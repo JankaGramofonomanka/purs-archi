@@ -3,10 +3,11 @@ module Canvas.Demo (draw) where
 import Prelude
 
 import Data.Maybe (Maybe(..))
-import Data.Number (pi)
-import Effect (Effect)
 import Effect.Exception (throw)
+import Effect (Effect)
 import Graphics.Canvas as Canvas
+import Geometry.Demo as Demo
+import Canvas.Impl as Renderer
 
 draw :: Effect Unit
 draw = do
@@ -14,118 +15,5 @@ draw = do
   case maybeCanvas of
     Nothing -> throw "Missing #canvas-target canvas"
     Just canvas -> do
-      context <- Canvas.getContext2D canvas
       dimensions <- Canvas.getCanvasDimensions canvas
-      let centerX = dimensions.width / 2.0
-      let centerY = dimensions.height / 2.0
-      Canvas.setFillStyle context "#5268d8"
-      Canvas.fillRect context
-        { x: centerX - 100.0
-        , y: centerY - 50.0
-        , width: 100.0
-        , height: 100.0
-        }
-      Canvas.setFillStyle context "#e53935"
-      Canvas.fillRect context
-        { x: centerX
-        , y: centerY - 50.0
-        , width: 100.0
-        , height: 100.0
-        }
-      Canvas.beginPath context
-      Canvas.moveTo context 0.0 (centerY - 50.0)
-      Canvas.lineTo context dimensions.width (centerY - 50.0)
-      Canvas.setStrokeStyle context "#1c2540"
-      Canvas.setLineWidth context 4.0
-      Canvas.stroke context
-      Canvas.beginPath context
-      Canvas.setStrokeStyle context "#c2410c"
-      Canvas.setLineDash context [ 16.0, 12.0 ]
-      Canvas.moveTo context 0.0 (centerY - 350.0)
-      Canvas.lineTo context dimensions.width (centerY - 350.0)
-      Canvas.stroke context
-      Canvas.beginPath context
-      Canvas.setStrokeStyle context "#0f766e"
-      Canvas.setLineDash context [ 0.0, 12.0 ]
-      Canvas.setLineCap context Canvas.Round
-      Canvas.moveTo context 0.0 (centerY - 250.0)
-      Canvas.lineTo context dimensions.width (centerY - 250.0)
-      Canvas.stroke context
-      Canvas.setLineCap context Canvas.Butt
-      Canvas.beginPath context
-      Canvas.setStrokeStyle context "#7e22ce"
-      Canvas.setLineDash context [ 16.0, 8.0, 0.0, 8.0 ]
-      Canvas.setLineCap context Canvas.Round
-      Canvas.moveTo context 0.0 (centerY - 150.0)
-      Canvas.lineTo context dimensions.width (centerY - 150.0)
-      Canvas.stroke context
-      Canvas.setLineDash context []
-      Canvas.setLineCap context Canvas.Butt
-      Canvas.setStrokeStyle context "#1c2540"
-      Canvas.beginPath context
-      Canvas.moveTo context (centerX + 100.0) (centerY - 150.0)
-      Canvas.lineTo context (centerX + 100.0) (centerY + 150.0)
-      Canvas.setGlobalAlpha context 1.0
-      Canvas.stroke context
-      Canvas.setLineWidth context 6.0
-      Canvas.beginPath context
-      Canvas.moveTo context (centerX + 200.0) (centerY - 150.0)
-      Canvas.lineTo context (centerX + 200.0) (centerY + 150.0)
-      Canvas.setGlobalAlpha context 0.1
-      Canvas.stroke context
-      Canvas.setLineWidth context 4.0
-      Canvas.beginPath context
-      Canvas.moveTo context (centerX + 300.0) (centerY - 150.0)
-      Canvas.lineTo context (centerX + 300.0) (centerY + 150.0)
-      Canvas.setGlobalAlpha context 0.3
-      Canvas.stroke context
-      Canvas.setLineWidth context 2.0
-      Canvas.beginPath context
-      Canvas.moveTo context (centerX + 400.0) (centerY - 150.0)
-      Canvas.lineTo context (centerX + 400.0) (centerY + 150.0)
-      Canvas.setGlobalAlpha context 1.0
-      Canvas.stroke context
-      Canvas.setGlobalAlpha context 1.0
-      Canvas.setFillStyle context "#1c2540"
-      drawPoint context (centerX - 200.0) (centerY + 50.0)
-      Canvas.setStrokeStyle context "#1c2540"
-      Canvas.setLineWidth context 2.0
-      drawPlus context (centerX - 100.0) (centerY + 50.0)
-      Canvas.fillRect context
-        { x: centerX - 204.0
-        , y: centerY + 146.0
-        , width: 8.0
-        , height: 8.0
-        }
-      drawX context (centerX - 100.0) (centerY + 150.0)
-
-drawPoint :: Canvas.Context2D -> Number -> Number -> Effect Unit
-drawPoint context x y = do
-  Canvas.beginPath context
-  Canvas.arc context
-    { x
-    , y
-    , radius: 4.0
-    , start: 0.0
-    , end: 2.0 * pi
-    , useCounterClockwise: false
-    }
-  Canvas.fill context
-
-drawPlus :: Canvas.Context2D -> Number -> Number -> Effect Unit
-drawPlus context x y = do
-  Canvas.beginPath context
-  Canvas.moveTo context (x - 4.0) y
-  Canvas.lineTo context (x + 4.0) y
-  Canvas.moveTo context x (y - 4.0)
-  Canvas.lineTo context x (y + 4.0)
-  Canvas.stroke context
-
-drawX :: Canvas.Context2D -> Number -> Number -> Effect Unit
-drawX context x y = do
-  Canvas.beginPath context
-  Canvas.moveTo context (x - 4.0) (y - 4.0)
-  Canvas.lineTo context (x + 4.0) (y + 4.0)
-  Canvas.moveTo context (x - 4.0) (y + 4.0)
-  Canvas.lineTo context (x + 4.0) (y - 4.0)
-  Canvas.stroke context
+      Renderer.runRenderer (Demo.draw dimensions.width dimensions.height)

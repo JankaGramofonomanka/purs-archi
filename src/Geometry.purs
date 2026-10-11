@@ -10,7 +10,7 @@ data Color = RGB { r :: Number, g :: Number, b :: Number } | Basic BasicColor
 data BasicColor = Black | White | Red | Green | Blue | Yellow | Cyan | Mag
 newtype Thickness = Thickness Number
 newtype Opaqueness = Opaqueness Number
-data LineStyle = Solid | Dashed | Dotted | DashDot | DashDotDot
+data LineStyle = Solid | Dashed | Dotted | DashDot -- | DashDotDot
 data PointStyle = Circle | Square | Cross | X
 
 class Renderer m where
