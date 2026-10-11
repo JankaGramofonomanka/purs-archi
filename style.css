@@ -14,13 +14,50 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  display: grid;
-  place-items: center;
-  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.route-nav {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e3e8f2;
+  background: #fff;
+}
+
+.route-link {
+  flex: 1;
+  max-width: 200px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: #52617d;
+  font-size: 0.9rem;
+  font-weight: 650;
+  text-align: center;
+  text-decoration: none;
+}
+
+.route-link:hover {
+  background: #f5f7fb;
+  color: #4056c4;
+}
+
+.route-link[aria-current="page"] {
+  background: #eef0ff;
+  color: #4056c4;
+}
+
+.route-link:focus-visible {
+  outline: 3px solid #aab5ff;
+  outline-offset: 2px;
 }
 
 .demo-card {
   width: min(100%, 440px);
+  margin: auto;
   padding: 40px;
   border: 1px solid #e3e8f2;
   border-radius: 20px;

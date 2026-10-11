@@ -13,11 +13,57 @@ const updateRoute = () => {
   const label = routeLabels[path];
   routeLabel.hidden = label === undefined;
   routeLabel.textContent = label ?? "";
+
+  const routeLinks = document.querySelectorAll(".route-link");
+  routeLinks.forEach(link => {
+    if (!(link instanceof HTMLAnchorElement)) {
+      throw new Error("Invalid route link");
+    }
+
+    if (link.dataset.route === path) {
+      link.setAttribute("aria-current", "page");
+    } else {
+      link.removeAttribute("aria-current");
+    }
+  });
 };
 
 export const setupRoutes = () => {
   updateRoute();
   window.addEventListener("popstate", updateRoute);
+
+  const routeNav = document.querySelector(".route-nav");
+  if (!(routeNav instanceof HTMLElement)) {
+    throw new Error("Missing .route-nav element");
+  }
+
+  routeNav.addEventListener("click", event => {
+    if (
+      !(event.target instanceof Element) ||
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+
+    const link = event.target.closest("a[data-route]");
+    if (
+      !(link instanceof HTMLAnchorElement) ||
+      link.target !== "" ||
+      link.hasAttribute("download") ||
+      link.origin !== window.location.origin
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    window.history.pushState({}, "", link.href);
+    updateRoute();
+  });
 };
 
 export const setCount = count => () => {
