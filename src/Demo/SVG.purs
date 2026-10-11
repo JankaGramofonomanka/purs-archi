@@ -15,53 +15,48 @@ type SvgElement =
   }
 
 draw :: Effect Unit
-draw = mountSvg
-  [ rectangle "50%" "50%" 100.0 100.0 "translate(-100 -50)" "#5268d8"
-  , rectangle "50%" "50%" 100.0 100.0 "translate(0 -50)" "#e53935"
-  , horizontalLine
-  , verticalLine 100.0 4.0
-  , verticalLine 200.0 6.0
-  , verticalLine 300.0 4.0
-  , verticalLine 400.0 2.0
-  ]
+draw = do
+  dimensions <- getSvgDimensions
+  let centerX = dimensions.width / 2.0
+  let centerY = dimensions.height / 2.0
+  mountSvg dimensions.width dimensions.height
+    [ rectangle (centerX - 100.0) (centerY - 50.0) 100.0 100.0 "#5268d8"
+    , rectangle centerX (centerY - 50.0) 100.0 100.0 "#e53935"
+    , horizontalLine dimensions.width (centerY - 50.0)
+    , verticalLine centerX centerY 100.0 4.0
+    , verticalLine centerX centerY 200.0 6.0
+    , verticalLine centerX centerY 300.0 4.0
+    , verticalLine centerX centerY 400.0 2.0
+    ]
 
-rectangle :: String -> String -> Number -> Number -> String -> String -> SvgElement
-rectangle x y width height transform fill = element "rect"
-  [ attribute "x" x
-  , attribute "y" y
-  , attribute "width" (show width)
-  , attribute "height" (show height)
-  , attribute "transform" transform
+rectangle :: Number -> Number -> Number -> Number -> String -> SvgElement
+rectangle x y width height fill = element "rect"
+  [ numberAttribute "x" x
+  , numberAttribute "y" y
+  , numberAttribute "width" width
+  , numberAttribute "height" height
   , attribute "fill" fill
   ]
 
-horizontalLine :: SvgElement
-horizontalLine = element "line"
-  [ attribute "x1" "0"
-  , attribute "y1" "50%"
-  , attribute "x2" "100%"
-  , attribute "y2" "50%"
-  , attribute "transform" "translate(0 -50)"
+horizontalLine :: Number -> Number -> SvgElement
+horizontalLine width y = element "line"
+  [ numberAttribute "x1" 0.0
+  , numberAttribute "y1" y
+  , numberAttribute "x2" width
+  , numberAttribute "y2" y
   , attribute "stroke" "#1c2540"
-  , attribute "stroke-width" "4"
+  , numberAttribute "stroke-width" 4.0
   ]
 
-verticalLine :: Number -> Number -> SvgElement
-verticalLine offset width = element "line"
-  [ attribute "x1" (centerOffset offset)
-  , attribute "y1" (centerOffset (-150.0))
-  , attribute "x2" (centerOffset offset)
-  , attribute "y2" (centerOffset 150.0)
+verticalLine :: Number -> Number -> Number -> Number -> SvgElement
+verticalLine centerX centerY offset width = element "line"
+  [ numberAttribute "x1" (centerX + offset)
+  , numberAttribute "y1" (centerY - 150.0)
+  , numberAttribute "x2" (centerX + offset)
+  , numberAttribute "y2" (centerY + 150.0)
   , attribute "stroke" "#1c2540"
-  , attribute "stroke-width" (show width)
+  , numberAttribute "stroke-width" width
   ]
-
-centerOffset :: Number -> String
-centerOffset offset =
-  if offset < 0.0 then
-    "calc(50% - " <> show (0.0 - offset) <> "px)"
-  else
-    "calc(50% + " <> show offset <> "px)"
 
 element :: String -> Array SvgAttribute -> SvgElement
 element tag attributes = { tag, attributes }
@@ -69,4 +64,9 @@ element tag attributes = { tag, attributes }
 attribute :: String -> String -> SvgAttribute
 attribute name value = { name, value }
 
-foreign import mountSvg :: Array SvgElement -> Effect Unit
+numberAttribute :: String -> Number -> SvgAttribute
+numberAttribute name value = { name, value: show value }
+
+foreign import getSvgDimensions :: Effect { width :: Number, height :: Number }
+
+foreign import mountSvg :: Number -> Number -> Array SvgElement -> Effect Unit
