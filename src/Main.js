@@ -1,3 +1,18 @@
+const updateRoute = () => {
+  const routeLabel = document.getElementById("route-label");
+  if (!(routeLabel instanceof HTMLElement)) {
+    throw new Error("Missing #route-label element");
+  }
+
+  const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  routeLabel.hidden = path !== "/test";
+};
+
+export const setupRoutes = () => {
+  updateRoute();
+  window.addEventListener("popstate", updateRoute);
+};
+
 export const setCount = count => () => {
   const output = document.getElementById("count");
   if (!(output instanceof HTMLElement)) {

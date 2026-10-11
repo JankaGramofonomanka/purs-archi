@@ -7,11 +7,14 @@ import Effect.Ref as Ref
 
 main :: Effect Unit
 main = do
+  setupRoutes
   count <- Ref.new 0
   setCount 0
   onIncrement do
     next <- Ref.modify (_ + 1) count
     setCount next
+
+foreign import setupRoutes :: Effect Unit
 
 foreign import setCount :: Int -> Effect Unit
 

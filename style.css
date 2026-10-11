@@ -37,6 +37,21 @@ body {
   text-transform: uppercase;
 }
 
+.route-label {
+  display: inline-block;
+  margin: 0 0 12px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #eef0ff;
+  color: #4056c4;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.route-label[hidden] {
+  display: none;
+}
+
 h1 {
   margin: 0;
   font-size: clamp(1.8rem, 7vw, 2.4rem);
