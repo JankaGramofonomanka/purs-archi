@@ -5,7 +5,15 @@ const updateRoute = () => {
   }
 
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
-  routeLabel.hidden = path !== "/test";
+  const routeLabels = {
+    "/test": "Test",
+    "/svg": "SVG",
+    "/canvas": "Canvas",
+    "/purescript-drawing": "PureScript Drawing"
+  };
+  const label = routeLabels[path];
+  routeLabel.hidden = label === undefined;
+  routeLabel.textContent = label ?? "";
 };
 
 export const setupRoutes = () => {
