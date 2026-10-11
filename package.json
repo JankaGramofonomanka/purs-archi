@@ -1,0 +1,16 @@
+{
+  "name": "purs-test-demo",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build:purescript": "spago build",
+    "dev": "npm run build:purescript && vite --host 127.0.0.1",
+    "build": "npm run build:purescript && vite build",
+    "preview": "vite preview --host 127.0.0.1"
+  },
+  "devDependencies": {
+    "purescript": "0.15.16",
+    "spago": "0.93.45",
+    "vite": "6.4.4"
+  }
+}
