@@ -6,7 +6,6 @@ const updateRoute = () => {
 
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
   const routeLabels = {
-    "/test": "Test",
     "/svg": "SVG",
     "/canvas": "Canvas",
     "/purescript-drawing": "PureScript Drawing"
