@@ -4,9 +4,9 @@ import Prelude
 
 import Effect (Effect)
 import Effect.Ref as Ref
-import Demo.Canvas as Canvas
-import Demo.PureScriptDrawing as PureScriptDrawing
-import Demo.SVG as SVG
+import Canvas.Demo as Canvas
+import PureScriptDrawing.Demo as PureScriptDrawing
+import SVG.Demo as SVG
 
 main :: Effect Unit
 main = do

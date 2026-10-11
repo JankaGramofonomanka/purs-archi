@@ -1,4 +1,4 @@
-module Demo.PureScriptDrawing (draw) where
+module PureScriptDrawing.Demo (draw) where
 
 import Prelude
 

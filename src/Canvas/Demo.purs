@@ -1,4 +1,4 @@
-module Demo.Canvas (draw) where
+module Canvas.Demo (draw) where
 
 import Prelude
 

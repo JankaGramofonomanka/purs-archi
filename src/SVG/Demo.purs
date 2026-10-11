@@ -1,4 +1,4 @@
-module Demo.SVG (draw) where
+module SVG.Demo (draw) where
 
 import Prelude
 
