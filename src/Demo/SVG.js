@@ -1,8 +1,17 @@
-export const mountSvg = markup => () => {
+const svgNamespace = "http://www.w3.org/2000/svg";
+
+export const mountSvg = elements => () => {
   const target = document.getElementById("svg-target");
-  if (!(target instanceof HTMLElement)) {
-    throw new Error("Missing #svg-target element");
+  if (!(target instanceof SVGSVGElement)) {
+    throw new Error("Missing #svg-target SVG element");
   }
 
-  target.innerHTML = markup;
+  const nodes = elements.map(({ tag, attributes }) => {
+    const node = document.createElementNS(svgNamespace, tag);
+    for (const { name, value } of attributes) {
+      node.setAttribute(name, value);
+    }
+    return node;
+  });
+  target.replaceChildren(...nodes);
 };
