@@ -5,14 +5,34 @@ const updateRoute = () => {
   }
 
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
-  const routeLabels = {
-    "/svg": "SVG",
-    "/canvas": "Canvas",
-    "/purescript-drawing": "PureScript Drawing"
+  const routes = {
+    "/svg": { label: "SVG", pageId: "svg-page" },
+    "/canvas": { label: "Canvas", pageId: "canvas-page" },
+    "/purescript-drawing": {
+      label: "PureScript Drawing",
+      pageId: "purescript-drawing-page"
+    }
   };
-  const label = routeLabels[path];
-  routeLabel.hidden = label === undefined;
-  routeLabel.textContent = label ?? "";
+  const route = routes[path];
+  routeLabel.hidden = route === undefined;
+  routeLabel.textContent = route?.label ?? "";
+
+  const homePage = document.getElementById("home-page");
+  const demoPage = document.getElementById("demo-page");
+  if (!(homePage instanceof HTMLElement) || !(demoPage instanceof HTMLElement)) {
+    throw new Error("Missing page container");
+  }
+
+  homePage.hidden = route !== undefined;
+  demoPage.hidden = route === undefined;
+
+  document.querySelectorAll(".demo-stage").forEach(stage => {
+    if (!(stage instanceof HTMLElement)) {
+      throw new Error("Invalid demo stage");
+    }
+
+    stage.hidden = stage.id !== route?.pageId;
+  });
 
   const routeLinks = document.querySelectorAll(".route-link");
   routeLinks.forEach(link => {
@@ -64,6 +84,21 @@ export const setupRoutes = () => {
     window.history.pushState({}, "", link.href);
     updateRoute();
   });
+};
+
+export const drawCanvasSquare = () => {
+  const canvas = document.getElementById("canvas-square");
+  if (!(canvas instanceof HTMLCanvasElement)) {
+    throw new Error("Missing #canvas-square canvas");
+  }
+
+  const context = canvas.getContext("2d");
+  if (context === null) {
+    throw new Error("Unable to get 2D context for #canvas-square");
+  }
+
+  context.fillStyle = "#5268d8";
+  context.fillRect(60, 60, 120, 120);
 };
 
 export const setCount = count => () => {

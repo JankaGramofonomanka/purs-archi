@@ -65,18 +65,22 @@ body {
   box-shadow: 0 18px 50px rgb(35 52 92 / 9%);
 }
 
-.eyebrow {
-  margin: 0 0 12px;
-  color: #5268d8;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+.demo-page {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.demo-page[hidden] {
+  display: none;
 }
 
 .route-label {
-  display: inline-block;
-  margin: 0 0 12px;
+  position: absolute;
+  z-index: 1;
+  top: 24px;
+  left: 24px;
+  margin: 0;
   padding: 4px 9px;
   border-radius: 999px;
   background: #eef0ff;
@@ -85,8 +89,33 @@ body {
   font-weight: 700;
 }
 
-.route-label[hidden] {
+.route-label[hidden],
+.demo-stage[hidden] {
   display: none;
+}
+
+.demo-stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.demo-square {
+  display: block;
+  width: min(240px, 70vw, 60vh);
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  color: #5268d8;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 h1 {

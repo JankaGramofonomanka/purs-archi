@@ -14,8 +14,8 @@ npm run dev
 ```
 
 Open the local URL printed by Vite (by default, <http://127.0.0.1:5173/>).
-The `/svg`, `/canvas`, and `/purescript-drawing` routes currently show the
-same page with a label for the selected route.
+The `/svg`, `/canvas`, and `/purescript-drawing` routes each draw a centered
+square using SVG, Canvas 2D, and PureScript Drawing, respectively.
 The first build downloads the PureScript packages listed in `spago.yaml`.
 
 To run the dev server and rebuild/reload the page when PureScript sources

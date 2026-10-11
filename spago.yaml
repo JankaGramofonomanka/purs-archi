@@ -3,6 +3,8 @@ package:
   dependencies:
     - console
     - effect
+    - exceptions
+    - open-drawing
     - prelude
     - refs
   test:
