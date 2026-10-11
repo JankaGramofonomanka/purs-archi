@@ -38,6 +38,26 @@ draw = do
       Canvas.setLineWidth context 4.0
       Canvas.stroke context
       Canvas.beginPath context
+      Canvas.setLineDash context [ 16.0, 12.0 ]
+      Canvas.moveTo context 0.0 (centerY - 350.0)
+      Canvas.lineTo context dimensions.width (centerY - 350.0)
+      Canvas.stroke context
+      Canvas.beginPath context
+      Canvas.setLineDash context [ 0.0, 12.0 ]
+      Canvas.setLineCap context Canvas.Round
+      Canvas.moveTo context 0.0 (centerY - 250.0)
+      Canvas.lineTo context dimensions.width (centerY - 250.0)
+      Canvas.stroke context
+      Canvas.setLineCap context Canvas.Butt
+      Canvas.beginPath context
+      Canvas.setLineDash context [ 16.0, 8.0, 0.0, 8.0 ]
+      Canvas.setLineCap context Canvas.Round
+      Canvas.moveTo context 0.0 (centerY - 150.0)
+      Canvas.lineTo context dimensions.width (centerY - 150.0)
+      Canvas.stroke context
+      Canvas.setLineDash context []
+      Canvas.setLineCap context Canvas.Butt
+      Canvas.beginPath context
       Canvas.moveTo context (centerX + 100.0) (centerY - 150.0)
       Canvas.lineTo context (centerX + 100.0) (centerY + 150.0)
       Canvas.stroke context
