@@ -21,4 +21,11 @@ draw = do
             (Drawing.rectangle 20.0 70.0 100.0 100.0)
             <> Drawing.filled (Drawing.fillColor (rgb 229 57 53))
               (Drawing.rectangle 120.0 70.0 100.0 100.0)
+            <> Drawing.outlined
+              (Drawing.outlineColor (rgb 28 37 64) <> Drawing.lineWidth 2.0)
+              (Drawing.path
+                [ { x: 0.0, y: 70.0 }
+                , { x: 240.0, y: 70.0 }
+                ]
+              )
         )

@@ -28,3 +28,9 @@ draw = do
         , width: 100.0
         , height: 100.0
         }
+      Canvas.beginPath context
+      Canvas.moveTo context 0.0 70.0
+      Canvas.lineTo context 240.0 70.0
+      Canvas.setStrokeStyle context "#1c2540"
+      Canvas.setLineWidth context 2.0
+      Canvas.stroke context
