@@ -14,8 +14,7 @@
       <a class="route-link" href="/canvas" data-route="/canvas">Canvas</a>
       <a class="route-link" href="/purescript-drawing" data-route="/purescript-drawing">PureScript Drawing</a>
     </nav>
-    <main class="demo-card">
-      <p id="route-label" class="route-label" hidden></p>
+    <main id="home-page" class="demo-card">
       <p class="eyebrow">A tiny PureScript app</p>
       <h1>Hello from PureScript</h1>
       <p class="description">
@@ -26,6 +25,32 @@
         <span id="count">0</span>
       </div>
       <button id="increment" type="button">Increment counter</button>
+    </main>
+    <main id="demo-page" class="demo-page" hidden>
+      <p id="route-label-demo" class="route-label" hidden></p>
+      <section class="demo-stage" data-demo-page="/svg" hidden>
+        <div id="svg-target" class="demo-square"></div>
+      </section>
+      <section class="demo-stage" data-demo-page="/canvas" hidden>
+        <canvas
+          id="canvas-target"
+          class="demo-square"
+          width="240"
+          height="240"
+          role="img"
+          aria-label="Square drawn with the Canvas API"
+        ></canvas>
+      </section>
+      <section class="demo-stage" data-demo-page="/purescript-drawing" hidden>
+        <canvas
+          id="drawing-target"
+          class="demo-square"
+          width="240"
+          height="240"
+          role="img"
+          aria-label="Square drawn with PureScript Drawing"
+        ></canvas>
+      </section>
     </main>
   </body>
 </html>

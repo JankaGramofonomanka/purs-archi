@@ -1,8 +1,12 @@
 package:
   name: purs-archi
   dependencies:
+    - canvas
+    - colors
     - console
     - effect
+    - exceptions
+    - open-drawing
     - prelude
     - refs
   test:
