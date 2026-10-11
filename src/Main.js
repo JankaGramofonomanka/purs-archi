@@ -1,20 +1,12 @@
 const updateRoute = onRouteChange => {
-  const routeLabel = document.getElementById("route-label-demo");
-  if (!(routeLabel instanceof HTMLElement)) {
-    throw new Error("Missing #route-label-demo element");
-  }
-
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
-  const routeLabels = {
+  const routes = {
     "/svg": "SVG",
     "/canvas": "Canvas",
     "/purescript-drawing": "PureScript Drawing"
   };
-  const label = routeLabels[path];
-  const route = label === undefined ? "/" : path;
+  const route = routes[path] === undefined ? "/" : path;
   currentRoute = route;
-  routeLabel.hidden = label === undefined;
-  routeLabel.textContent = label ?? "";
 
   const homePage = document.getElementById("home-page");
   const demoPage = document.getElementById("demo-page");
