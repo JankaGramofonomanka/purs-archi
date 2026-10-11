@@ -31,4 +31,11 @@ draw = do
                 , { x: dimensions.width, y: centerY - 50.0 }
                 ]
               )
+            <> Drawing.outlined
+              (Drawing.outlineColor (rgb 28 37 64) <> Drawing.lineWidth 2.0)
+              (Drawing.path
+                [ { x: centerX + 100.0, y: centerY - 150.0 }
+                , { x: centerX + 100.0, y: centerY + 150.0 }
+                ]
+              )
         )

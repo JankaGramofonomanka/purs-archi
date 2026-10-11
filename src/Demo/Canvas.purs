@@ -37,3 +37,7 @@ draw = do
       Canvas.setStrokeStyle context "#1c2540"
       Canvas.setLineWidth context 2.0
       Canvas.stroke context
+      Canvas.beginPath context
+      Canvas.moveTo context (centerX + 100.0) (centerY - 150.0)
+      Canvas.lineTo context (centerX + 100.0) (centerY + 150.0)
+      Canvas.stroke context
