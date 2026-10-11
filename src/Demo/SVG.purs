@@ -32,9 +32,9 @@ draw = do
     , verticalLine centerX centerY 300.0 4.0 0.3
     , verticalLine centerX centerY 400.0 2.0 1.0
     , cornerPoint (centerX - 200.0) (centerY + 50.0)
-    , cornerPoint (centerX - 100.0) (centerY + 50.0)
-    , cornerPoint (centerX - 200.0) (centerY + 150.0)
-    , cornerPoint (centerX - 100.0) (centerY + 150.0)
+    , crossPoint (centerX - 100.0) (centerY + 50.0)
+    , squarePoint (centerX - 200.0) (centerY + 150.0)
+    , xPoint (centerX - 100.0) (centerY + 150.0)
     ]
 
 rectangle :: Number -> Number -> Number -> Number -> String -> SvgElement
@@ -79,6 +79,40 @@ cornerPoint x y = element "circle"
   , numberAttribute "cy" y
   , numberAttribute "r" 4.0
   , attribute "fill" "#1c2540"
+  ]
+
+crossPoint :: Number -> Number -> SvgElement
+crossPoint x y = pointPath
+  ( "M" <> show (x - 4.0) <> " " <> show y
+      <> " L" <> show (x + 4.0) <> " " <> show y
+      <> " M" <> show x <> " " <> show (y - 4.0)
+      <> " L" <> show x <> " " <> show (y + 4.0)
+  )
+
+squarePoint :: Number -> Number -> SvgElement
+squarePoint x y = element "rect"
+  [ numberAttribute "x" (x - 4.0)
+  , numberAttribute "y" (y - 4.0)
+  , numberAttribute "width" 8.0
+  , numberAttribute "height" 8.0
+  , attribute "fill" "#1c2540"
+  ]
+
+xPoint :: Number -> Number -> SvgElement
+xPoint x y = pointPath
+  ( "M" <> show (x - 4.0) <> " " <> show (y - 4.0)
+      <> " L" <> show (x + 4.0) <> " " <> show (y + 4.0)
+      <> " M" <> show (x - 4.0) <> " " <> show (y + 4.0)
+      <> " L" <> show (x + 4.0) <> " " <> show (y - 4.0)
+  )
+
+pointPath :: String -> SvgElement
+pointPath d = element "path"
+  [ attribute "d" d
+  , attribute "stroke" "#1c2540"
+  , numberAttribute "stroke-width" 2.0
+  , attribute "stroke-linecap" "round"
+  , attribute "fill" "none"
   ]
 
 element :: String -> Array SvgAttribute -> SvgElement

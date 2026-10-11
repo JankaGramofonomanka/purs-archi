@@ -88,9 +88,16 @@ draw = do
       Canvas.setGlobalAlpha context 1.0
       Canvas.setFillStyle context "#1c2540"
       drawPoint context (centerX - 200.0) (centerY + 50.0)
-      drawPoint context (centerX - 100.0) (centerY + 50.0)
-      drawPoint context (centerX - 200.0) (centerY + 150.0)
-      drawPoint context (centerX - 100.0) (centerY + 150.0)
+      Canvas.setStrokeStyle context "#1c2540"
+      Canvas.setLineWidth context 2.0
+      drawPlus context (centerX - 100.0) (centerY + 50.0)
+      Canvas.fillRect context
+        { x: centerX - 204.0
+        , y: centerY + 146.0
+        , width: 8.0
+        , height: 8.0
+        }
+      drawX context (centerX - 100.0) (centerY + 150.0)
 
 drawPoint :: Canvas.Context2D -> Number -> Number -> Effect Unit
 drawPoint context x y = do
@@ -104,3 +111,21 @@ drawPoint context x y = do
     , useCounterClockwise: false
     }
   Canvas.fill context
+
+drawPlus :: Canvas.Context2D -> Number -> Number -> Effect Unit
+drawPlus context x y = do
+  Canvas.beginPath context
+  Canvas.moveTo context (x - 4.0) y
+  Canvas.lineTo context (x + 4.0) y
+  Canvas.moveTo context x (y - 4.0)
+  Canvas.lineTo context x (y + 4.0)
+  Canvas.stroke context
+
+drawX :: Canvas.Context2D -> Number -> Number -> Effect Unit
+drawX context x y = do
+  Canvas.beginPath context
+  Canvas.moveTo context (x - 4.0) (y - 4.0)
+  Canvas.lineTo context (x + 4.0) (y + 4.0)
+  Canvas.moveTo context (x - 4.0) (y + 4.0)
+  Canvas.lineTo context (x + 4.0) (y - 4.0)
+  Canvas.stroke context

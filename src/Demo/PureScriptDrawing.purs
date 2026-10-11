@@ -67,12 +67,32 @@ draw = do
               )
             <> Drawing.filled (Drawing.fillColor ink)
               (Drawing.circle (centerX - 200.0) (centerY + 50.0) 4.0)
+            <> Drawing.outlined (Drawing.outlineColor ink <> Drawing.lineWidth 2.0)
+              (Drawing.path
+                [ { x: centerX - 104.0, y: centerY + 50.0 }
+                , { x: centerX - 96.0, y: centerY + 50.0 }
+                ]
+              )
+            <> Drawing.outlined (Drawing.outlineColor ink <> Drawing.lineWidth 2.0)
+              (Drawing.path
+                [ { x: centerX - 100.0, y: centerY + 46.0 }
+                , { x: centerX - 100.0, y: centerY + 54.0 }
+                ]
+              )
             <> Drawing.filled (Drawing.fillColor ink)
-              (Drawing.circle (centerX - 100.0) (centerY + 50.0) 4.0)
-            <> Drawing.filled (Drawing.fillColor ink)
-              (Drawing.circle (centerX - 200.0) (centerY + 150.0) 4.0)
-            <> Drawing.filled (Drawing.fillColor ink)
-              (Drawing.circle (centerX - 100.0) (centerY + 150.0) 4.0)
+              (Drawing.rectangle (centerX - 204.0) (centerY + 146.0) 8.0 8.0)
+            <> Drawing.outlined (Drawing.outlineColor ink <> Drawing.lineWidth 2.0)
+              (Drawing.path
+                [ { x: centerX - 104.0, y: centerY + 146.0 }
+                , { x: centerX - 96.0, y: centerY + 154.0 }
+                ]
+              )
+            <> Drawing.outlined (Drawing.outlineColor ink <> Drawing.lineWidth 2.0)
+              (Drawing.path
+                [ { x: centerX - 104.0, y: centerY + 154.0 }
+                , { x: centerX - 96.0, y: centerY + 146.0 }
+                ]
+              )
         )
 
 ink :: Color
