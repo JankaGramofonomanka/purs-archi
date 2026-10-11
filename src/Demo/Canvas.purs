@@ -16,8 +16,15 @@ draw = do
       context <- Canvas.getContext2D canvas
       Canvas.setFillStyle context "#5268d8"
       Canvas.fillRect context
-        { x: 60.0
-        , y: 60.0
-        , width: 120.0
-        , height: 120.0
+        { x: 20.0
+        , y: 70.0
+        , width: 100.0
+        , height: 100.0
+        }
+      Canvas.setFillStyle context "#e53935"
+      Canvas.fillRect context
+        { x: 120.0
+        , y: 70.0
+        , width: 100.0
+        , height: 100.0
         }

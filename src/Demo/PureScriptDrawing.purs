@@ -17,7 +17,8 @@ draw = do
     Just canvas -> do
       context <- Canvas.getContext2D canvas
       Drawing.render context
-        ( Drawing.filled
-            (Drawing.fillColor (rgb 82 104 216))
-            (Drawing.rectangle 60.0 60.0 120.0 120.0)
+        ( Drawing.filled (Drawing.fillColor (rgb 82 104 216))
+            (Drawing.rectangle 20.0 70.0 100.0 100.0)
+            <> Drawing.filled (Drawing.fillColor (rgb 229 57 53))
+              (Drawing.rectangle 120.0 70.0 100.0 100.0)
         )
