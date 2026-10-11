@@ -6,9 +6,12 @@
     "build:purescript": "spago build",
     "dev": "npm run build:purescript && vite --host 127.0.0.1",
     "build": "npm run build:purescript && vite build",
+    "watch": "concurrently --kill-others \"npm run dev\" \"chokidar 'src/**/*' spago.yaml -c 'npm run build:purescript'\"",
     "preview": "vite preview --host 127.0.0.1"
   },
   "devDependencies": {
+    "chokidar-cli": "^3.0.0",
+    "concurrently": "^9.2.5",
     "purescript": "0.15.16",
     "spago": "0.93.45",
     "vite": "6.4.4"
