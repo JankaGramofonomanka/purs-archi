@@ -23,10 +23,10 @@ draw = do
   mountSvg dimensions.width dimensions.height
     [ rectangle (centerX - 100.0) (centerY - 50.0) 100.0 100.0 "#5268d8"
     , rectangle centerX (centerY - 50.0) 100.0 100.0 "#e53935"
-    , horizontalLine dimensions.width (centerY - 350.0) (Just "16 12") "butt"
-    , horizontalLine dimensions.width (centerY - 250.0) (Just "0 12") "round"
-    , horizontalLine dimensions.width (centerY - 150.0) (Just "16 8 0 8") "round"
-    , horizontalLine dimensions.width (centerY - 50.0) Nothing "butt"
+    , horizontalLine dimensions.width (centerY - 350.0) (Just "16 12") "butt" "#c2410c"
+    , horizontalLine dimensions.width (centerY - 250.0) (Just "0 12") "round" "#0f766e"
+    , horizontalLine dimensions.width (centerY - 150.0) (Just "16 8 0 8") "round" "#7e22ce"
+    , horizontalLine dimensions.width (centerY - 50.0) Nothing "butt" "#1c2540"
     , verticalLine centerX centerY 100.0 4.0
     , verticalLine centerX centerY 200.0 6.0
     , verticalLine centerX centerY 300.0 4.0
@@ -42,14 +42,14 @@ rectangle x y width height fill = element "rect"
   , attribute "fill" fill
   ]
 
-horizontalLine :: Number -> Number -> Maybe String -> String -> SvgElement
-horizontalLine width y dashArray lineCap =
+horizontalLine :: Number -> Number -> Maybe String -> String -> String -> SvgElement
+horizontalLine width y dashArray lineCap stroke =
   element "line"
     ( [ numberAttribute "x1" 0.0
       , numberAttribute "y1" y
       , numberAttribute "x2" width
       , numberAttribute "y2" y
-      , attribute "stroke" "#1c2540"
+      , attribute "stroke" stroke
       , numberAttribute "stroke-width" 4.0
       ]
         <> case dashArray of

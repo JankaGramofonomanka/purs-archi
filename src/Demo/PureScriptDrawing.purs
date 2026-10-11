@@ -27,9 +27,9 @@ draw = do
             (Drawing.rectangle (centerX - 100.0) (centerY - 50.0) 100.0 100.0)
             <> Drawing.filled (Drawing.fillColor (rgb 229 57 53))
               (Drawing.rectangle centerX (centerY - 50.0) 100.0 100.0)
-            <> dashedLine dimensions.width (centerY - 350.0)
-            <> dottedLine dimensions.width (centerY - 250.0)
-            <> dashDotLine dimensions.width (centerY - 150.0)
+            <> dashedLine (rgb 194 65 12) dimensions.width (centerY - 350.0)
+            <> dottedLine (rgb 15 118 110) dimensions.width (centerY - 250.0)
+            <> dashDotLine (rgb 126 34 206) dimensions.width (centerY - 150.0)
             <> Drawing.outlined
                 (Drawing.outlineColor ink <> Drawing.lineWidth 4.0)
                 (Drawing.path
@@ -70,48 +70,48 @@ draw = do
 ink :: Color
 ink = rgb 28 37 64
 
-dashLine :: Number -> Number -> Number -> Number -> Drawing.Drawing
-dashLine width y dashWidth gap =
+dashLine :: Color -> Number -> Number -> Number -> Number -> Drawing.Drawing
+dashLine color width y dashWidth gap =
   foldMap drawDash (0 .. ceil (width / (dashWidth + gap)))
   where
   drawDash index =
     let x = toNumber index * (dashWidth + gap)
         visibleWidth = min dashWidth (width - x)
     in if x < width then
-      Drawing.filled (Drawing.fillColor ink)
+      Drawing.filled (Drawing.fillColor color)
         (Drawing.rectangle x (y - 2.0) visibleWidth 4.0)
     else
       mempty
 
-dashedLine :: Number -> Number -> Drawing.Drawing
-dashedLine width y = dashLine width y 16.0 12.0
+dashedLine :: Color -> Number -> Number -> Drawing.Drawing
+dashedLine color width y = dashLine color width y 16.0 12.0
 
-dottedLine :: Number -> Number -> Drawing.Drawing
-dottedLine width y =
+dottedLine :: Color -> Number -> Number -> Drawing.Drawing
+dottedLine color width y =
   foldMap drawDot (0 .. ceil (width / 12.0))
   where
   drawDot index =
     let x = toNumber index * 12.0
     in if x <= width then
-      Drawing.filled (Drawing.fillColor ink) (Drawing.circle x y 2.0)
+      Drawing.filled (Drawing.fillColor color) (Drawing.circle x y 2.0)
     else
       mempty
 
-dashDotLine :: Number -> Number -> Drawing.Drawing
-dashDotLine width y =
+dashDotLine :: Color -> Number -> Number -> Drawing.Drawing
+dashDotLine color width y =
   foldMap drawDashDot (0 .. ceil (width / 32.0))
   where
   drawDashDot index =
     let x = toNumber index * 32.0
         dash =
           if x < width then
-            Drawing.filled (Drawing.fillColor ink)
+            Drawing.filled (Drawing.fillColor color)
               (Drawing.rectangle x (y - 2.0) (min 16.0 (width - x)) 4.0)
           else
             mempty
         dot =
           if x + 24.0 <= width then
-            Drawing.filled (Drawing.fillColor ink)
+            Drawing.filled (Drawing.fillColor color)
               (Drawing.circle (x + 24.0) y 2.0)
           else
             mempty
