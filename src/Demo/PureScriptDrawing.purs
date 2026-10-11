@@ -65,6 +65,14 @@ draw = do
                 , { x: centerX + 400.0, y: centerY + 150.0 }
                 ]
               )
+            <> Drawing.filled (Drawing.fillColor ink)
+              (Drawing.circle (centerX - 200.0) (centerY + 50.0) 4.0)
+            <> Drawing.filled (Drawing.fillColor ink)
+              (Drawing.circle (centerX - 100.0) (centerY + 50.0) 4.0)
+            <> Drawing.filled (Drawing.fillColor ink)
+              (Drawing.circle (centerX - 200.0) (centerY + 150.0) 4.0)
+            <> Drawing.filled (Drawing.fillColor ink)
+              (Drawing.circle (centerX - 100.0) (centerY + 150.0) 4.0)
         )
 
 ink :: Color

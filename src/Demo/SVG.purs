@@ -31,6 +31,10 @@ draw = do
     , verticalLine centerX centerY 200.0 6.0 0.1
     , verticalLine centerX centerY 300.0 4.0 0.3
     , verticalLine centerX centerY 400.0 2.0 1.0
+    , cornerPoint (centerX - 200.0) (centerY + 50.0)
+    , cornerPoint (centerX - 100.0) (centerY + 50.0)
+    , cornerPoint (centerX - 200.0) (centerY + 150.0)
+    , cornerPoint (centerX - 100.0) (centerY + 150.0)
     ]
 
 rectangle :: Number -> Number -> Number -> Number -> String -> SvgElement
@@ -67,6 +71,14 @@ verticalLine centerX centerY offset width opacity = element "line"
   , attribute "stroke" "#1c2540"
   , numberAttribute "stroke-width" width
   , numberAttribute "stroke-opacity" opacity
+  ]
+
+cornerPoint :: Number -> Number -> SvgElement
+cornerPoint x y = element "circle"
+  [ numberAttribute "cx" x
+  , numberAttribute "cy" y
+  , numberAttribute "r" 4.0
+  , attribute "fill" "#1c2540"
   ]
 
 element :: String -> Array SvgAttribute -> SvgElement

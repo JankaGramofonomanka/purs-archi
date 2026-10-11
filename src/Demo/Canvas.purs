@@ -3,6 +3,7 @@ module Demo.Canvas (draw) where
 import Prelude
 
 import Data.Maybe (Maybe(..))
+import Data.Number (pi)
 import Effect (Effect)
 import Effect.Exception (throw)
 import Graphics.Canvas as Canvas
@@ -85,3 +86,21 @@ draw = do
       Canvas.setGlobalAlpha context 1.0
       Canvas.stroke context
       Canvas.setGlobalAlpha context 1.0
+      Canvas.setFillStyle context "#1c2540"
+      drawPoint context (centerX - 200.0) (centerY + 50.0)
+      drawPoint context (centerX - 100.0) (centerY + 50.0)
+      drawPoint context (centerX - 200.0) (centerY + 150.0)
+      drawPoint context (centerX - 100.0) (centerY + 150.0)
+
+drawPoint :: Canvas.Context2D -> Number -> Number -> Effect Unit
+drawPoint context x y = do
+  Canvas.beginPath context
+  Canvas.arc context
+    { x
+    , y
+    , radius: 4.0
+    , start: 0.0
+    , end: 2.0 * pi
+    , useCounterClockwise: false
+    }
+  Canvas.fill context
