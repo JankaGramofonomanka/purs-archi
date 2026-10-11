@@ -12,6 +12,7 @@ const updateRoute = onRouteChange => {
   };
   const label = routeLabels[path];
   const route = label === undefined ? "/" : path;
+  currentRoute = route;
   routeLabel.hidden = label === undefined;
   routeLabel.textContent = label ?? "";
 
@@ -30,6 +31,8 @@ const updateRoute = onRouteChange => {
     page.hidden = page.dataset.demoPage !== route;
   }
 
+  resizeCanvasForRoute(route);
+
   const routeLinks = document.querySelectorAll(".route-link");
   routeLinks.forEach(link => {
     if (!(link instanceof HTMLAnchorElement)) {
@@ -46,9 +49,43 @@ const updateRoute = onRouteChange => {
   onRouteChange(route)();
 };
 
+let currentRoute = "/";
+
+const resizeCanvasForRoute = route => {
+  const canvasIds = {
+    "/canvas": "canvas-target",
+    "/purescript-drawing": "drawing-target"
+  };
+  const canvasId = canvasIds[route];
+  if (canvasId === undefined) {
+    return;
+  }
+
+  const canvas = document.getElementById(canvasId);
+  if (!(canvas instanceof HTMLCanvasElement)) {
+    throw new Error(`Missing #${canvasId} canvas`);
+  }
+
+  const bounds = canvas.getBoundingClientRect();
+  const width = Math.round(bounds.width);
+  const height = Math.round(bounds.height);
+  if (width === 0 || height === 0) {
+    throw new Error(`Canvas #${canvasId} has no visible drawing area`);
+  }
+
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+};
+
 export const setupRoutes = onRouteChange => () => {
   updateRoute(onRouteChange);
   window.addEventListener("popstate", () => updateRoute(onRouteChange));
+  window.addEventListener("resize", () => {
+    resizeCanvasForRoute(currentRoute);
+    onRouteChange(currentRoute)();
+  });
 
   const routeNav = document.querySelector(".route-nav");
   if (!(routeNav instanceof HTMLElement)) {

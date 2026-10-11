@@ -14,23 +14,26 @@ draw = do
     Nothing -> throw "Missing #canvas-target canvas"
     Just canvas -> do
       context <- Canvas.getContext2D canvas
+      dimensions <- Canvas.getCanvasDimensions canvas
+      let centerX = dimensions.width / 2.0
+      let centerY = dimensions.height / 2.0
       Canvas.setFillStyle context "#5268d8"
       Canvas.fillRect context
-        { x: 20.0
-        , y: 70.0
+        { x: centerX - 100.0
+        , y: centerY - 50.0
         , width: 100.0
         , height: 100.0
         }
       Canvas.setFillStyle context "#e53935"
       Canvas.fillRect context
-        { x: 120.0
-        , y: 70.0
+        { x: centerX
+        , y: centerY - 50.0
         , width: 100.0
         , height: 100.0
         }
       Canvas.beginPath context
-      Canvas.moveTo context 0.0 70.0
-      Canvas.lineTo context 240.0 70.0
+      Canvas.moveTo context 0.0 (centerY - 50.0)
+      Canvas.lineTo context dimensions.width (centerY - 50.0)
       Canvas.setStrokeStyle context "#1c2540"
       Canvas.setLineWidth context 2.0
       Canvas.stroke context

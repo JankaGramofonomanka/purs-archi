@@ -16,16 +16,19 @@ draw = do
     Nothing -> throw "Missing #drawing-target canvas"
     Just canvas -> do
       context <- Canvas.getContext2D canvas
+      dimensions <- Canvas.getCanvasDimensions canvas
+      let centerX = dimensions.width / 2.0
+      let centerY = dimensions.height / 2.0
       Drawing.render context
         ( Drawing.filled (Drawing.fillColor (rgb 82 104 216))
-            (Drawing.rectangle 20.0 70.0 100.0 100.0)
+            (Drawing.rectangle (centerX - 100.0) (centerY - 50.0) 100.0 100.0)
             <> Drawing.filled (Drawing.fillColor (rgb 229 57 53))
-              (Drawing.rectangle 120.0 70.0 100.0 100.0)
+              (Drawing.rectangle centerX (centerY - 50.0) 100.0 100.0)
             <> Drawing.outlined
               (Drawing.outlineColor (rgb 28 37 64) <> Drawing.lineWidth 2.0)
               (Drawing.path
-                [ { x: 0.0, y: 70.0 }
-                , { x: 240.0, y: 70.0 }
+                [ { x: 0.0, y: centerY - 50.0 }
+                , { x: dimensions.width, y: centerY - 50.0 }
                 ]
               )
         )

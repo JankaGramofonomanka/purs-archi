@@ -79,7 +79,7 @@ body {
 
 .demo-stage {
   position: absolute;
-  inset: 0;
+  inset: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -87,9 +87,8 @@ body {
 
 .demo-square {
   display: block;
-  width: min(240px, 70vw, 60vh);
-  height: auto;
-  aspect-ratio: 1;
+  width: 100%;
+  height: 100%;
   background: #e5eaf5;
   outline: 1px solid #aebbd4;
 }
