@@ -27,10 +27,10 @@ draw = do
     , horizontalLine dimensions.width (centerY - 250.0) (Just "0 12") "round" "#0f766e"
     , horizontalLine dimensions.width (centerY - 150.0) (Just "16 8 0 8") "round" "#7e22ce"
     , horizontalLine dimensions.width (centerY - 50.0) Nothing "butt" "#1c2540"
-    , verticalLine centerX centerY 100.0 4.0
-    , verticalLine centerX centerY 200.0 6.0
-    , verticalLine centerX centerY 300.0 4.0
-    , verticalLine centerX centerY 400.0 2.0
+    , verticalLine centerX centerY 100.0 4.0 1.0
+    , verticalLine centerX centerY 200.0 6.0 0.1
+    , verticalLine centerX centerY 300.0 4.0 0.3
+    , verticalLine centerX centerY 400.0 2.0 1.0
     ]
 
 rectangle :: Number -> Number -> Number -> Number -> String -> SvgElement
@@ -58,14 +58,15 @@ horizontalLine width y dashArray lineCap stroke =
         <> [ attribute "stroke-linecap" lineCap ]
     )
 
-verticalLine :: Number -> Number -> Number -> Number -> SvgElement
-verticalLine centerX centerY offset width = element "line"
+verticalLine :: Number -> Number -> Number -> Number -> Number -> SvgElement
+verticalLine centerX centerY offset width opacity = element "line"
   [ numberAttribute "x1" (centerX + offset)
   , numberAttribute "y1" (centerY - 150.0)
   , numberAttribute "x2" (centerX + offset)
   , numberAttribute "y2" (centerY + 150.0)
   , attribute "stroke" "#1c2540"
   , numberAttribute "stroke-width" width
+  , numberAttribute "stroke-opacity" opacity
   ]
 
 element :: String -> Array SvgAttribute -> SvgElement

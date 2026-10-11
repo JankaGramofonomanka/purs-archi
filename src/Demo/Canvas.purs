@@ -64,19 +64,24 @@ draw = do
       Canvas.beginPath context
       Canvas.moveTo context (centerX + 100.0) (centerY - 150.0)
       Canvas.lineTo context (centerX + 100.0) (centerY + 150.0)
+      Canvas.setGlobalAlpha context 1.0
       Canvas.stroke context
       Canvas.setLineWidth context 6.0
       Canvas.beginPath context
       Canvas.moveTo context (centerX + 200.0) (centerY - 150.0)
       Canvas.lineTo context (centerX + 200.0) (centerY + 150.0)
+      Canvas.setGlobalAlpha context 0.1
       Canvas.stroke context
       Canvas.setLineWidth context 4.0
       Canvas.beginPath context
       Canvas.moveTo context (centerX + 300.0) (centerY - 150.0)
       Canvas.lineTo context (centerX + 300.0) (centerY + 150.0)
+      Canvas.setGlobalAlpha context 0.3
       Canvas.stroke context
       Canvas.setLineWidth context 2.0
       Canvas.beginPath context
       Canvas.moveTo context (centerX + 400.0) (centerY - 150.0)
       Canvas.lineTo context (centerX + 400.0) (centerY + 150.0)
+      Canvas.setGlobalAlpha context 1.0
       Canvas.stroke context
+      Canvas.setGlobalAlpha context 1.0

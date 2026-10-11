@@ -2,7 +2,7 @@ module Demo.PureScriptDrawing (draw) where
 
 import Prelude
 
-import Color (Color, rgb)
+import Color (Color, rgb, rgba)
 import Data.Array ((..))
 import Data.Foldable (foldMap)
 import Data.Int (ceil, toNumber)
@@ -45,21 +45,21 @@ draw = do
                 ]
               )
             <> Drawing.outlined
-              (Drawing.outlineColor (rgb 28 37 64) <> Drawing.lineWidth 6.0)
+              (Drawing.outlineColor (rgba 28 37 64 0.1) <> Drawing.lineWidth 6.0)
               (Drawing.path
                 [ { x: centerX + 200.0, y: centerY - 150.0 }
                 , { x: centerX + 200.0, y: centerY + 150.0 }
                 ]
               )
             <> Drawing.outlined
-              (Drawing.outlineColor (rgb 28 37 64) <> Drawing.lineWidth 4.0)
+              (Drawing.outlineColor (rgba 28 37 64 0.3) <> Drawing.lineWidth 4.0)
               (Drawing.path
                 [ { x: centerX + 300.0, y: centerY - 150.0 }
                 , { x: centerX + 300.0, y: centerY + 150.0 }
                 ]
               )
             <> Drawing.outlined
-              (Drawing.outlineColor (rgb 28 37 64) <> Drawing.lineWidth 2.0)
+              (Drawing.outlineColor (rgba 28 37 64 1.0) <> Drawing.lineWidth 2.0)
               (Drawing.path
                 [ { x: centerX + 400.0, y: centerY - 150.0 }
                 , { x: centerX + 400.0, y: centerY + 150.0 }
