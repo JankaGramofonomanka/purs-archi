@@ -25,14 +25,14 @@ draw = do
             <> Drawing.filled (Drawing.fillColor (rgb 229 57 53))
               (Drawing.rectangle centerX (centerY - 50.0) 100.0 100.0)
             <> Drawing.outlined
-              (Drawing.outlineColor (rgb 28 37 64) <> Drawing.lineWidth 2.0)
+              (Drawing.outlineColor (rgb 28 37 64) <> Drawing.lineWidth 4.0)
               (Drawing.path
                 [ { x: 0.0, y: centerY - 50.0 }
                 , { x: dimensions.width, y: centerY - 50.0 }
                 ]
               )
             <> Drawing.outlined
-              (Drawing.outlineColor (rgb 28 37 64) <> Drawing.lineWidth 2.0)
+              (Drawing.outlineColor (rgb 28 37 64) <> Drawing.lineWidth 4.0)
               (Drawing.path
                 [ { x: centerX + 100.0, y: centerY - 150.0 }
                 , { x: centerX + 100.0, y: centerY + 150.0 }
@@ -46,14 +46,14 @@ draw = do
                 ]
               )
             <> Drawing.outlined
-              (Drawing.outlineColor (rgb 28 37 64) <> Drawing.lineWidth 2.0)
+              (Drawing.outlineColor (rgb 28 37 64) <> Drawing.lineWidth 4.0)
               (Drawing.path
                 [ { x: centerX + 300.0, y: centerY - 150.0 }
                 , { x: centerX + 300.0, y: centerY + 150.0 }
                 ]
               )
             <> Drawing.outlined
-              (Drawing.outlineColor (rgb 28 37 64) <> Drawing.lineWidth 1.0)
+              (Drawing.outlineColor (rgb 28 37 64) <> Drawing.lineWidth 2.0)
               (Drawing.path
                 [ { x: centerX + 400.0, y: centerY - 150.0 }
                 , { x: centerX + 400.0, y: centerY + 150.0 }

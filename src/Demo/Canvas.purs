@@ -35,7 +35,7 @@ draw = do
       Canvas.moveTo context 0.0 (centerY - 50.0)
       Canvas.lineTo context dimensions.width (centerY - 50.0)
       Canvas.setStrokeStyle context "#1c2540"
-      Canvas.setLineWidth context 2.0
+      Canvas.setLineWidth context 4.0
       Canvas.stroke context
       Canvas.beginPath context
       Canvas.moveTo context (centerX + 100.0) (centerY - 150.0)
@@ -46,12 +46,12 @@ draw = do
       Canvas.moveTo context (centerX + 200.0) (centerY - 150.0)
       Canvas.lineTo context (centerX + 200.0) (centerY + 150.0)
       Canvas.stroke context
-      Canvas.setLineWidth context 2.0
+      Canvas.setLineWidth context 4.0
       Canvas.beginPath context
       Canvas.moveTo context (centerX + 300.0) (centerY - 150.0)
       Canvas.lineTo context (centerX + 300.0) (centerY + 150.0)
       Canvas.stroke context
-      Canvas.setLineWidth context 1.0
+      Canvas.setLineWidth context 2.0
       Canvas.beginPath context
       Canvas.moveTo context (centerX + 400.0) (centerY - 150.0)
       Canvas.lineTo context (centerX + 400.0) (centerY + 150.0)
