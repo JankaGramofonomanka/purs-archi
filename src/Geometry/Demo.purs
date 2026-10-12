@@ -41,25 +41,25 @@ draw width height = do
   Geometry.drawCircleSegment (point centerX (centerY - 150.0)) 50.0 pi (2.0 * pi) (Just $ Geometry.Contour { thickness: Thickness 4.0, opaqueness: opaque, lineStyle: DashDot, color: ink }) (Just $ Geometry.Fill { opaqueness: opaque, color: teal })
 
   Geometry.drawLine (point 0.0 (centerY - 350.0)) (point width (centerY - 350.0))
-    (Thickness 4.0) opaque Dashed orange
+    (contour (Thickness 4.0) opaque Dashed orange)
   Geometry.drawLine (point 0.0 (centerY - 250.0)) (point width (centerY - 250.0))
-    (Thickness 4.0) opaque Dotted teal
+    (contour (Thickness 4.0) opaque Dotted teal)
   Geometry.drawLine (point 0.0 (centerY - 150.0)) (point width (centerY - 150.0))
-    (Thickness 4.0) opaque DashDot purple
+    (contour (Thickness 4.0) opaque DashDot purple)
   Geometry.drawLine (point 0.0 (centerY - 50.0)) (point width (centerY - 50.0))
-    (Thickness 4.0) opaque Solid ink
+    (contour (Thickness 4.0) opaque Solid ink)
   Geometry.drawLineSegment (point (centerX + 100.0) (centerY - 150.0))
     (point (centerX + 100.0) (centerY + 150.0))
-    (Thickness 4.0) opaque Solid ink
+    (contour (Thickness 4.0) opaque Solid ink)
   Geometry.drawLineSegment (point (centerX + 200.0) (centerY - 150.0))
     (point (centerX + 200.0) (centerY + 150.0))
-    (Thickness 6.0) (Opaqueness 0.1) Solid ink
+    (contour (Thickness 6.0) (Opaqueness 0.1) Solid ink)
   Geometry.drawLineSegment (point (centerX + 300.0) (centerY - 150.0))
     (point (centerX + 300.0) (centerY + 150.0))
-    (Thickness 4.0) (Opaqueness 0.3) Solid ink
+    (contour (Thickness 4.0) (Opaqueness 0.3) Solid ink)
   Geometry.drawLineSegment (point (centerX + 400.0) (centerY - 150.0))
     (point (centerX + 400.0) (centerY + 150.0))
-    (Thickness 2.0) opaque Solid ink
+    (contour (Thickness 2.0) opaque Solid ink)
   Geometry.drawArch (point centerX (centerY - 100.0)) 50.0 pi (2.0 * pi) (Geometry.Contour { thickness: Thickness 4.0, opaqueness: opaque, lineStyle: Solid, color: ink })
 
   Geometry.drawPoint (point (centerX - 200.0) (centerY + 50.0)) Circle ink
@@ -88,3 +88,7 @@ ink = RGB { r: 28.0, g: 37.0, b: 64.0 }
 
 opaque :: Opaqueness
 opaque = Opaqueness 1.0
+
+contour :: Thickness -> Opaqueness -> LineStyle -> Color -> Geometry.Contour
+contour thickness opaqueness lineStyle color =
+  Geometry.Contour { thickness, opaqueness, lineStyle, color }

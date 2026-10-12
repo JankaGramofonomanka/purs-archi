@@ -131,7 +131,7 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
           Canvas.setLineDash context []
           Canvas.setLineCap context Canvas.Butt
 
-  drawLine start end thickness opacity style color = Renderer do
+  drawLine start end (Contour { thickness, opaqueness, lineStyle, color }) = Renderer do
     canvas <- getCanvas
     dimensions <- Canvas.getCanvasDimensions canvas
     let (Point from) = start
@@ -145,11 +145,12 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
     drawSegment canvas
       { x: from.x - dx * extension, y: from.y - dy * extension }
       { x: from.x + dx * extension, y: from.y + dy * extension }
-      thickness opacity style color
+      thickness opaqueness lineStyle color
 
-  drawLineSegment (Point from) (Point to) thickness opacity style color = Renderer do
+  drawLineSegment (Point from) (Point to)
+    (Contour { thickness, opaqueness, lineStyle, color }) = Renderer do
     canvas <- getCanvas
-    drawSegment canvas from to thickness opacity style color
+    drawSegment canvas from to thickness opaqueness lineStyle color
 
   drawPoint (Point p) pointStyle color = Renderer do
     canvas <- getCanvas

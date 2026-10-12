@@ -53,7 +53,8 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
       options.hasContour options.strokeWidth options.strokeOpacity
       options.strokeDash options.strokeCap options.strokeColor)
 
-  drawLine (Point start) (Point end) (Thickness width) (Opaqueness opacity) style color =
+  drawLine (Point start) (Point end)
+    (Contour { thickness: Thickness width, opaqueness: Opaqueness opacity, lineStyle, color }) =
     let dx = end.x - start.x
         dy = end.y - start.y
         length = sqrt (dx * dx + dy * dy)
@@ -64,10 +65,11 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
         (start.y - dy * extension)
         (start.x + dx * extension)
         (start.y + dy * extension)
-        width opacity (dashArray style) (lineCap style) (colorCss color))
+        width opacity (dashArray lineStyle) (lineCap lineStyle) (colorCss color))
 
-  drawLineSegment (Point start) (Point end) (Thickness width) (Opaqueness opacity) style color =
-    Renderer (appendLine start.x start.y end.x end.y width opacity (dashArray style) (lineCap style) (colorCss color))
+  drawLineSegment (Point start) (Point end)
+    (Contour { thickness: Thickness width, opaqueness: Opaqueness opacity, lineStyle, color }) =
+    Renderer (appendLine start.x start.y end.x end.y width opacity (dashArray lineStyle) (lineCap lineStyle) (colorCss color))
 
   drawPoint (Point p) style color =
     Renderer case style of
