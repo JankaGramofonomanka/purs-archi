@@ -13,23 +13,23 @@ import Data.Foldable (traverse_)
 import Data.Maybe (Maybe(..))
 import Data.Number (pi, sqrt)
 import Effect.Exception (throw)
-import Geometry (BasicColor(..), Color(..), Contour(..), Fill(..), LineStyle(..), Opaqueness(..), Point(..), PointStyle(..), Thickness(..))
-import Geometry as Geometry
+import Renderer (BasicColor(..), Color(..), Contour(..), Fill(..), LineStyle(..), Opaqueness(..), Point(..), PointStyle(..), Thickness(..))
+import Renderer as Renderer
 import Graphics.Canvas as Canvas
 
-newtype Renderer a = Renderer (Effect a)
+newtype CanvasRenderer a = CanvasRenderer (Effect a)
 
-runRenderer :: forall a . Renderer a -> Effect a
-runRenderer (Renderer e) = e
+runCanvasRenderer :: forall a . CanvasRenderer a -> Effect a
+runCanvasRenderer (CanvasRenderer e) = e
 
-derive newtype instance Functor Renderer
-derive newtype instance Apply Renderer
-derive newtype instance Bind Renderer
-derive newtype instance Applicative Renderer
-derive newtype instance Monad Renderer
+derive newtype instance Functor CanvasRenderer
+derive newtype instance Apply CanvasRenderer
+derive newtype instance Bind CanvasRenderer
+derive newtype instance Applicative CanvasRenderer
+derive newtype instance Monad CanvasRenderer
 
-instance geometryRenderer :: Geometry.Renderer Renderer where
-  drawCircle (Point p) radius contour fill = Renderer do
+instance geometryCanvasRenderer :: Renderer.Renderer CanvasRenderer where
+  drawCircle (Point p) radius contour fill = CanvasRenderer do
     context <- getContext
     Canvas.beginPath context
     Canvas.arc context
@@ -56,7 +56,7 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
         Canvas.setLineDash context []
         Canvas.setLineCap context Canvas.Butt
 
-  drawArch (Point p) radius startAngle endAngle (Contour { thickness: Thickness width, opaqueness: Opaqueness opacity, lineStyle, color }) = Renderer do
+  drawArch (Point p) radius startAngle endAngle (Contour { thickness: Thickness width, opaqueness: Opaqueness opacity, lineStyle, color }) = CanvasRenderer do
     context <- getContext
     Canvas.beginPath context
     Canvas.arc context
@@ -73,7 +73,7 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
     Canvas.setLineDash context []
     Canvas.setLineCap context Canvas.Butt
 
-  drawCircleSegment (Point p) radius startAngle endAngle contour fill = Renderer do
+  drawCircleSegment (Point p) radius startAngle endAngle contour fill = CanvasRenderer do
     context <- getContext
     Canvas.beginPath context
     Canvas.arc context
@@ -105,7 +105,7 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
         Canvas.setLineDash context []
         Canvas.setLineCap context Canvas.Butt
 
-  drawPolygon points contour fill = Renderer do
+  drawPolygon points contour fill = CanvasRenderer do
     if Array.length points < 3 then pure unit
     else case Array.uncons points of
       Nothing -> pure unit
@@ -135,7 +135,7 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
             Canvas.setLineDash context []
             Canvas.setLineCap context Canvas.Butt
 
-  drawLine start end (Contour { thickness, opaqueness, lineStyle, color }) = Renderer do
+  drawLine start end (Contour { thickness, opaqueness, lineStyle, color }) = CanvasRenderer do
     canvas <- getCanvas
     dimensions <- Canvas.getCanvasDimensions canvas
     let (Point from) = start
@@ -156,11 +156,11 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
       color
 
   drawLineSegment (Point from) (Point to)
-    (Contour { thickness, opaqueness, lineStyle, color }) = Renderer do
+    (Contour { thickness, opaqueness, lineStyle, color }) = CanvasRenderer do
     canvas <- getCanvas
     drawSegment canvas from to thickness opaqueness lineStyle color
 
-  drawPoint (Point p) pointStyle color = Renderer do
+  drawPoint (Point p) pointStyle color = CanvasRenderer do
     context <- getContext
     Canvas.setFillStyle context (colorCss color)
     Canvas.setStrokeStyle context (colorCss color)

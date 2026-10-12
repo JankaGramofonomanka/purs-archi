@@ -1,4 +1,4 @@
-module Geometry where
+module Renderer where
 
 import Prelude
 import Data.Maybe (Maybe)

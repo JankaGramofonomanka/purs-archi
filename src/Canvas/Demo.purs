@@ -6,7 +6,7 @@ import Data.Maybe (Maybe(..))
 import Effect.Exception (throw)
 import Effect (Effect)
 import Graphics.Canvas as Canvas
-import Geometry.Demo as Demo
+import Renderer.Demo as Demo
 import Canvas.Impl as Renderer
 
 draw :: Effect Unit
@@ -16,4 +16,4 @@ draw = do
     Nothing -> throw "Missing #canvas-target canvas"
     Just canvas -> do
       dimensions <- Canvas.getCanvasDimensions canvas
-      Renderer.runRenderer (Demo.draw dimensions.width dimensions.height)
+      Renderer.runCanvasRenderer (Demo.draw dimensions.width dimensions.height)

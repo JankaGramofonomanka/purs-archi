@@ -15,24 +15,24 @@ import Data.Maybe (Maybe(..))
 import Data.Number (pi, sqrt)
 import Data.Foldable (foldMap)
 import Effect.Exception (throw)
-import Geometry (BasicColor(..), Color(..), Contour(..), Fill(..), LineStyle(..), Opaqueness(..), Point(..), PointStyle(..), Thickness(..))
-import Geometry as Geometry
+import Renderer (BasicColor(..), Color(..), Contour(..), Fill(..), LineStyle(..), Opaqueness(..), Point(..), PointStyle(..), Thickness(..))
+import Renderer as Renderer
 import Graphics.Canvas as Canvas
 import Graphics.Drawing as Drawing
 
-newtype Renderer a = Renderer (Effect a)
+newtype PSDRenderer a = PSDRenderer (Effect a)
 
-runRenderer :: forall a . Renderer a -> Effect a
-runRenderer (Renderer e) = e
+runPSDRenderer :: forall a . PSDRenderer a -> Effect a
+runPSDRenderer (PSDRenderer e) = e
 
-derive newtype instance Functor Renderer
-derive newtype instance Apply Renderer
-derive newtype instance Bind Renderer
-derive newtype instance Applicative Renderer
-derive newtype instance Monad Renderer
+derive newtype instance Functor PSDRenderer
+derive newtype instance Apply PSDRenderer
+derive newtype instance Bind PSDRenderer
+derive newtype instance Applicative PSDRenderer
+derive newtype instance Monad PSDRenderer
 
-instance geometryRenderer :: Geometry.Renderer Renderer where
-  drawCircle (Point p) radius contour fill = Renderer do
+instance geometryPSDRenderer :: Renderer.Renderer PSDRenderer where
+  drawCircle (Point p) radius contour fill = PSDRenderer do
     canvas <- getCanvas
     context <- Canvas.getContext2D canvas
     let shape = Drawing.circle p.x p.y radius
@@ -57,7 +57,7 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
         Canvas.setLineDash context []
         Canvas.setLineCap context Canvas.Butt
 
-  drawArch (Point p) radius startAngle endAngle (Contour { thickness: Thickness width, opaqueness: Opaqueness opacity, lineStyle, color }) = Renderer do
+  drawArch (Point p) radius startAngle endAngle (Contour { thickness: Thickness width, opaqueness: Opaqueness opacity, lineStyle, color }) = PSDRenderer do
     canvas <- getCanvas
     context <- Canvas.getContext2D canvas
     Canvas.setGlobalAlpha context opacity
@@ -71,7 +71,7 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
     Canvas.setLineDash context []
     Canvas.setLineCap context Canvas.Butt
 
-  drawCircleSegment (Point p) radius startAngle endAngle contour fill = Renderer do
+  drawCircleSegment (Point p) radius startAngle endAngle contour fill = PSDRenderer do
     canvas <- getCanvas
     context <- Canvas.getContext2D canvas
     Canvas.beginPath context
@@ -104,7 +104,7 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
         Canvas.setLineDash context []
         Canvas.setLineCap context Canvas.Butt
 
-  drawPolygon points contour fill = Renderer do
+  drawPolygon points contour fill = PSDRenderer do
     if Array.length points < 3 then pure unit
     else do
       canvas <- getCanvas
@@ -131,7 +131,7 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
           Canvas.setLineDash context []
           Canvas.setLineCap context Canvas.Butt
 
-  drawLine start end (Contour { thickness, opaqueness, lineStyle, color }) = Renderer do
+  drawLine start end (Contour { thickness, opaqueness, lineStyle, color }) = PSDRenderer do
     canvas <- getCanvas
     dimensions <- Canvas.getCanvasDimensions canvas
     let (Point from) = start
@@ -148,11 +148,11 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
       thickness opaqueness lineStyle color
 
   drawLineSegment (Point from) (Point to)
-    (Contour { thickness, opaqueness, lineStyle, color }) = Renderer do
+    (Contour { thickness, opaqueness, lineStyle, color }) = PSDRenderer do
     canvas <- getCanvas
     drawSegment canvas from to thickness opaqueness lineStyle color
 
-  drawPoint (Point p) pointStyle color = Renderer do
+  drawPoint (Point p) pointStyle color = PSDRenderer do
     canvas <- getCanvas
     context <- Canvas.getContext2D canvas
     let drawing = case pointStyle of

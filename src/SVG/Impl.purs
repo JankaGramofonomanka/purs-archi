@@ -10,24 +10,24 @@ import Control.Apply (class Apply)
 import Control.Bind (class Bind)
 import Data.Maybe (Maybe(..))
 import Data.Number (sqrt)
-import Geometry (BasicColor(..), Color(..), Contour(..), Fill(..), LineStyle(..), Opaqueness(..), Point(..), PointStyle(..), Thickness(..))
-import Geometry as Geometry
+import Renderer (BasicColor(..), Color(..), Contour(..), Fill(..), LineStyle(..), Opaqueness(..), Point(..), PointStyle(..), Thickness(..))
+import Renderer as Renderer
 
-newtype Renderer a = Renderer (Effect a)
+newtype SVGRenderer a = SVGRenderer (Effect a)
 
-runRenderer :: forall a . Renderer a -> Effect a
-runRenderer (Renderer e) = e
+runSVGRenderer :: forall a . SVGRenderer a -> Effect a
+runSVGRenderer (SVGRenderer e) = e
 
-derive newtype instance Functor Renderer
-derive newtype instance Apply Renderer
-derive newtype instance Bind Renderer
-derive newtype instance Applicative Renderer
-derive newtype instance Monad Renderer
+derive newtype instance Functor SVGRenderer
+derive newtype instance Apply SVGRenderer
+derive newtype instance Bind SVGRenderer
+derive newtype instance Applicative SVGRenderer
+derive newtype instance Monad SVGRenderer
 
-instance geometryRenderer :: Geometry.Renderer Renderer where
+instance geometryRenderer :: Renderer.Renderer SVGRenderer where
   drawCircle (Point p) radius contour fill =
     let options = polygonOptions fill contour
-    in Renderer (appendStyledCircle
+    in SVGRenderer (appendStyledCircle
       p.x p.y radius
       options.hasFill options.fillOpacity options.fillColor
       options.hasContour options.strokeWidth options.strokeOpacity
@@ -35,12 +35,12 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
 
   drawArch (Point p) radius startAngle endAngle
     (Contour { thickness: Thickness width, opaqueness: Opaqueness opacity, lineStyle, color }) =
-      Renderer (appendArc p.x p.y radius startAngle endAngle width opacity
+      SVGRenderer (appendArc p.x p.y radius startAngle endAngle width opacity
         (dashArray lineStyle) (lineCap lineStyle) (colorCss color))
 
   drawCircleSegment (Point p) radius startAngle endAngle contour fill =
     let options = polygonOptions fill contour
-    in Renderer (appendCircleSegment
+    in SVGRenderer (appendCircleSegment
       p.x p.y radius startAngle endAngle options.hasFill options.fillOpacity
       options.fillColor options.hasContour options.strokeWidth
       options.strokeOpacity options.strokeDash options.strokeCap options.strokeColor)
@@ -48,7 +48,7 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
   drawPolygon points contour fill =
     let coordinates = map pointCoordinates points
         options = polygonOptions fill contour
-    in Renderer (appendPolygon coordinates
+    in SVGRenderer (appendPolygon coordinates
       options.hasFill options.fillOpacity options.fillColor
       options.hasContour options.strokeWidth options.strokeOpacity
       options.strokeDash options.strokeCap options.strokeColor)
@@ -59,7 +59,7 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
         dy = end.y - start.y
         length = sqrt (dx * dx + dy * dy)
         extension = if length == 0.0 then 0.0 else 1000000.0 / length
-    in Renderer
+    in SVGRenderer
       (appendLine
         (start.x - dx * extension)
         (start.y - dy * extension)
@@ -69,10 +69,10 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
 
   drawLineSegment (Point start) (Point end)
     (Contour { thickness: Thickness width, opaqueness: Opaqueness opacity, lineStyle, color }) =
-    Renderer (appendLine start.x start.y end.x end.y width opacity (dashArray lineStyle) (lineCap lineStyle) (colorCss color))
+    SVGRenderer (appendLine start.x start.y end.x end.y width opacity (dashArray lineStyle) (lineCap lineStyle) (colorCss color))
 
   drawPoint (Point p) style color =
-    Renderer case style of
+    SVGRenderer case style of
       Circle -> appendCircle p.x p.y 4.0 (colorCss color)
       Square -> appendRectangle (p.x - 4.0) (p.y - 4.0) 8.0 8.0 1.0 (colorCss color)
       Cross -> appendPath (crossPath p.x p.y) (colorCss color) 2.0
