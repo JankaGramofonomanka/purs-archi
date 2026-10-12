@@ -13,19 +13,21 @@ import Geometry
   )
 import Geometry as Geometry
 import Data.Number (pi)
+import Data.Default (class Default, def)
+import Data.Newtype (class Newtype, modify)
 
 draw :: forall m. Monad m => Geometry.Renderer m => Number -> Number -> m Unit
 draw width height = do
   let centerX = width / 2.0
   let centerY = height / 2.0
-  Geometry.drawRectangle (point (centerX - 100.0) (centerY - 50.0)) 100.0 100.0 Nothing (Just $ Geometry.Fill { opaqueness: opaque, color: blue })
-  Geometry.drawRectangle (point centerX (centerY - 50.0)) 100.0 100.0 Nothing (Just $ Geometry.Fill { opaqueness: opaque, color: red })
+  Geometry.drawRectangle (point (centerX - 100.0) (centerY - 50.0)) 100.0 100.0 Nothing (Just $ modify (_ { color = blue }) def)
+  Geometry.drawRectangle (point centerX (centerY - 50.0)) 100.0 100.0 Nothing (Just $ modify (_ { color = red }) def)
   Geometry.drawTriangle
     (point (centerX - 100.0) (centerY + 50.0))
     (point (centerX + 100.0) (centerY + 50.0))
     (point centerX (centerY + 200.0))
     Nothing
-    (Just $ Geometry.Fill { opaqueness: opaque, color: purple })
+    (Just $ modify (_ { color = purple }) def)
   Geometry.drawRectangle (point (centerX - 50.0) (centerY)) 100.0 100.0 Nothing (Just $ Geometry.Fill { opaqueness: Opaqueness 0.5, color: teal })
   Geometry.drawPolygon
     [ point (centerX + 100.0) (centerY + 50.0)
@@ -35,32 +37,29 @@ draw width height = do
     , point (centerX + 300.0) (centerY + 200.0)
     , point (centerX + 200.0) (centerY + 50.0)
     ]
-    (Just $ Geometry.Contour { thickness: Thickness 2.0, opaqueness: opaque, lineStyle: Solid, color: ink })
+    (Just $ modify (_ { thickness = Thickness 2.0 }) def)
     Nothing
-  Geometry.drawCircleSegment (point centerX (centerY - 225.0)) 50.0 0.0 pi (Just $ Geometry.Contour { thickness: Thickness 4.0, opaqueness: opaque, lineStyle: DashDot, color: ink }) (Just $ Geometry.Fill { opaqueness: opaque, color: teal })
+  Geometry.drawCircleSegment (point centerX (centerY - 225.0)) 50.0 0.0 pi (Just $ modify (_ { lineStyle = DashDot }) def) (Just $ modify (_ { color = teal }) def)
   Geometry.drawCircle (point centerX (centerY - 150.0)) 50.0 Nothing (Just $ Geometry.Fill { opaqueness: Opaqueness 0.5, color: orange })
 
   Geometry.drawLine (point 0.0 (centerY - 350.0)) (point width (centerY - 350.0))
-    (contour (Thickness 4.0) opaque Dashed orange)
+    (modify (_ { lineStyle = Dashed, color = orange }) def)
   Geometry.drawLine (point 0.0 (centerY - 250.0)) (point width (centerY - 250.0))
-    (contour (Thickness 4.0) opaque Dotted teal)
+    (modify (_ { lineStyle = Dotted, color = teal }) def)
   Geometry.drawLine (point 0.0 (centerY - 150.0)) (point width (centerY - 150.0))
-    (contour (Thickness 4.0) opaque DashDot purple)
-  Geometry.drawLine (point 0.0 (centerY - 50.0)) (point width (centerY - 50.0))
-    (contour (Thickness 4.0) opaque Solid ink)
-  Geometry.drawLineSegment (point (centerX + 100.0) (centerY - 150.0))
-    (point (centerX + 100.0) (centerY + 150.0))
-    (contour (Thickness 4.0) opaque Solid ink)
+    (modify (_ { lineStyle = DashDot, color = purple }) def)
+  Geometry.drawLine (point 0.0 (centerY - 50.0)) (point width (centerY - 50.0)) def
+  Geometry.drawLineSegment (point (centerX + 100.0) (centerY - 150.0)) (point (centerX + 100.0) (centerY + 150.0)) def
   Geometry.drawLineSegment (point (centerX + 200.0) (centerY - 150.0))
     (point (centerX + 200.0) (centerY + 150.0))
-    (contour (Thickness 6.0) (Opaqueness 0.1) Solid ink)
+    (modify (_ { thickness = Thickness 6.0, opaqueness = Opaqueness 0.1 }) def)
   Geometry.drawLineSegment (point (centerX + 300.0) (centerY - 150.0))
     (point (centerX + 300.0) (centerY + 150.0))
-    (contour (Thickness 4.0) (Opaqueness 0.3) Solid ink)
+    (modify (_ { opaqueness = Opaqueness 0.3 }) def)
   Geometry.drawLineSegment (point (centerX + 400.0) (centerY - 150.0))
     (point (centerX + 400.0) (centerY + 150.0))
-    (contour (Thickness 2.0) opaque Solid ink)
-  Geometry.drawArch (point centerX (centerY - 75.0)) 50.0 pi (2.0 * pi) (Geometry.Contour { thickness: Thickness 4.0, opaqueness: opaque, lineStyle: Solid, color: ink })
+    (modify (_ { thickness = Thickness 2.0 }) def)
+  Geometry.drawArch (point centerX (centerY - 75.0)) 50.0 pi (2.0 * pi) def
 
   Geometry.drawPoint (point (centerX - 200.0) (centerY + 50.0)) Circle ink
   Geometry.drawPoint (point (centerX - 100.0) (centerY + 50.0)) Cross ink

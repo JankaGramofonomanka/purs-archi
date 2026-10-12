@@ -16,8 +16,8 @@ data BasicColor = Black | White | Red | Green | Blue | Yellow | Cyan | Mag
 
 newtype Thickness = Thickness Number
 derive instance Newtype Thickness _
-
 newtype Opaqueness = Opaqueness Number
+
 derive instance Newtype Opaqueness _
 
 data LineStyle = Solid | Dashed | Dotted | DashDot -- | DashDotDot
