@@ -22,6 +22,12 @@ const updateRoute = onRouteChange => {
     page.hidden = page.dataset.demoPage !== demoPage;
   }
 
+  const actionBar = document.querySelector("[data-page-actions]");
+  if (!(actionBar instanceof HTMLElement)) {
+    throw new Error("Missing page action bar");
+  }
+  actionBar.hidden = route.startsWith("/demo/");
+
   resizeCanvasForRoute(route);
 
   const routeLinks = document.querySelectorAll(".route-link");
@@ -81,7 +87,7 @@ const resizeCanvasForRoute = route => {
   }
 };
 
-export const setupRoutes = onRouteChange => () => {
+export const setupRoutes = onRouteChange => onAction => () => {
   updateRoute(onRouteChange);
   window.addEventListener("popstate", () => updateRoute(onRouteChange));
   window.addEventListener("resize", () => {
@@ -93,6 +99,12 @@ export const setupRoutes = onRouteChange => () => {
   if (!(routeNav instanceof HTMLElement)) {
     throw new Error("Missing .route-nav element");
   }
+
+  const increaseRadiusButton = document.querySelector("#increase-radius");
+  if (!(increaseRadiusButton instanceof HTMLButtonElement)) {
+    throw new Error("Missing #increase-radius button");
+  }
+  increaseRadiusButton.addEventListener("click", () => onAction());
 
   routeNav.addEventListener("click", event => {
     if (

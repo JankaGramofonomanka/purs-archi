@@ -57,9 +57,41 @@ body {
 }
 
 .demo-page {
-  position: relative;
+  display: flex;
   flex: 1;
   min-height: 0;
+}
+
+.action-bar[hidden] {
+  display: none;
+}
+
+.action-bar {
+  flex: 0 0 200px;
+  padding: 16px;
+  border-right: 1px solid #e3e8f2;
+  background: #fff;
+}
+
+.action-bar button {
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: #eef0ff;
+  color: #4056c4;
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.action-bar button:hover {
+  background: #e2e6ff;
+}
+
+.action-bar button:focus-visible {
+  outline: 3px solid #aab5ff;
+  outline-offset: 2px;
 }
 
 .demo-stage[hidden] {
@@ -67,8 +99,10 @@ body {
 }
 
 .demo-stage {
-  position: absolute;
-  inset: 16px;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  margin: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
