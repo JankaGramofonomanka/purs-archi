@@ -18,6 +18,22 @@ draw width height = do
   let centerY = height / 2.0
   Geometry.drawRectangle (point (centerX - 100.0) (centerY - 50.0)) 100.0 100.0 opaque blue
   Geometry.drawRectangle (point centerX (centerY - 50.0)) 100.0 100.0 opaque red
+  Geometry.drawTriangle
+    (point (centerX - 100.0) (centerY + 50.0))
+    (point (centerX + 100.0) (centerY + 50.0))
+    (point centerX (centerY + 200.0))
+    opaque purple
+  Geometry.drawRectangle (point (centerX - 50.0) (centerY)) 100.0 100.0 (Opaqueness 0.5) teal
+  Geometry.drawPolygon
+    [ point (centerX + 100.0) (centerY + 50.0)
+    , point centerX (centerY + 200.0)
+    , point (centerX + 100.0) (centerY + 350.0)
+    , point (centerX + 200.0) (centerY + 200.0)
+    , point (centerX + 300.0) (centerY + 200.0)
+    , point (centerX + 200.0) (centerY + 50.0)
+    ]
+    opaque orange
+
   Geometry.drawLine (point 0.0 (centerY - 350.0)) (point width (centerY - 350.0))
     (Thickness 4.0) opaque Dashed orange
   Geometry.drawLine (point 0.0 (centerY - 250.0)) (point width (centerY - 250.0))
@@ -38,11 +54,12 @@ draw width height = do
   Geometry.drawLineSegment (point (centerX + 400.0) (centerY - 150.0))
     (point (centerX + 400.0) (centerY + 150.0))
     (Thickness 2.0) opaque Solid ink
+
   Geometry.drawPoint (point (centerX - 200.0) (centerY + 50.0)) Circle ink
   Geometry.drawPoint (point (centerX - 100.0) (centerY + 50.0)) Cross ink
   Geometry.drawPoint (point (centerX - 200.0) (centerY + 150.0)) Square ink
   Geometry.drawPoint (point (centerX - 100.0) (centerY + 150.0)) X ink
-  Geometry.drawRectangle (point (centerX - 50.0) (centerY)) 100.0 100.0 (Opaqueness 0.5) teal
+
 
 blue :: Color
 blue = RGB { r: 82.0, g: 104.0, b: 216.0 }

@@ -27,6 +27,12 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
   drawRectangle (Point p) width height (Opaqueness opacity) color =
     Renderer (appendRectangle p.x p.y width height opacity (colorCss color))
 
+  drawTriangle first second third opacity color =
+    Geometry.drawPolygon [ first, second, third ] opacity color
+
+  drawPolygon points (Opaqueness opacity) color =
+    Renderer (appendPolygon (map pointCoordinates points) opacity (colorCss color))
+
   drawLine (Point start) (Point end) (Thickness width) (Opaqueness opacity) style color =
     let dx = end.x - start.x
         dy = end.y - start.y
@@ -49,6 +55,9 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
       Square -> appendRectangle (p.x - 4.0) (p.y - 4.0) 8.0 8.0 1.0 (colorCss color)
       Cross -> appendPath (crossPath p.x p.y) (colorCss color) 2.0
       X -> appendPath (xPath p.x p.y) (colorCss color) 2.0
+
+pointCoordinates :: Point -> { x :: Number, y :: Number }
+pointCoordinates (Point p) = p
 
 colorCss :: Color -> String
 colorCss (RGB rgb) =
@@ -89,6 +98,7 @@ xPath x y =
     <> " L " <> show (x + 4.0) <> " " <> show (y - 4.0)
 
 foreign import appendRectangle :: Number -> Number -> Number -> Number -> Number -> String -> Effect Unit
+foreign import appendPolygon :: Array { x :: Number, y :: Number } -> Number -> String -> Effect Unit
 foreign import appendLine :: Number -> Number -> Number -> Number -> Number -> Number -> String -> String -> String -> Effect Unit
 foreign import appendCircle :: Number -> Number -> Number -> String -> Effect Unit
 foreign import appendPath :: String -> String -> Number -> Effect Unit

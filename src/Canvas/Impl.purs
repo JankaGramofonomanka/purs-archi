@@ -8,6 +8,8 @@ import Control.Applicative (class Applicative)
 import Control.Monad (class Monad)
 import Control.Apply (class Apply)
 import Control.Bind (class Bind)
+import Data.Array as Array
+import Data.Foldable (traverse_)
 import Data.Maybe (Maybe(..))
 import Data.Number (pi, sqrt)
 import Effect.Exception (throw)
@@ -33,6 +35,23 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
     Canvas.setGlobalAlpha context opacity
     Canvas.fillRect context { x: p.x, y: p.y, width, height }
     Canvas.setGlobalAlpha context 1.0
+
+  drawTriangle first second third opacity color =
+    Geometry.drawPolygon [ first, second, third ] opacity color
+
+  drawPolygon points (Opaqueness opacity) color = Renderer do
+    case Array.uncons points of
+      Nothing -> pure unit
+      Just { head: Point first, tail } -> do
+        context <- getContext
+        Canvas.beginPath context
+        Canvas.moveTo context first.x first.y
+        traverse_ (\(Point p) -> Canvas.lineTo context p.x p.y) tail
+        Canvas.closePath context
+        Canvas.setFillStyle context (colorCss color)
+        Canvas.setGlobalAlpha context opacity
+        Canvas.fill context
+        Canvas.setGlobalAlpha context 1.0
 
   drawLine start end thickness opacity style color = Renderer do
     canvas <- getCanvas

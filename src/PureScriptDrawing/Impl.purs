@@ -40,6 +40,18 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
         (Drawing.rectangle p.x p.y width height))
     Canvas.setGlobalAlpha context 1.0
 
+  drawTriangle first second third opacity color =
+    Geometry.drawPolygon [ first, second, third ] opacity color
+
+  drawPolygon points (Opaqueness opacity) color = Renderer do
+    canvas <- getCanvas
+    context <- Canvas.getContext2D canvas
+    Canvas.setGlobalAlpha context opacity
+    Drawing.render context
+      (Drawing.filled (Drawing.fillColor (toDrawingColor color))
+        (Drawing.closed (map pointCoordinates points)))
+    Canvas.setGlobalAlpha context 1.0
+
   drawLine start end thickness opacity style color = Renderer do
     canvas <- getCanvas
     dimensions <- Canvas.getCanvasDimensions canvas
@@ -82,6 +94,9 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
       Drawing.outlined
         (Drawing.outlineColor (toDrawingColor color) <> Drawing.lineWidth 2.0)
         (Drawing.path points)
+
+pointCoordinates :: Point -> { x :: Number, y :: Number }
+pointCoordinates (Point p) = p
 
 drawSegment
   :: Canvas.CanvasElement
