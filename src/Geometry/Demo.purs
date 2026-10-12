@@ -2,6 +2,7 @@ module Geometry.Demo (draw) where
 
 import Prelude
 
+import Data.Maybe (Maybe(..))
 import Geometry
   ( Color(..)
   , LineStyle(..)
@@ -16,14 +17,15 @@ draw :: forall m. Monad m => Geometry.Renderer m => Number -> Number -> m Unit
 draw width height = do
   let centerX = width / 2.0
   let centerY = height / 2.0
-  Geometry.drawRectangle (point (centerX - 100.0) (centerY - 50.0)) 100.0 100.0 (Geometry.Fill { opaqueness: opaque, color: blue })
-  Geometry.drawRectangle (point centerX (centerY - 50.0)) 100.0 100.0 (Geometry.Fill { opaqueness: opaque, color: red })
+  Geometry.drawRectangle (point (centerX - 100.0) (centerY - 50.0)) 100.0 100.0 Nothing (Geometry.Fill { opaqueness: opaque, color: blue })
+  Geometry.drawRectangle (point centerX (centerY - 50.0)) 100.0 100.0 Nothing (Geometry.Fill { opaqueness: opaque, color: red })
   Geometry.drawTriangle
     (point (centerX - 100.0) (centerY + 50.0))
     (point (centerX + 100.0) (centerY + 50.0))
     (point centerX (centerY + 200.0))
+    Nothing
     (Geometry.Fill { opaqueness: opaque, color: purple })
-  Geometry.drawRectangle (point (centerX - 50.0) (centerY)) 100.0 100.0 (Geometry.Fill { opaqueness: Opaqueness 0.5, color: teal })
+  Geometry.drawRectangle (point (centerX - 50.0) (centerY)) 100.0 100.0 Nothing (Geometry.Fill { opaqueness: Opaqueness 0.5, color: teal })
   Geometry.drawPolygon
     [ point (centerX + 100.0) (centerY + 50.0)
     , point centerX (centerY + 200.0)
@@ -32,6 +34,7 @@ draw width height = do
     , point (centerX + 300.0) (centerY + 200.0)
     , point (centerX + 200.0) (centerY + 50.0)
     ]
+    (Just $ Geometry.Contour { thickness: Thickness 2.0, opaqueness: opaque, lineStyle: Solid, color: ink })
     (Geometry.Fill { opaqueness: opaque, color: orange })
 
   Geometry.drawLine (point 0.0 (centerY - 350.0)) (point width (centerY - 350.0))

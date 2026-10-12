@@ -1,6 +1,7 @@
 module Geometry where
 
 import Prelude
+import Data.Maybe (Maybe)
 
 data Point = Point { x :: Number, y :: Number }
 point :: Number -> Number -> Point
@@ -13,12 +14,12 @@ newtype Opaqueness = Opaqueness Number
 data LineStyle = Solid | Dashed | Dotted | DashDot -- | DashDotDot
 data PointStyle = Circle | Square | Cross | X
 
--- data Contour = Contour
---   { thickness :: Thickness
---   , opaqueness :: Opaqueness
---   , lineStyle :: LineStyle
---   , color :: Color
---   }
+data Contour = Contour
+  { thickness :: Thickness
+  , opaqueness :: Opaqueness
+  , lineStyle :: LineStyle
+  , color :: Color
+  }
 
 data Fill = Fill
   { opaqueness :: Opaqueness
@@ -29,7 +30,7 @@ class Renderer m where
   drawLine :: Point -> Point -> Thickness -> Opaqueness -> LineStyle -> Color -> m Unit
   drawLineSegment :: Point -> Point -> Thickness -> Opaqueness -> LineStyle -> Color -> m Unit
   drawPoint :: Point -> PointStyle -> Color -> m Unit
-  drawPolygon :: Array Point -> Fill -> m Unit
+  drawPolygon :: Array Point -> Maybe Contour -> Fill -> m Unit
 
 drawRectangle
   :: forall m
@@ -37,16 +38,17 @@ drawRectangle
   => Point
   -> Number
   -> Number
+  -> Maybe Contour
   -> Fill
   -> m Unit
-drawRectangle (Point p) width height fill =
+drawRectangle (Point p) width height contour fill =
   drawPolygon
     [ point p.x p.y
     , point (p.x + width) p.y
     , point (p.x + width) (p.y + height)
     , point p.x (p.y + height)
     ]
-    fill
+    contour fill
 
 drawTriangle
   :: forall m
@@ -54,10 +56,11 @@ drawTriangle
   => Point
   -> Point
   -> Point
+  -> Maybe Contour
   -> Fill
   -> m Unit
-drawTriangle first second third fill =
-  drawPolygon [ first, second, third ] fill
+drawTriangle first second third contour fill =
+  drawPolygon [ first, second, third ] contour fill
 
 drawLineHorizontal :: forall m. Renderer m => Number -> Thickness -> Opaqueness -> LineStyle -> Color -> m Unit
 drawLineHorizontal y = drawLineSegment (point 0.0 y) (point 100.0 y)

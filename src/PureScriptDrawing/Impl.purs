@@ -14,7 +14,7 @@ import Data.Maybe (Maybe(..))
 import Data.Number (sqrt)
 import Data.Foldable (foldMap)
 import Effect.Exception (throw)
-import Geometry (BasicColor(..), Color(..), Fill(..), LineStyle(..), Opaqueness(..), Point(..), PointStyle(..), Thickness(..))
+import Geometry (BasicColor(..), Color(..), Contour(..), Fill(..), LineStyle(..), Opaqueness(..), Point(..), PointStyle(..), Thickness(..))
 import Geometry as Geometry
 import Graphics.Canvas as Canvas
 import Graphics.Drawing as Drawing
@@ -31,14 +31,28 @@ derive newtype instance Applicative Renderer
 derive newtype instance Monad Renderer
 
 instance geometryRenderer :: Geometry.Renderer Renderer where
-  drawPolygon points (Fill { opaqueness: Opaqueness opacity, color }) = Renderer do
+  drawPolygon points contour (Fill { opaqueness: Opaqueness opacity, color }) = Renderer do
     canvas <- getCanvas
     context <- Canvas.getContext2D canvas
+    let shape = Drawing.closed (map pointCoordinates points)
     Canvas.setGlobalAlpha context opacity
     Drawing.render context
       (Drawing.filled (Drawing.fillColor (toDrawingColor color))
-        (Drawing.closed (map pointCoordinates points)))
+        shape)
     Canvas.setGlobalAlpha context 1.0
+    case contour of
+      Nothing -> pure unit
+      Just (Contour { thickness: Thickness width, opaqueness: Opaqueness contourOpacity, lineStyle, color: contourColor }) -> do
+        Canvas.setGlobalAlpha context contourOpacity
+        Canvas.setLineDash context (dashPattern lineStyle)
+        Canvas.setLineCap context (capStyle lineStyle)
+        Drawing.render context
+          (Drawing.outlined
+            (Drawing.outlineColor (toDrawingColor contourColor) <> Drawing.lineWidth width)
+            shape)
+        Canvas.setGlobalAlpha context 1.0
+        Canvas.setLineDash context []
+        Canvas.setLineCap context Canvas.Butt
 
   drawLine start end thickness opacity style color = Renderer do
     canvas <- getCanvas

@@ -34,17 +34,27 @@ export const appendRectangle = x => y => width => height => opacity => fill => (
     ["fill-opacity", opacity], ["fill", fill]
   ]);
 
-export const appendPolygon = points => opacity => fill => () => {
+export const appendPolygon = points => opacity => fill => hasContour => strokeWidth => strokeOpacity => strokeDash => strokeCap => stroke => () => {
   if (points.length < 3) return;
 
   const commands = points.map(({ x, y }, index) =>
     `${index === 0 ? "M" : "L"} ${x} ${y}`
   );
-  append("path", [
+  const attributes = [
     ["d", `${commands.join(" ")} Z`],
     ["fill-opacity", opacity],
     ["fill", fill]
-  ]);
+  ];
+  if (hasContour) {
+    attributes.push(
+      ["stroke", stroke],
+      ["stroke-width", strokeWidth],
+      ["stroke-opacity", strokeOpacity],
+      ["stroke-linecap", strokeCap]
+    );
+    if (strokeDash !== "") attributes.push(["stroke-dasharray", strokeDash]);
+  }
+  append("path", attributes);
 };
 
 export const appendLine = x1 => y1 => x2 => y2 => width => opacity => dash => cap => stroke => () => {

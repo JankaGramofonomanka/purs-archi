@@ -8,8 +8,9 @@ import Control.Applicative (class Applicative)
 import Control.Monad (class Monad)
 import Control.Apply (class Apply)
 import Control.Bind (class Bind)
+import Data.Maybe (Maybe(..))
 import Data.Number (sqrt)
-import Geometry (BasicColor(..), Color(..), Fill(..), LineStyle(..), Opaqueness(..), Point(..), PointStyle(..), Thickness(..))
+import Geometry (BasicColor(..), Color(..), Contour(..), Fill(..), LineStyle(..), Opaqueness(..), Point(..), PointStyle(..), Thickness(..))
 import Geometry as Geometry
 
 newtype Renderer a = Renderer (Effect a)
@@ -24,8 +25,15 @@ derive newtype instance Applicative Renderer
 derive newtype instance Monad Renderer
 
 instance geometryRenderer :: Geometry.Renderer Renderer where
-  drawPolygon points (Fill { opaqueness: Opaqueness opacity, color }) =
-    Renderer (appendPolygon (map pointCoordinates points) opacity (colorCss color))
+  drawPolygon points contour (Fill { opaqueness: Opaqueness opacity, color }) =
+    let coordinates = map pointCoordinates points
+        fill = colorCss color
+    in Renderer case contour of
+      Nothing ->
+        appendPolygon coordinates opacity fill false 0.0 1.0 "" "butt" ""
+      Just (Contour { thickness: Thickness width, opaqueness: Opaqueness contourOpacity, lineStyle, color: contourColor }) ->
+        appendPolygon coordinates opacity fill true width contourOpacity
+          (dashArray lineStyle) (lineCap lineStyle) (colorCss contourColor)
 
   drawLine (Point start) (Point end) (Thickness width) (Opaqueness opacity) style color =
     let dx = end.x - start.x
@@ -92,7 +100,17 @@ xPath x y =
     <> " L " <> show (x + 4.0) <> " " <> show (y - 4.0)
 
 foreign import appendRectangle :: Number -> Number -> Number -> Number -> Number -> String -> Effect Unit
-foreign import appendPolygon :: Array { x :: Number, y :: Number } -> Number -> String -> Effect Unit
+foreign import appendPolygon
+  :: Array { x :: Number, y :: Number }
+  -> Number
+  -> String
+  -> Boolean
+  -> Number
+  -> Number
+  -> String
+  -> String
+  -> String
+  -> Effect Unit
 foreign import appendLine :: Number -> Number -> Number -> Number -> Number -> Number -> String -> String -> String -> Effect Unit
 foreign import appendCircle :: Number -> Number -> Number -> String -> Effect Unit
 foreign import appendPath :: String -> String -> Number -> Effect Unit
