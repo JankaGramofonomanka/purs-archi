@@ -31,18 +31,6 @@ derive newtype instance Applicative Renderer
 derive newtype instance Monad Renderer
 
 instance geometryRenderer :: Geometry.Renderer Renderer where
-  drawRectangle (Point p) width height (Opaqueness opacity) color = Renderer do
-    canvas <- getCanvas
-    context <- Canvas.getContext2D canvas
-    Canvas.setGlobalAlpha context opacity
-    Drawing.render context
-      (Drawing.filled (Drawing.fillColor (toDrawingColor color))
-        (Drawing.rectangle p.x p.y width height))
-    Canvas.setGlobalAlpha context 1.0
-
-  drawTriangle first second third opacity color =
-    Geometry.drawPolygon [ first, second, third ] opacity color
-
   drawPolygon points (Opaqueness opacity) color = Renderer do
     canvas <- getCanvas
     context <- Canvas.getContext2D canvas

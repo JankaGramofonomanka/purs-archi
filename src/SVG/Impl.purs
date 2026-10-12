@@ -24,12 +24,6 @@ derive newtype instance Applicative Renderer
 derive newtype instance Monad Renderer
 
 instance geometryRenderer :: Geometry.Renderer Renderer where
-  drawRectangle (Point p) width height (Opaqueness opacity) color =
-    Renderer (appendRectangle p.x p.y width height opacity (colorCss color))
-
-  drawTriangle first second third opacity color =
-    Geometry.drawPolygon [ first, second, third ] opacity color
-
   drawPolygon points (Opaqueness opacity) color =
     Renderer (appendPolygon (map pointCoordinates points) opacity (colorCss color))
 
