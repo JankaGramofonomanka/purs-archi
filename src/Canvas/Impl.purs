@@ -29,8 +29,9 @@ derive newtype instance Applicative Renderer
 derive newtype instance Monad Renderer
 
 instance geometryRenderer :: Geometry.Renderer Renderer where
-  drawPolygon points contour (Fill { opaqueness: Opaqueness opacity, color }) = Renderer do
-    case Array.uncons points of
+  drawPolygon points contour fill = Renderer do
+    if Array.length points < 3 then pure unit
+    else case Array.uncons points of
       Nothing -> pure unit
       Just { head: Point first, tail } -> do
         context <- getContext
@@ -38,10 +39,13 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
         Canvas.moveTo context first.x first.y
         traverse_ (\(Point p) -> Canvas.lineTo context p.x p.y) tail
         Canvas.closePath context
-        Canvas.setFillStyle context (colorCss color)
-        Canvas.setGlobalAlpha context opacity
-        Canvas.fill context
-        Canvas.setGlobalAlpha context 1.0
+        case fill of
+          Nothing -> pure unit
+          Just (Fill { opaqueness: Opaqueness opacity, color }) -> do
+            Canvas.setFillStyle context (colorCss color)
+            Canvas.setGlobalAlpha context opacity
+            Canvas.fill context
+            Canvas.setGlobalAlpha context 1.0
         case contour of
           Nothing -> pure unit
           Just (Contour { thickness: Thickness width, opaqueness: Opaqueness contourOpacity, lineStyle, color: contourColor }) -> do

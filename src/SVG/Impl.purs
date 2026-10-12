@@ -25,15 +25,13 @@ derive newtype instance Applicative Renderer
 derive newtype instance Monad Renderer
 
 instance geometryRenderer :: Geometry.Renderer Renderer where
-  drawPolygon points contour (Fill { opaqueness: Opaqueness opacity, color }) =
+  drawPolygon points contour fill =
     let coordinates = map pointCoordinates points
-        fill = colorCss color
-    in Renderer case contour of
-      Nothing ->
-        appendPolygon coordinates opacity fill false 0.0 1.0 "" "butt" ""
-      Just (Contour { thickness: Thickness width, opaqueness: Opaqueness contourOpacity, lineStyle, color: contourColor }) ->
-        appendPolygon coordinates opacity fill true width contourOpacity
-          (dashArray lineStyle) (lineCap lineStyle) (colorCss contourColor)
+        options = polygonOptions fill contour
+    in Renderer (appendPolygon coordinates
+      options.hasFill options.fillOpacity options.fillColor
+      options.hasContour options.strokeWidth options.strokeOpacity
+      options.strokeDash options.strokeCap options.strokeColor)
 
   drawLine (Point start) (Point end) (Thickness width) (Opaqueness opacity) style color =
     let dx = end.x - start.x
@@ -60,6 +58,53 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
 
 pointCoordinates :: Point -> { x :: Number, y :: Number }
 pointCoordinates (Point p) = p
+
+polygonOptions
+  :: Maybe Fill
+  -> Maybe Contour
+  -> { hasFill :: Boolean
+     , fillOpacity :: Number
+     , fillColor :: String
+     , hasContour :: Boolean
+     , strokeWidth :: Number
+     , strokeOpacity :: Number
+     , strokeDash :: String
+     , strokeCap :: String
+     , strokeColor :: String
+     }
+polygonOptions fill contour =
+  let fillOptions = case fill of
+        Nothing -> { hasFill: false, fillOpacity: 1.0, fillColor: "" }
+        Just (Fill { opaqueness: Opaqueness opacity, color }) ->
+          { hasFill: true, fillOpacity: opacity, fillColor: colorCss color }
+      contourOptions = case contour of
+        Nothing ->
+          { hasContour: false
+          , strokeWidth: 0.0
+          , strokeOpacity: 1.0
+          , strokeDash: ""
+          , strokeCap: "butt"
+          , strokeColor: ""
+          }
+        Just (Contour { thickness: Thickness width, opaqueness: Opaqueness opacity, lineStyle, color }) ->
+          { hasContour: true
+          , strokeWidth: width
+          , strokeOpacity: opacity
+          , strokeDash: dashArray lineStyle
+          , strokeCap: lineCap lineStyle
+          , strokeColor: colorCss color
+          }
+  in
+    { hasFill: fillOptions.hasFill
+    , fillOpacity: fillOptions.fillOpacity
+    , fillColor: fillOptions.fillColor
+    , hasContour: contourOptions.hasContour
+    , strokeWidth: contourOptions.strokeWidth
+    , strokeOpacity: contourOptions.strokeOpacity
+    , strokeDash: contourOptions.strokeDash
+    , strokeCap: contourOptions.strokeCap
+    , strokeColor: contourOptions.strokeColor
+    }
 
 colorCss :: Color -> String
 colorCss (RGB rgb) =
@@ -102,6 +147,7 @@ xPath x y =
 foreign import appendRectangle :: Number -> Number -> Number -> Number -> Number -> String -> Effect Unit
 foreign import appendPolygon
   :: Array { x :: Number, y :: Number }
+  -> Boolean
   -> Number
   -> String
   -> Boolean

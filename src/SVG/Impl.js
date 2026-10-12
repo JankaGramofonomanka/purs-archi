@@ -34,17 +34,18 @@ export const appendRectangle = x => y => width => height => opacity => fill => (
     ["fill-opacity", opacity], ["fill", fill]
   ]);
 
-export const appendPolygon = points => opacity => fill => hasContour => strokeWidth => strokeOpacity => strokeDash => strokeCap => stroke => () => {
+export const appendPolygon = points => hasFill => fillOpacity => fill => hasContour => strokeWidth => strokeOpacity => strokeDash => strokeCap => stroke => () => {
   if (points.length < 3) return;
 
   const commands = points.map(({ x, y }, index) =>
     `${index === 0 ? "M" : "L"} ${x} ${y}`
   );
-  const attributes = [
-    ["d", `${commands.join(" ")} Z`],
-    ["fill-opacity", opacity],
-    ["fill", fill]
-  ];
+  const attributes = [["d", `${commands.join(" ")} Z`]];
+  if (hasFill) {
+    attributes.push(["fill-opacity", fillOpacity], ["fill", fill]);
+  } else {
+    attributes.push(["fill", "none"]);
+  }
   if (hasContour) {
     attributes.push(
       ["stroke", stroke],

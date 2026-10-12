@@ -9,6 +9,7 @@ import Control.Monad (class Monad)
 import Control.Apply (class Apply)
 import Control.Bind (class Bind)
 import Color as DrawingColor
+import Data.Array as Array
 import Data.Int (round)
 import Data.Maybe (Maybe(..))
 import Data.Number (sqrt)
@@ -31,28 +32,32 @@ derive newtype instance Applicative Renderer
 derive newtype instance Monad Renderer
 
 instance geometryRenderer :: Geometry.Renderer Renderer where
-  drawPolygon points contour (Fill { opaqueness: Opaqueness opacity, color }) = Renderer do
-    canvas <- getCanvas
-    context <- Canvas.getContext2D canvas
-    let shape = Drawing.closed (map pointCoordinates points)
-    Canvas.setGlobalAlpha context opacity
-    Drawing.render context
-      (Drawing.filled (Drawing.fillColor (toDrawingColor color))
-        shape)
-    Canvas.setGlobalAlpha context 1.0
-    case contour of
-      Nothing -> pure unit
-      Just (Contour { thickness: Thickness width, opaqueness: Opaqueness contourOpacity, lineStyle, color: contourColor }) -> do
-        Canvas.setGlobalAlpha context contourOpacity
-        Canvas.setLineDash context (dashPattern lineStyle)
-        Canvas.setLineCap context (capStyle lineStyle)
-        Drawing.render context
-          (Drawing.outlined
-            (Drawing.outlineColor (toDrawingColor contourColor) <> Drawing.lineWidth width)
-            shape)
-        Canvas.setGlobalAlpha context 1.0
-        Canvas.setLineDash context []
-        Canvas.setLineCap context Canvas.Butt
+  drawPolygon points contour fill = Renderer do
+    if Array.length points < 3 then pure unit
+    else do
+      canvas <- getCanvas
+      context <- Canvas.getContext2D canvas
+      let shape = Drawing.closed (map pointCoordinates points)
+      case fill of
+        Nothing -> pure unit
+        Just (Fill { opaqueness: Opaqueness opacity, color }) -> do
+          Canvas.setGlobalAlpha context opacity
+          Drawing.render context
+            (Drawing.filled (Drawing.fillColor (toDrawingColor color)) shape)
+          Canvas.setGlobalAlpha context 1.0
+      case contour of
+        Nothing -> pure unit
+        Just (Contour { thickness: Thickness width, opaqueness: Opaqueness contourOpacity, lineStyle, color: contourColor }) -> do
+          Canvas.setGlobalAlpha context contourOpacity
+          Canvas.setLineDash context (dashPattern lineStyle)
+          Canvas.setLineCap context (capStyle lineStyle)
+          Drawing.render context
+            (Drawing.outlined
+              (Drawing.outlineColor (toDrawingColor contourColor) <> Drawing.lineWidth width)
+              shape)
+          Canvas.setGlobalAlpha context 1.0
+          Canvas.setLineDash context []
+          Canvas.setLineCap context Canvas.Butt
 
   drawLine start end thickness opacity style color = Renderer do
     canvas <- getCanvas

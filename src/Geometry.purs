@@ -30,7 +30,7 @@ class Renderer m where
   drawLine :: Point -> Point -> Thickness -> Opaqueness -> LineStyle -> Color -> m Unit
   drawLineSegment :: Point -> Point -> Thickness -> Opaqueness -> LineStyle -> Color -> m Unit
   drawPoint :: Point -> PointStyle -> Color -> m Unit
-  drawPolygon :: Array Point -> Maybe Contour -> Fill -> m Unit
+  drawPolygon :: Array Point -> Maybe Contour -> Maybe Fill -> m Unit
 
 drawRectangle
   :: forall m
@@ -39,7 +39,7 @@ drawRectangle
   -> Number
   -> Number
   -> Maybe Contour
-  -> Fill
+  -> Maybe Fill
   -> m Unit
 drawRectangle (Point p) width height contour fill =
   drawPolygon
@@ -57,7 +57,7 @@ drawTriangle
   -> Point
   -> Point
   -> Maybe Contour
-  -> Fill
+  -> Maybe Fill
   -> m Unit
 drawTriangle first second third contour fill =
   drawPolygon [ first, second, third ] contour fill
