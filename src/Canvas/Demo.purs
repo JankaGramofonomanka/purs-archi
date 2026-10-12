@@ -11,9 +11,13 @@ import Canvas.Impl as Renderer
 
 draw :: Effect Unit
 draw = do
+  canvas <- getCanvas
+  dimensions <- Canvas.getCanvasDimensions canvas
+  Renderer.runCanvasRenderer (Demo.draw dimensions.width dimensions.height)
+
+getCanvas :: Effect Canvas.CanvasElement
+getCanvas = do
   maybeCanvas <- Canvas.getCanvasElementById "canvas-target"
   case maybeCanvas of
     Nothing -> throw "Missing #canvas-target canvas"
-    Just canvas -> do
-      dimensions <- Canvas.getCanvasDimensions canvas
-      Renderer.runCanvasRenderer (Demo.draw dimensions.width dimensions.height)
+    Just canvas -> pure canvas

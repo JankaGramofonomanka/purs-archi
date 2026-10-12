@@ -1,8 +1,8 @@
 # PureScript drawing demo
 
-A small browser drawing demo written in PureScript. The home page redirects to
-the SVG drawing, and `/canvas` and `/purescript-drawing` provide additional
-drawing implementations.
+A small browser drawing demo written in PureScript. The `/svg`, `/canvas`, and
+`/purescript-drawing` routes show blank drawing surfaces; their `/demo/...`
+counterparts render the SVG, Canvas, and PureScript Drawing examples.
 
 ## Run locally
 
@@ -15,9 +15,7 @@ npm run dev
 ```
 
 Open the local URL printed by Vite (by default, <http://127.0.0.1:5173/>).
-The `/svg`, `/canvas`, and `/purescript-drawing` routes each draw a centered
-square using independent PureScript modules for SVG, Canvas, and PureScript
-Drawing, respectively.
+The home page redirects to `/svg`.
 The first build downloads the PureScript packages listed in `spago.yaml`.
 
 To run the dev server and rebuild/reload the page when PureScript sources

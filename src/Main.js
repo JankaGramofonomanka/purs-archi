@@ -2,20 +2,24 @@ const updateRoute = onRouteChange => {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
   const routes = {
     "/svg": "SVG",
+    "/demo/svg": "SVG Demo",
     "/canvas": "Canvas",
-    "/purescript-drawing": "PureScript Drawing"
+    "/demo/canvas": "Canvas Demo",
+    "/purescript-drawing": "PureScript Drawing",
+    "/demo/purescript-drawing": "PureScript Drawing Demo"
   };
   const route = Object.hasOwn(routes, path) ? path : "/svg";
   if (path !== route) {
     window.history.replaceState({}, "", route);
   }
   currentRoute = route;
+  const demoPage = getDemoPage(route);
 
   for (const page of document.querySelectorAll("[data-demo-page]")) {
     if (!(page instanceof HTMLElement)) {
       throw new Error("Invalid demo page");
     }
-    page.hidden = page.dataset.demoPage !== route;
+    page.hidden = page.dataset.demoPage !== demoPage;
   }
 
   resizeCanvasForRoute(route);
@@ -26,7 +30,15 @@ const updateRoute = onRouteChange => {
       throw new Error("Invalid route link");
     }
 
-    if (link.dataset.route === route) {
+    const pageRoute = link.dataset.page;
+    if (pageRoute === undefined) {
+      throw new Error("Route link is missing its page");
+    }
+    const linkRoute = route.startsWith("/demo/") ? `/demo${pageRoute}` : pageRoute;
+    link.dataset.route = linkRoute;
+    link.href = linkRoute;
+
+    if (pageRoute === demoPage) {
       link.setAttribute("aria-current", "page");
     } else {
       link.removeAttribute("aria-current");
@@ -38,12 +50,15 @@ const updateRoute = onRouteChange => {
 
 let currentRoute = "/";
 
+const getDemoPage = route => route.startsWith("/demo/") ? route.slice(5) : route;
+
 const resizeCanvasForRoute = route => {
+  const page = getDemoPage(route);
   const canvasIds = {
     "/canvas": "canvas-target",
     "/purescript-drawing": "drawing-target"
   };
-  const canvasId = canvasIds[route];
+  const canvasId = canvasIds[page];
   if (canvasId === undefined) {
     return;
   }

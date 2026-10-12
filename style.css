@@ -20,6 +20,7 @@ body {
 
 .route-nav {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   gap: 8px;
   width: 100%;
@@ -29,7 +30,7 @@ body {
 }
 
 .route-link {
-  flex: 1;
+  flex: 1 1 140px;
   max-width: 200px;
   padding: 10px 12px;
   border-radius: 10px;

@@ -11,9 +11,13 @@ import PureScriptDrawing.Impl as Renderer
 
 draw :: Effect Unit
 draw = do
+  canvas <- getCanvas
+  dimensions <- Canvas.getCanvasDimensions canvas
+  Renderer.runPSDRenderer (Demo.draw dimensions.width dimensions.height)
+
+getCanvas :: Effect Canvas.CanvasElement
+getCanvas = do
   maybeCanvas <- Canvas.getCanvasElementById "drawing-target"
   case maybeCanvas of
     Nothing -> throw "Missing #drawing-target canvas"
-    Just canvas -> do
-      dimensions <- Canvas.getCanvasDimensions canvas
-      Renderer.runPSDRenderer (Demo.draw dimensions.width dimensions.height)
+    Just canvas -> pure canvas
