@@ -10,7 +10,9 @@ package:
     - newtype
     - open-drawing
     - prelude
+    - random
     - refs
+    - transformers
   test:
     main: Test.Main
     dependencies: []

@@ -14,7 +14,9 @@
             "newtype",
             "open-drawing",
             "prelude",
-            "refs"
+            "random",
+            "refs",
+            "transformers"
           ],
           "build_plan": [
             "arraybuffer-types",
@@ -52,12 +54,14 @@
             "partial",
             "prelude",
             "profunctor",
+            "random",
             "record",
             "refs",
             "safe-coerce",
             "st",
             "strings",
             "tailrec",
+            "transformers",
             "tuples",
             "type-equality",
             "unfoldable",
@@ -1163,6 +1167,16 @@
         "tuples"
       ]
     },
+    "random": {
+      "type": "registry",
+      "version": "6.0.0",
+      "integrity": "sha256-7sZRo6P9UIiXDZ9s2QL9T8h3wlIwLdQrR4+oZKOijQw=",
+      "dependencies": [
+        "effect",
+        "integers",
+        "prelude"
+      ]
+    },
     "record": {
       "type": "registry",
       "version": "4.0.0",
@@ -1238,6 +1252,28 @@
         "partial",
         "prelude",
         "refs"
+      ]
+    },
+    "transformers": {
+      "type": "registry",
+      "version": "6.1.0",
+      "integrity": "sha256-QJmgNT/y7ljPHSsXaW4zxF/982BFiQ90KNL1g/NtEOQ=",
+      "dependencies": [
+        "control",
+        "distributive",
+        "effect",
+        "either",
+        "exceptions",
+        "foldable-traversable",
+        "identity",
+        "lazy",
+        "maybe",
+        "newtype",
+        "prelude",
+        "st",
+        "tailrec",
+        "tuples",
+        "unfoldable"
       ]
     },
     "tuples": {
