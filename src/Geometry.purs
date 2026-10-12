@@ -33,6 +33,7 @@ class Renderer m where
   drawPolygon :: Array Point -> Maybe Contour -> Maybe Fill -> m Unit
   drawCircle :: Point -> Number -> Maybe Contour -> Maybe Fill -> m Unit
   drawArch :: Point -> Number -> Number -> Number -> Contour -> m Unit
+  drawCircleSegment :: Point -> Number -> Number -> Number -> Maybe Contour -> Maybe Fill -> m Unit
 
 drawRectangle
   :: forall m

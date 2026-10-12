@@ -71,6 +71,39 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
     Canvas.setLineDash context []
     Canvas.setLineCap context Canvas.Butt
 
+  drawCircleSegment (Point p) radius startAngle endAngle contour fill = Renderer do
+    canvas <- getCanvas
+    context <- Canvas.getContext2D canvas
+    Canvas.beginPath context
+    Canvas.arc context
+      { x: p.x
+      , y: p.y
+      , radius
+      , start: startAngle
+      , end: endAngle
+      , useCounterClockwise: endAngle < startAngle
+      }
+    Canvas.closePath context
+    case fill of
+      Nothing -> pure unit
+      Just (Fill { opaqueness: Opaqueness opacity, color }) -> do
+        Canvas.setGlobalAlpha context opacity
+        Canvas.setFillStyle context (DrawingColor.cssStringHSLA (toDrawingColor color))
+        Canvas.fill context
+        Canvas.setGlobalAlpha context 1.0
+    case contour of
+      Nothing -> pure unit
+      Just (Contour { thickness: Thickness width, opaqueness: Opaqueness opacity, lineStyle, color }) -> do
+        Canvas.setGlobalAlpha context opacity
+        Canvas.setStrokeStyle context (DrawingColor.cssStringHSLA (toDrawingColor color))
+        Canvas.setLineWidth context width
+        Canvas.setLineDash context (dashPattern lineStyle)
+        Canvas.setLineCap context (capStyle lineStyle)
+        Canvas.stroke context
+        Canvas.setGlobalAlpha context 1.0
+        Canvas.setLineDash context []
+        Canvas.setLineCap context Canvas.Butt
+
   drawPolygon points contour fill = Renderer do
     if Array.length points < 3 then pure unit
     else do

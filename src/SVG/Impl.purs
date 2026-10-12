@@ -38,6 +38,13 @@ instance geometryRenderer :: Geometry.Renderer Renderer where
       Renderer (appendArc p.x p.y radius startAngle endAngle width opacity
         (dashArray lineStyle) (lineCap lineStyle) (colorCss color))
 
+  drawCircleSegment (Point p) radius startAngle endAngle contour fill =
+    let options = polygonOptions fill contour
+    in Renderer (appendCircleSegment
+      p.x p.y radius startAngle endAngle options.hasFill options.fillOpacity
+      options.fillColor options.hasContour options.strokeWidth
+      options.strokeOpacity options.strokeDash options.strokeCap options.strokeColor)
+
   drawPolygon points contour fill =
     let coordinates = map pointCoordinates points
         options = polygonOptions fill contour
@@ -190,6 +197,22 @@ foreign import appendArc
   -> Number
   -> Number
   -> Number
+  -> Number
+  -> Number
+  -> String
+  -> String
+  -> String
+  -> Effect Unit
+foreign import appendCircleSegment
+  :: Number
+  -> Number
+  -> Number
+  -> Number
+  -> Number
+  -> Boolean
+  -> Number
+  -> String
+  -> Boolean
   -> Number
   -> Number
   -> String
