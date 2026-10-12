@@ -13,7 +13,7 @@ import Data.Foldable (traverse_)
 import Data.Maybe (Maybe(..))
 import Data.Number (pi, sqrt)
 import Effect.Exception (throw)
-import Geometry (BasicColor(..), Color(..), LineStyle(..), Opaqueness(..), Point(..), PointStyle(..), Thickness(..))
+import Geometry (BasicColor(..), Color(..), Fill(..), LineStyle(..), Opaqueness(..), Point(..), PointStyle(..), Thickness(..))
 import Geometry as Geometry
 import Graphics.Canvas as Canvas
 
@@ -29,7 +29,7 @@ derive newtype instance Applicative Renderer
 derive newtype instance Monad Renderer
 
 instance geometryRenderer :: Geometry.Renderer Renderer where
-  drawPolygon points (Opaqueness opacity) color = Renderer do
+  drawPolygon points (Fill { opaqueness: Opaqueness opacity, color }) = Renderer do
     case Array.uncons points of
       Nothing -> pure unit
       Just { head: Point first, tail } -> do

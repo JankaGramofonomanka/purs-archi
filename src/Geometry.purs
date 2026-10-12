@@ -13,11 +13,23 @@ newtype Opaqueness = Opaqueness Number
 data LineStyle = Solid | Dashed | Dotted | DashDot -- | DashDotDot
 data PointStyle = Circle | Square | Cross | X
 
+-- data Contour = Contour
+--   { thickness :: Thickness
+--   , opaqueness :: Opaqueness
+--   , lineStyle :: LineStyle
+--   , color :: Color
+--   }
+
+data Fill = Fill
+  { opaqueness :: Opaqueness
+  , color :: Color
+  }
+
 class Renderer m where
   drawLine :: Point -> Point -> Thickness -> Opaqueness -> LineStyle -> Color -> m Unit
   drawLineSegment :: Point -> Point -> Thickness -> Opaqueness -> LineStyle -> Color -> m Unit
   drawPoint :: Point -> PointStyle -> Color -> m Unit
-  drawPolygon :: Array Point -> Opaqueness -> Color -> m Unit
+  drawPolygon :: Array Point -> Fill -> m Unit
 
 drawRectangle
   :: forall m
@@ -25,18 +37,16 @@ drawRectangle
   => Point
   -> Number
   -> Number
-  -> Opaqueness
-  -> Color
+  -> Fill
   -> m Unit
-drawRectangle (Point p) width height opacity color =
+drawRectangle (Point p) width height fill =
   drawPolygon
     [ point p.x p.y
     , point (p.x + width) p.y
     , point (p.x + width) (p.y + height)
     , point p.x (p.y + height)
     ]
-    opacity
-    color
+    fill
 
 drawTriangle
   :: forall m
@@ -44,11 +54,10 @@ drawTriangle
   => Point
   -> Point
   -> Point
-  -> Opaqueness
-  -> Color
+  -> Fill
   -> m Unit
-drawTriangle first second third opacity color =
-  drawPolygon [ first, second, third ] opacity color
+drawTriangle first second third fill =
+  drawPolygon [ first, second, third ] fill
 
 drawLineHorizontal :: forall m. Renderer m => Number -> Thickness -> Opaqueness -> LineStyle -> Color -> m Unit
 drawLineHorizontal y = drawLineSegment (point 0.0 y) (point 100.0 y)

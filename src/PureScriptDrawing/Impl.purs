@@ -14,7 +14,7 @@ import Data.Maybe (Maybe(..))
 import Data.Number (sqrt)
 import Data.Foldable (foldMap)
 import Effect.Exception (throw)
-import Geometry (BasicColor(..), Color(..), LineStyle(..), Opaqueness(..), Point(..), PointStyle(..), Thickness(..))
+import Geometry (BasicColor(..), Color(..), Fill(..), LineStyle(..), Opaqueness(..), Point(..), PointStyle(..), Thickness(..))
 import Geometry as Geometry
 import Graphics.Canvas as Canvas
 import Graphics.Drawing as Drawing
@@ -31,7 +31,7 @@ derive newtype instance Applicative Renderer
 derive newtype instance Monad Renderer
 
 instance geometryRenderer :: Geometry.Renderer Renderer where
-  drawPolygon points (Opaqueness opacity) color = Renderer do
+  drawPolygon points (Fill { opaqueness: Opaqueness opacity, color }) = Renderer do
     canvas <- getCanvas
     context <- Canvas.getContext2D canvas
     Canvas.setGlobalAlpha context opacity

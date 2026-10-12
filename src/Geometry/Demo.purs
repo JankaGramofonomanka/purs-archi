@@ -16,14 +16,14 @@ draw :: forall m. Monad m => Geometry.Renderer m => Number -> Number -> m Unit
 draw width height = do
   let centerX = width / 2.0
   let centerY = height / 2.0
-  Geometry.drawRectangle (point (centerX - 100.0) (centerY - 50.0)) 100.0 100.0 opaque blue
-  Geometry.drawRectangle (point centerX (centerY - 50.0)) 100.0 100.0 opaque red
+  Geometry.drawRectangle (point (centerX - 100.0) (centerY - 50.0)) 100.0 100.0 (Geometry.Fill { opaqueness: opaque, color: blue })
+  Geometry.drawRectangle (point centerX (centerY - 50.0)) 100.0 100.0 (Geometry.Fill { opaqueness: opaque, color: red })
   Geometry.drawTriangle
     (point (centerX - 100.0) (centerY + 50.0))
     (point (centerX + 100.0) (centerY + 50.0))
     (point centerX (centerY + 200.0))
-    opaque purple
-  Geometry.drawRectangle (point (centerX - 50.0) (centerY)) 100.0 100.0 (Opaqueness 0.5) teal
+    (Geometry.Fill { opaqueness: opaque, color: purple })
+  Geometry.drawRectangle (point (centerX - 50.0) (centerY)) 100.0 100.0 (Geometry.Fill { opaqueness: Opaqueness 0.5, color: teal })
   Geometry.drawPolygon
     [ point (centerX + 100.0) (centerY + 50.0)
     , point centerX (centerY + 200.0)
@@ -32,7 +32,7 @@ draw width height = do
     , point (centerX + 300.0) (centerY + 200.0)
     , point (centerX + 200.0) (centerY + 50.0)
     ]
-    opaque orange
+    (Geometry.Fill { opaqueness: opaque, color: orange })
 
   Geometry.drawLine (point 0.0 (centerY - 350.0)) (point width (centerY - 350.0))
     (Thickness 4.0) opaque Dashed orange
