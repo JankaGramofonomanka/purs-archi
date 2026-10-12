@@ -15,6 +15,8 @@ import Renderer as Renderer
 import Data.Number (pi)
 import Data.Default (class Default, def)
 import Data.Newtype (class Newtype, modify)
+import Ortogonal as Ortogonal
+import Geometry (Rectangle(..))
 
 draw :: forall m. Monad m => Renderer.Renderer m => Number -> Number -> m Unit
 draw width height = do
@@ -66,6 +68,22 @@ draw width height = do
   Renderer.drawPoint (point (centerX - 200.0) (centerY + 150.0)) Square ink
   Renderer.drawPoint (point (centerX - 100.0) (centerY + 150.0)) X ink
 
+  -- render ortogonal
+  centerX <- pure $ centerX - 500.0
+  let rectangle = Rectangle { width: 100.0, height: 200.0 }
+  let left = centerX - 60.0
+  let right = centerX + 70.0
+  let top = centerY - 120.0
+  let bottom = centerY + 140.0
+  Ortogonal.drawCentered       (point centerX centerY) rectangle
+  Ortogonal.drawLeftCentered   (point left    centerY) rectangle
+  Ortogonal.drawRightCentered  (point right   centerY) rectangle
+  Ortogonal.drawTopCentered    (point centerX top)     rectangle
+  Ortogonal.drawBottomCentered (point centerX bottom)  rectangle
+  Ortogonal.drawTopLeft        (point left    top)     rectangle
+  Ortogonal.drawTopRight       (point right   top)     rectangle
+  Ortogonal.drawBottomLeft     (point left    bottom)  rectangle
+  Ortogonal.drawBottomRight    (point right   bottom)  rectangle
 
 blue :: Color
 blue = RGB { r: 82.0, g: 104.0, b: 216.0 }
