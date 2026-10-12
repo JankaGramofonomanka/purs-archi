@@ -37,8 +37,8 @@ draw width height = do
     ]
     (Just $ Geometry.Contour { thickness: Thickness 2.0, opaqueness: opaque, lineStyle: Solid, color: ink })
     Nothing
-  Geometry.drawCircle (point centerX (centerY - 50.0)) 50.0 Nothing (Just $ Geometry.Fill { opaqueness: Opaqueness 0.5, color: orange })
-  Geometry.drawCircleSegment (point centerX (centerY - 150.0)) 50.0 pi (2.0 * pi) (Just $ Geometry.Contour { thickness: Thickness 4.0, opaqueness: opaque, lineStyle: DashDot, color: ink }) (Just $ Geometry.Fill { opaqueness: opaque, color: teal })
+  Geometry.drawCircleSegment (point centerX (centerY - 225.0)) 50.0 0.0 pi (Just $ Geometry.Contour { thickness: Thickness 4.0, opaqueness: opaque, lineStyle: DashDot, color: ink }) (Just $ Geometry.Fill { opaqueness: opaque, color: teal })
+  Geometry.drawCircle (point centerX (centerY - 150.0)) 50.0 Nothing (Just $ Geometry.Fill { opaqueness: Opaqueness 0.5, color: orange })
 
   Geometry.drawLine (point 0.0 (centerY - 350.0)) (point width (centerY - 350.0))
     (contour (Thickness 4.0) opaque Dashed orange)
@@ -60,7 +60,7 @@ draw width height = do
   Geometry.drawLineSegment (point (centerX + 400.0) (centerY - 150.0))
     (point (centerX + 400.0) (centerY + 150.0))
     (contour (Thickness 2.0) opaque Solid ink)
-  Geometry.drawArch (point centerX (centerY - 100.0)) 50.0 pi (2.0 * pi) (Geometry.Contour { thickness: Thickness 4.0, opaqueness: opaque, lineStyle: Solid, color: ink })
+  Geometry.drawArch (point centerX (centerY - 75.0)) 50.0 pi (2.0 * pi) (Geometry.Contour { thickness: Thickness 4.0, opaqueness: opaque, lineStyle: Solid, color: ink })
 
   Geometry.drawPoint (point (centerX - 200.0) (centerY + 50.0)) Circle ink
   Geometry.drawPoint (point (centerX - 100.0) (centerY + 50.0)) Cross ink
