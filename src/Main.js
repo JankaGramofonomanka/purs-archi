@@ -5,16 +5,11 @@ const updateRoute = onRouteChange => {
     "/canvas": "Canvas",
     "/purescript-drawing": "PureScript Drawing"
   };
-  const route = routes[path] === undefined ? "/" : path;
-  currentRoute = route;
-
-  const homePage = document.getElementById("home-page");
-  const demoPage = document.getElementById("demo-page");
-  if (!(homePage instanceof HTMLElement) || !(demoPage instanceof HTMLElement)) {
-    throw new Error("Missing page container");
+  const route = Object.hasOwn(routes, path) ? path : "/svg";
+  if (path !== route) {
+    window.history.replaceState({}, "", route);
   }
-  homePage.hidden = route !== "/";
-  demoPage.hidden = route === "/";
+  currentRoute = route;
 
   for (const page of document.querySelectorAll("[data-demo-page]")) {
     if (!(page instanceof HTMLElement)) {
@@ -111,22 +106,4 @@ export const setupRoutes = onRouteChange => () => {
     window.history.pushState({}, "", link.href);
     updateRoute(onRouteChange);
   });
-};
-
-export const setCount = count => () => {
-  const output = document.getElementById("count");
-  if (!(output instanceof HTMLElement)) {
-    throw new Error("Missing #count element");
-  }
-
-  output.textContent = String(count);
-};
-
-export const onIncrement = handler => () => {
-  const button = document.getElementById("increment");
-  if (!(button instanceof HTMLButtonElement)) {
-    throw new Error("Missing #increment button");
-  }
-
-  button.addEventListener("click", handler);
 };

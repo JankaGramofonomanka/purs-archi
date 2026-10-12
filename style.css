@@ -55,23 +55,12 @@ body {
   outline-offset: 2px;
 }
 
-.demo-card {
-  width: min(100%, 440px);
-  margin: auto;
-  padding: 40px;
-  border: 1px solid #e3e8f2;
-  border-radius: 20px;
-  background: #fff;
-  box-shadow: 0 18px 50px rgb(35 52 92 / 9%);
-}
-
 .demo-page {
   position: relative;
   flex: 1;
   min-height: 0;
 }
 
-.demo-page[hidden],
 .demo-stage[hidden] {
   display: none;
 }
@@ -90,54 +79,4 @@ body {
   height: 100%;
   background: #e5eaf5;
   outline: 1px solid #aebbd4;
-}
-
-.eyebrow {
-  margin: 0 0 12px;
-  color: #5268d8;
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-h1 {
-  margin: 0;
-  font-size: clamp(1.8rem, 7vw, 2.4rem);
-  letter-spacing: -0.04em;
-}
-
-.description {
-  margin: 14px 0 28px;
-  color: #64708a;
-  line-height: 1.6;
-}
-
-.counter {
-  margin-bottom: 20px;
-  color: #25356e;
-  font-size: 3rem;
-  font-weight: 700;
-  text-align: center;
-}
-
-button {
-  width: 100%;
-  min-height: 48px;
-  border: 0;
-  border-radius: 10px;
-  background: #5268d8;
-  color: #fff;
-  cursor: pointer;
-  font: inherit;
-  font-weight: 650;
-}
-
-button:hover {
-  background: #4056c4;
-}
-
-button:focus-visible {
-  outline: 3px solid #aab5ff;
-  outline-offset: 3px;
 }
