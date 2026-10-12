@@ -14,7 +14,7 @@ data LineStyle = Solid | Dashed | Dotted | DashDot -- | DashDotDot
 data PointStyle = Circle | Square | Cross | X
 
 class Renderer m where
-  drawRectangle :: Point -> Number -> Number-> Color -> m Unit
+  drawRectangle :: Point -> Number -> Number-> Opaqueness -> Color -> m Unit
   drawLine :: Point -> Point -> Thickness -> Opaqueness -> LineStyle -> Color -> m Unit
   drawLineSegment :: Point -> Point -> Thickness -> Opaqueness -> LineStyle -> Color -> m Unit
   drawPoint :: Point -> PointStyle -> Color -> m Unit

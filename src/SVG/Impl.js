@@ -28,8 +28,11 @@ const append = (tag, attributes) => {
   target().append(element);
 };
 
-export const appendRectangle = x => y => width => height => fill => () =>
-  append("rect", [["x", x], ["y", y], ["width", width], ["height", height], ["fill", fill]]);
+export const appendRectangle = x => y => width => height => opacity => fill => () =>
+  append("rect", [
+    ["x", x], ["y", y], ["width", width], ["height", height],
+    ["fill-opacity", opacity], ["fill", fill]
+  ]);
 
 export const appendLine = x1 => y1 => x2 => y2 => width => opacity => dash => cap => stroke => () => {
   const attributes = [
