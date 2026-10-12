@@ -2,29 +2,48 @@ module Geometry where
 
 import Prelude
 import Data.Maybe (Maybe)
+import Data.Default (class Default)
+import Data.Newtype (class Newtype)
 
-data Point = Point { x :: Number, y :: Number }
+newtype Point = Point { x :: Number, y :: Number }
 point :: Number -> Number -> Point
 point x y = Point { x, y }
 
+derive instance Newtype Point _
+
 data Color = RGB { r :: Number, g :: Number, b :: Number } | Basic BasicColor
 data BasicColor = Black | White | Red | Green | Blue | Yellow | Cyan | Mag
+
 newtype Thickness = Thickness Number
+derive instance Newtype Thickness _
+
 newtype Opaqueness = Opaqueness Number
+derive instance Newtype Opaqueness _
+
 data LineStyle = Solid | Dashed | Dotted | DashDot -- | DashDotDot
 data PointStyle = Circle | Square | Cross | X
 
-data Contour = Contour
+newtype Contour = Contour
   { thickness :: Thickness
   , opaqueness :: Opaqueness
   , lineStyle :: LineStyle
   , color :: Color
   }
 
-data Fill = Fill
+derive instance Newtype Contour _
+
+instance Default Contour where
+  def = Contour { thickness: Thickness 4.0, opaqueness: Opaqueness 1.0, lineStyle: Solid, color: Basic Black }
+
+newtype Fill = Fill
   { opaqueness :: Opaqueness
   , color :: Color
   }
+
+derive instance Newtype Fill _
+
+instance Default Fill where
+  def = Fill { opaqueness: Opaqueness 1.0, color: Basic White }
 
 type LineRenderer m = Contour -> m Unit
 type AreaRenderer m = Maybe Contour -> Maybe Fill -> m Unit

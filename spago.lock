@@ -8,8 +8,10 @@
             "canvas",
             "colors",
             "console",
+            "data-default",
             "effect",
             "exceptions",
+            "newtype",
             "open-drawing",
             "prelude",
             "refs"
@@ -17,6 +19,7 @@
           "build_plan": [
             "arraybuffer-types",
             "arrays",
+            "assert",
             "bifunctors",
             "canvas",
             "colors",
@@ -24,6 +27,7 @@
             "const",
             "contravariant",
             "control",
+            "data-default",
             "distributive",
             "effect",
             "either",
@@ -48,6 +52,7 @@
             "partial",
             "prelude",
             "profunctor",
+            "record",
             "refs",
             "safe-coerce",
             "st",
@@ -724,7 +729,20 @@
         "zipperarray": "2.0.0"
       }
     },
-    "extra_packages": {}
+    "extra_packages": {
+      "data-default": {
+        "git": "https://github.com/m-bock/purescript-data-default.git",
+        "ref": "350e600a5a022c9599865a2dd14196b442f59bcc",
+        "dependencies": [
+          "assert",
+          "effect",
+          "lists",
+          "maybe",
+          "prelude",
+          "record"
+        ]
+      }
+    }
   },
   "packages": {
     "arraybuffer-types": {
@@ -752,6 +770,16 @@
         "tuples",
         "unfoldable",
         "unsafe-coerce"
+      ]
+    },
+    "assert": {
+      "type": "registry",
+      "version": "6.0.0",
+      "integrity": "sha256-hCZ1J8/71nQiRwsSV2j7iicppScOegBFZrLI6sPf9F8=",
+      "dependencies": [
+        "console",
+        "effect",
+        "prelude"
       ]
     },
     "bifunctors": {
@@ -835,6 +863,19 @@
       "dependencies": [
         "newtype",
         "prelude"
+      ]
+    },
+    "data-default": {
+      "type": "git",
+      "url": "https://github.com/m-bock/purescript-data-default.git",
+      "rev": "350e600a5a022c9599865a2dd14196b442f59bcc",
+      "dependencies": [
+        "assert",
+        "effect",
+        "lists",
+        "maybe",
+        "prelude",
+        "record"
       ]
     },
     "distributive": {
@@ -1120,6 +1161,16 @@
         "newtype",
         "prelude",
         "tuples"
+      ]
+    },
+    "record": {
+      "type": "registry",
+      "version": "4.0.0",
+      "integrity": "sha256-WQ8fqp4X1wTA70J4qUcPW4Z7DCwx6e5KJnT/EuTdWSc=",
+      "dependencies": [
+        "functions",
+        "prelude",
+        "unsafe-coerce"
       ]
     },
     "refs": {

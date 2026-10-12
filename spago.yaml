@@ -4,8 +4,10 @@ package:
     - canvas
     - colors
     - console
+    - data-default
     - effect
     - exceptions
+    - newtype
     - open-drawing
     - prelude
     - refs
@@ -15,4 +17,14 @@ package:
 workspace:
   packageSet:
     registry: 81.4.0
-  extraPackages: {}
+  extraPackages:
+    data-default:
+      git: https://github.com/m-bock/purescript-data-default.git
+      ref: 350e600a5a022c9599865a2dd14196b442f59bcc
+      dependencies:
+        - assert
+        - effect
+        - lists
+        - maybe
+        - prelude
+        - record
