@@ -58,6 +58,44 @@ export const appendPolygon = points => hasFill => fillOpacity => fill => hasCont
   append("path", attributes);
 };
 
+export const appendStyledCircle = cx => cy => radius => hasFill => fillOpacity => fill => hasContour => strokeWidth => strokeOpacity => strokeDash => strokeCap => stroke => () => {
+  const attributes = [["cx", cx], ["cy", cy], ["r", radius]];
+  if (hasFill) {
+    attributes.push(["fill-opacity", fillOpacity], ["fill", fill]);
+  } else {
+    attributes.push(["fill", "none"]);
+  }
+  if (hasContour) {
+    attributes.push(
+      ["stroke", stroke],
+      ["stroke-width", strokeWidth],
+      ["stroke-opacity", strokeOpacity],
+      ["stroke-linecap", strokeCap]
+    );
+    if (strokeDash !== "") attributes.push(["stroke-dasharray", strokeDash]);
+  }
+  append("circle", attributes);
+};
+
+export const appendArc = cx => cy => radius => startAngle => endAngle => strokeWidth => strokeOpacity => strokeDash => strokeCap => stroke => () => {
+  const span = endAngle - startAngle;
+  const steps = Math.max(1, Math.ceil(Math.abs(span) / (2 * Math.PI) * 64));
+  const points = Array.from({ length: steps + 1 }, (_, index) => {
+    const angle = startAngle + span * index / steps;
+    return `${cx + radius * Math.cos(angle)} ${cy + radius * Math.sin(angle)}`;
+  });
+  const attributes = [
+    ["d", `M ${points[0]} ${points.slice(1).map(point => `L ${point}`).join(" ")}`],
+    ["fill", "none"],
+    ["stroke", stroke],
+    ["stroke-width", strokeWidth],
+    ["stroke-opacity", strokeOpacity],
+    ["stroke-linecap", strokeCap]
+  ];
+  if (strokeDash !== "") attributes.push(["stroke-dasharray", strokeDash]);
+  append("path", attributes);
+};
+
 export const appendLine = x1 => y1 => x2 => y2 => width => opacity => dash => cap => stroke => () => {
   const attributes = [
     ["x1", x1], ["y1", y1], ["x2", x2], ["y2", y2],

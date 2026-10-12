@@ -29,6 +29,50 @@ derive newtype instance Applicative Renderer
 derive newtype instance Monad Renderer
 
 instance geometryRenderer :: Geometry.Renderer Renderer where
+  drawCircle (Point p) radius contour fill = Renderer do
+    context <- getContext
+    Canvas.beginPath context
+    Canvas.arc context
+      { x: p.x, y: p.y, radius, start: 0.0, end: 2.0 * pi
+      , useCounterClockwise: false
+      }
+    case fill of
+      Nothing -> pure unit
+      Just (Fill { opaqueness: Opaqueness opacity, color }) -> do
+        Canvas.setFillStyle context (colorCss color)
+        Canvas.setGlobalAlpha context opacity
+        Canvas.fill context
+        Canvas.setGlobalAlpha context 1.0
+    case contour of
+      Nothing -> pure unit
+      Just (Contour { thickness: Thickness width, opaqueness: Opaqueness opacity, lineStyle, color }) -> do
+        Canvas.setStrokeStyle context (colorCss color)
+        Canvas.setLineWidth context width
+        Canvas.setGlobalAlpha context opacity
+        Canvas.setLineDash context (dashPattern lineStyle)
+        Canvas.setLineCap context (capStyle lineStyle)
+        Canvas.stroke context
+        Canvas.setGlobalAlpha context 1.0
+        Canvas.setLineDash context []
+        Canvas.setLineCap context Canvas.Butt
+
+  drawArch (Point p) radius startAngle endAngle (Contour { thickness: Thickness width, opaqueness: Opaqueness opacity, lineStyle, color }) = Renderer do
+    context <- getContext
+    Canvas.beginPath context
+    Canvas.arc context
+      { x: p.x, y: p.y, radius, start: startAngle, end: endAngle
+      , useCounterClockwise: false
+      }
+    Canvas.setStrokeStyle context (colorCss color)
+    Canvas.setLineWidth context width
+    Canvas.setGlobalAlpha context opacity
+    Canvas.setLineDash context (dashPattern lineStyle)
+    Canvas.setLineCap context (capStyle lineStyle)
+    Canvas.stroke context
+    Canvas.setGlobalAlpha context 1.0
+    Canvas.setLineDash context []
+    Canvas.setLineCap context Canvas.Butt
+
   drawPolygon points contour fill = Renderer do
     if Array.length points < 3 then pure unit
     else case Array.uncons points of

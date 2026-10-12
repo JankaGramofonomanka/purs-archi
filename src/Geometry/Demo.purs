@@ -12,6 +12,7 @@ import Geometry
   , point
   )
 import Geometry as Geometry
+import Data.Number (pi)
 
 draw :: forall m. Monad m => Geometry.Renderer m => Number -> Number -> m Unit
 draw width height = do
@@ -36,6 +37,9 @@ draw width height = do
     ]
     (Just $ Geometry.Contour { thickness: Thickness 2.0, opaqueness: opaque, lineStyle: Solid, color: ink })
     Nothing
+
+  Geometry.drawCircle (point centerX (centerY - 50.0)) 50.0 Nothing (Just $ Geometry.Fill { opaqueness: Opaqueness 0.5, color: orange })
+  Geometry.drawArch (point centerX (centerY - 100.0)) 50.0 pi (2.0 * pi) (Geometry.Contour { thickness: Thickness 4.0, opaqueness: opaque, lineStyle: Solid, color: ink })
 
   Geometry.drawLine (point 0.0 (centerY - 350.0)) (point width (centerY - 350.0))
     (Thickness 4.0) opaque Dashed orange

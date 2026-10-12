@@ -31,6 +31,8 @@ class Renderer m where
   drawLineSegment :: Point -> Point -> Thickness -> Opaqueness -> LineStyle -> Color -> m Unit
   drawPoint :: Point -> PointStyle -> Color -> m Unit
   drawPolygon :: Array Point -> Maybe Contour -> Maybe Fill -> m Unit
+  drawCircle :: Point -> Number -> Maybe Contour -> Maybe Fill -> m Unit
+  drawArch :: Point -> Number -> Number -> Number -> Contour -> m Unit
 
 drawRectangle
   :: forall m

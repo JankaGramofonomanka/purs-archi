@@ -25,6 +25,19 @@ derive newtype instance Applicative Renderer
 derive newtype instance Monad Renderer
 
 instance geometryRenderer :: Geometry.Renderer Renderer where
+  drawCircle (Point p) radius contour fill =
+    let options = polygonOptions fill contour
+    in Renderer (appendStyledCircle
+      p.x p.y radius
+      options.hasFill options.fillOpacity options.fillColor
+      options.hasContour options.strokeWidth options.strokeOpacity
+      options.strokeDash options.strokeCap options.strokeColor)
+
+  drawArch (Point p) radius startAngle endAngle
+    (Contour { thickness: Thickness width, opaqueness: Opaqueness opacity, lineStyle, color }) =
+      Renderer (appendArc p.x p.y radius startAngle endAngle width opacity
+        (dashArray lineStyle) (lineCap lineStyle) (colorCss color))
+
   drawPolygon points contour fill =
     let coordinates = map pointCoordinates points
         options = polygonOptions fill contour
@@ -151,6 +164,32 @@ foreign import appendPolygon
   -> Number
   -> String
   -> Boolean
+  -> Number
+  -> Number
+  -> String
+  -> String
+  -> String
+  -> Effect Unit
+foreign import appendStyledCircle
+  :: Number
+  -> Number
+  -> Number
+  -> Boolean
+  -> Number
+  -> String
+  -> Boolean
+  -> Number
+  -> Number
+  -> String
+  -> String
+  -> String
+  -> Effect Unit
+foreign import appendArc
+  :: Number
+  -> Number
+  -> Number
+  -> Number
+  -> Number
   -> Number
   -> Number
   -> String
