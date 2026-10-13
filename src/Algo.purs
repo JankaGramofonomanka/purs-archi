@@ -8,15 +8,15 @@ module Algo
 
 import Prelude
 
-import Control.Monad.State (StateT, get, gets, lift, modify_)
+import Control.Monad.State (StateT, get, lift, modify_)
 import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Default (def)
 import Data.Foldable (for_)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, modify, unwrap)
 import Data.Newtype as Newtype
-import Data.Tuple (Tuple(..))
-import Partial.Unsafe (unsafePartial)
+import Data.Number as Number
 import Renderer (LineStyle(..), Opaqueness(..))
 import Renderer as Renderer
 import Test.QuickCheck.Gen as Gen
@@ -36,8 +36,6 @@ newtype State = State
 
 derive instance newtypeState :: Newtype State _
 
-data Action = AddVertical | AddHorizontal
-
 mkState :: Number -> Number -> Number -> Number -> State
 mkState left right top bottom
   = State
@@ -53,14 +51,30 @@ mkState left right top bottom
   , currentBottom: bottom
   }
 
+data Action = AddVertical | AddHorizontal
+
+applicable :: State -> Action -> Boolean
+applicable (State state) AddVertical =
+  Number.abs (state.currentRight - state.currentLeft) > 12.0
+applicable (State state) AddHorizontal =
+  Number.abs (state.currentBottom - state.currentTop) > 12.0
+
+allActions :: Array Action
+allActions = [ AddVertical, AddHorizontal ]
+
 step :: StateT State Gen.Gen Unit
 step = do
-  action <- chooseAction
-  handleAction action
+  m'action <- chooseAction
+  case m'action of
+    Nothing -> pure unit
+    Just action -> handleAction action
 
-chooseAction :: StateT State Gen.Gen Action
-chooseAction = lift $ Gen.elements
-  (NonEmptyArray.cons' AddVertical [AddHorizontal])
+chooseAction :: StateT State Gen.Gen (Maybe Action)
+chooseAction = do
+  state <- get
+  case NonEmptyArray.fromArray (Array.filter (applicable state) allActions) of
+    Nothing -> pure Nothing
+    Just applicableActions -> Just <$> (lift $ Gen.elements applicableActions)
 
 handleAction :: Action -> StateT State Gen.Gen Unit
 handleAction AddVertical = addVertical
@@ -87,20 +101,6 @@ addHorizontal = do
   let bottom = min side middle
   let newHorizontal = [middle] <> horizontal
   modify_ (Newtype.modify (_ { horizontal = newHorizontal, currentTop = top, currentBottom = bottom }))
-
-pickTwo
-  :: (State -> Number)
-  -> (State -> Number)
-  -> (State -> Array Number)
-  -> StateT State Gen.Gen (Tuple Number Number)
-pickTwo getLowerBound getUpperBound getLines = do
-  left <- gets getLowerBound
-  right <- gets getUpperBound
-  lines <- gets getLines
-  shuffled <- lift $ Gen.shuffle (Array.nub ([left, right] <> lines))
-  pure $ unsafePartial $ Tuple
-    (Array.unsafeIndex shuffled 0)
-    (Array.unsafeIndex shuffled 1)
 
 renderState :: forall m. Monad m => Renderer.Renderer m => State -> m Unit
 renderState (State { left, right, top, bottom, vertical, horizontal }) = do
