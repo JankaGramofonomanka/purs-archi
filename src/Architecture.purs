@@ -5,11 +5,18 @@ module Architecture
   , Entablature
   , Order
   , minutesPerDiameter
+  , minuteFromColumnHeight
+  , minuteFromColumnAndEntablatureHeight
+  , minuteFromLowerDiameter
   , doric
   , ionic
   , corynthian
   )
   where
+
+import Prelude
+
+import Data.Int as Int
 
 newtype Minutes = Minutes Int
 
@@ -43,6 +50,22 @@ type Order =
 
 minutesPerDiameter :: Int
 minutesPerDiameter = 60
+
+minuteFromColumnHeight :: Order -> Number -> Number
+minuteFromColumnHeight order height =
+  minuteFromProportion order.column.height height
+
+minuteFromColumnAndEntablatureHeight :: Order -> Number -> Number
+minuteFromColumnAndEntablatureHeight order height =
+  minuteFromProportion order.height height
+
+minuteFromLowerDiameter :: Order -> Number -> Number
+minuteFromLowerDiameter order diameter =
+  minuteFromProportion order.column.lowerDiameter diameter
+
+minuteFromProportion :: Minutes -> Number -> Number
+minuteFromProportion (Minutes proportion) measurement =
+  measurement / Int.toNumber proportion
 
 doric :: Order
 doric =
