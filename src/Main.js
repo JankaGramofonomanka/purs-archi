@@ -26,7 +26,14 @@ const updateRoute = onRouteChange => {
   if (!(actionBar instanceof HTMLElement)) {
     throw new Error("Missing page action bar");
   }
-  actionBar.hidden = route.startsWith("/demo/");
+  const showPageActions = !route.startsWith("/demo/");
+  actionBar.hidden = !showPageActions;
+
+  const demoPageElement = document.querySelector(".demo-page");
+  if (!(demoPageElement instanceof HTMLElement)) {
+    throw new Error("Missing .demo-page element");
+  }
+  demoPageElement.classList.toggle("has-page-actions", showPageActions);
 
   resizeCanvasForRoute(route);
 
