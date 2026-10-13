@@ -28,6 +28,10 @@ newtype State = State
   , bottom :: Number
   , vertical :: Array Number
   , horizontal :: Array Number
+  , currentLeft :: Number
+  , currentRight :: Number
+  , currentTop :: Number
+  , currentBottom :: Number
   }
 
 derive instance newtypeState :: Newtype State _
@@ -35,7 +39,19 @@ derive instance newtypeState :: Newtype State _
 data Action = AddVertical | AddHorizontal
 
 mkState :: Number -> Number -> Number -> Number -> State
-mkState left right top bottom = State { left, right, top, bottom, vertical: [], horizontal: [] }
+mkState left right top bottom
+  = State
+  { left
+  , right
+  , top
+  , bottom
+  , vertical: []
+  , horizontal: []
+  , currentLeft: left
+  , currentRight: right
+  , currentTop: top
+  , currentBottom: bottom
+  }
 
 step :: StateT State Gen.Gen Unit
 step = do
@@ -52,19 +68,25 @@ handleAction AddHorizontal = addHorizontal
 
 addVertical :: StateT State Gen.Gen Unit
 addVertical = do
-  State { vertical } <- get
-  Tuple left right <- pickTwo (_.left <<< unwrap) (_.right <<< unwrap) (_.vertical <<< unwrap)
-  let middle = (right + left) / 2.0
-  let newLines = Array.nub (vertical <> [middle])
-  modify_ (Newtype.modify (_ { vertical = newLines }))
+  State { vertical, currentLeft, currentRight } <- get
+  let middle = (currentLeft + currentRight) / 2.0
+  side <- lift $ Gen.elements (NonEmptyArray.cons' currentLeft [ currentRight ])
+
+  let left = min side middle
+  let right = max side middle
+  let newVertical = [middle] <> vertical
+  modify_ (Newtype.modify (_ { vertical = newVertical, currentLeft = left, currentRight = right }))
 
 addHorizontal :: StateT State Gen.Gen Unit
 addHorizontal = do
-  State { horizontal } <- get
-  Tuple top bottom <- pickTwo (_.top <<< unwrap) (_.bottom <<< unwrap) (_.horizontal <<< unwrap)
-  let middle = (bottom + top) / 2.0
-  let newLines = Array.nub (horizontal <> [middle])
-  modify_ (Newtype.modify (_ { horizontal = newLines }))
+  State { horizontal, currentTop, currentBottom } <- get
+  let middle = (currentTop + currentBottom) / 2.0
+  side <- lift $ Gen.elements (NonEmptyArray.cons' currentTop [ currentBottom ])
+
+  let top = max side middle
+  let bottom = min side middle
+  let newHorizontal = [middle] <> horizontal
+  modify_ (Newtype.modify (_ { horizontal = newHorizontal, currentTop = top, currentBottom = bottom }))
 
 pickTwo
   :: (State -> Number)
