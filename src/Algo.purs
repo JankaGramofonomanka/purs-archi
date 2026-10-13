@@ -37,7 +37,7 @@ mkState left right = State { left, right, lines: [left, right] }
 step :: forall m. MonadEffect m => StateT State m Unit
 step = do
   Tuple left right <- pickLines
-  let middle = right + left / 2.0
+  let middle = (right + left) / 2.0
   lines <- gets (_.lines <<< unwrap)
   modify_ (Newtype.modify (_ { lines = lines <> [middle] }))
 
