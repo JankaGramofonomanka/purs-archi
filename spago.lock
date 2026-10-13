@@ -14,7 +14,7 @@
             "newtype",
             "open-drawing",
             "prelude",
-            "random",
+            "quickcheck",
             "refs",
             "transformers"
           ],
@@ -44,6 +44,7 @@
             "integers",
             "invariant",
             "lazy",
+            "lcg",
             "lists",
             "maybe",
             "newtype",
@@ -54,6 +55,7 @@
             "partial",
             "prelude",
             "profunctor",
+            "quickcheck",
             "random",
             "record",
             "refs",
@@ -1053,6 +1055,20 @@
         "prelude"
       ]
     },
+    "lcg": {
+      "type": "registry",
+      "version": "4.0.0",
+      "integrity": "sha256-bUYyfXYmjTn7zSpj2hTiePywzsuD80fCjkonsrpdGOw=",
+      "dependencies": [
+        "effect",
+        "integers",
+        "maybe",
+        "numbers",
+        "partial",
+        "prelude",
+        "random"
+      ]
+    },
     "lists": {
       "type": "registry",
       "version": "7.0.0",
@@ -1164,6 +1180,39 @@
         "invariant",
         "newtype",
         "prelude",
+        "tuples"
+      ]
+    },
+    "quickcheck": {
+      "type": "registry",
+      "version": "8.0.1",
+      "integrity": "sha256-SfW+maesCt0jnnFhfrgJZGPcWLj8oFcGbcDIVklmdzc=",
+      "dependencies": [
+        "arrays",
+        "console",
+        "control",
+        "effect",
+        "either",
+        "enums",
+        "exceptions",
+        "foldable-traversable",
+        "gen",
+        "identity",
+        "integers",
+        "lazy",
+        "lcg",
+        "lists",
+        "maybe",
+        "newtype",
+        "nonempty",
+        "numbers",
+        "partial",
+        "prelude",
+        "record",
+        "st",
+        "strings",
+        "tailrec",
+        "transformers",
         "tuples"
       ]
     },

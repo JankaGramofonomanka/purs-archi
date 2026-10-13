@@ -10,7 +10,7 @@ package:
     - newtype
     - open-drawing
     - prelude
-    - random
+    - quickcheck
     - refs
     - transformers
   test:

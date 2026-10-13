@@ -9,19 +9,16 @@ module Algo
 
 import Prelude
 
-import Control.Monad.State (StateT, get, gets, modify_)
 import Data.Array as Array
 import Data.Default (def)
 import Data.Foldable (for_)
-import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype, modify, unwrap)
+import Data.Newtype (class Newtype, modify)
 import Data.Newtype as Newtype
 import Data.Tuple (Tuple(..))
-import Effect.Class (class MonadEffect, liftEffect)
-import Effect.Exception (throw)
-import Effect.Random (randomInt)
+import Partial.Unsafe (unsafePartial)
 import Renderer (LineStyle(..), Opaqueness(..))
 import Renderer as Renderer
+import Test.QuickCheck.Gen as Gen
 
 newtype State = State
   { left :: Number
@@ -34,34 +31,28 @@ derive instance newtypeState :: Newtype State _
 mkState :: Number -> Number -> State
 mkState left right = State { left, right, lines: [] }
 
-step :: forall m. MonadEffect m => StateT State m Unit
-step = do
-  Tuple left right <- pickLines
+step :: State -> Gen.Gen State
+step state@(State { lines }) = do
+  Tuple left right <- pickLines state
   let middle = (right + left) / 2.0
-  lines <- gets (_.lines <<< unwrap)
   let newLines = Array.nub (lines <> [middle])
-  modify_ (Newtype.modify (_ { lines = newLines }))
+  pure (Newtype.modify (_ { lines = newLines }) state)
 
-pickLines :: forall m. MonadEffect m => StateT State m (Tuple Number Number)
-pickLines = do
-  state <- get
+pickLines :: State -> Gen.Gen (Tuple Number Number)
+pickLines state = do
   Tuple one two <- pickTwo state
   pure $ Tuple (min one two) (max one two)
 
-pickTwo
-  :: forall m
-   . MonadEffect m
-  => State
-  -> m (Tuple Number Number)
+pickTwo :: State -> Gen.Gen (Tuple Number Number)
 pickTwo (State { left,  right, lines }) = do
   let values = [left, right] <> lines
   let lastIndex = Array.length values - 1
-  firstIndex <- liftEffect $ randomInt 0 lastIndex
-  secondIndex <- liftEffect $ randomInt 0 (lastIndex - 1)
-  case Array.index values firstIndex,
-        Array.index values (if secondIndex == firstIndex then secondIndex + 1 else secondIndex) of
-    Just first, Just second -> pure $ Tuple first second
-    _, _ -> liftEffect $ throw "pickTwo could not retrieve randomly selected lines"
+  firstIndex <- Gen.chooseInt 0 lastIndex
+  secondIndex <- Gen.chooseInt 0 (lastIndex - 1)
+  let distinctSecondIndex = if secondIndex == firstIndex then secondIndex + 1 else secondIndex
+  pure $ Tuple
+    (unsafePartial $ Array.unsafeIndex values firstIndex)
+    (unsafePartial $ Array.unsafeIndex values distinctSecondIndex)
 
 renderState :: forall m. Monad m => Renderer.Renderer m => State -> m Unit
 renderState (State { left, right, lines }) = do

@@ -3,9 +3,7 @@ module Main where
 import Prelude
 
 import Control.Monad (when)
-import Control.Monad.State (runStateT)
 import Data.Maybe (Maybe(..))
-import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
@@ -16,6 +14,7 @@ import PureScriptDrawing.Page as PureScriptDrawingPage
 import SVG.Demo as SVGDemo
 import SVG.Page as SVGPage
 import Algo as Algo
+import Test.QuickCheck.Gen as Gen
 
 data Action = StepAlgorithm
 
@@ -51,7 +50,7 @@ handleAction state = handle StepAlgorithm
       case currentState.algoState of
         Nothing -> throw "Algorithm state has not been initialized"
         Just algoState -> do
-          Tuple _ nextAlgoState <- runStateT Algo.step algoState
+          nextAlgoState <- Gen.randomSampleOne (Algo.step algoState)
           let nextState = currentState { algoState = Just nextAlgoState }
           Ref.write nextState state
           renderBlankRoute nextState.route nextAlgoState
