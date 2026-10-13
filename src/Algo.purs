@@ -10,6 +10,7 @@ import Prelude
 
 import Control.Monad.State (StateT, get, gets, lift, modify_)
 import Data.Array as Array
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Default (def)
 import Data.Foldable (for_)
 import Data.Newtype (class Newtype, modify, unwrap)
@@ -42,11 +43,12 @@ step = do
   handleAction action
 
 chooseAction :: StateT State Gen.Gen Action
-chooseAction = lift $ pure AddVertical
+chooseAction = lift $ Gen.elements
+  (NonEmptyArray.cons' AddVertical [AddHorizontal])
 
 handleAction :: Action -> StateT State Gen.Gen Unit
 handleAction AddVertical = addVertical
-handleAction AddHorizontal = pure unit
+handleAction AddHorizontal = addHorizontal
 
 addVertical :: StateT State Gen.Gen Unit
 addVertical = do
@@ -55,6 +57,14 @@ addVertical = do
   let middle = (right + left) / 2.0
   let newLines = Array.nub (vertical <> [middle])
   modify_ (Newtype.modify (_ { vertical = newLines }))
+
+addHorizontal :: StateT State Gen.Gen Unit
+addHorizontal = do
+  State { horizontal } <- get
+  Tuple top bottom <- pickTwo (_.top <<< unwrap) (_.bottom <<< unwrap) (_.horizontal <<< unwrap)
+  let middle = (bottom + top) / 2.0
+  let newLines = Array.nub (horizontal <> [middle])
+  modify_ (Newtype.modify (_ { horizontal = newLines }))
 
 pickTwo
   :: (State -> Number)
