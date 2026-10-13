@@ -28,11 +28,23 @@ newtype State = State
 
 derive instance newtypeState :: Newtype State _
 
+data Action = AddVertical
+
 mkState :: Number -> Number -> State
 mkState left right = State { left, right, lines: [] }
 
 step :: State -> Gen.Gen State
-step state@(State { lines }) = do
+step state = do
+  action <- chooseAction
+  handleAction state action
+
+chooseAction :: Gen.Gen Action
+chooseAction = pure AddVertical
+
+handleAction :: State -> Action -> Gen.Gen State
+handleAction state AddVertical = addVertical state
+
+addVertical state@(State { lines }) = do
   Tuple left right <- pickLines state
   let middle = (right + left) / 2.0
   let newLines = Array.nub (lines <> [middle])
