@@ -2,6 +2,7 @@ module Algo
   ( State(..)
   , mkState
   , pickLines
+  , renderState
   , step
   )
   where
@@ -10,13 +11,17 @@ import Prelude
 
 import Control.Monad.State (StateT, gets, modify_)
 import Data.Array as Array
+import Data.Default (def)
+import Data.Foldable (for_)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (class Newtype, modify, unwrap)
+import Data.Newtype as Newtype
 import Data.Tuple (Tuple(..))
 import Effect.Class (class MonadEffect, liftEffect)
 import Effect.Exception (throw)
 import Effect.Random (randomInt)
-import Data.Newtype as Newtype
-import Data.Newtype (class Newtype, unwrap)
+import Renderer (LineStyle(..), Opaqueness(..))
+import Renderer as Renderer
 
 newtype State = State
   { left :: Number
@@ -57,3 +62,15 @@ pickTwo values
            Array.index values (if secondIndex == firstIndex then secondIndex + 1 else secondIndex) of
         Just first, Just second -> pure $ Tuple first second
         _, _ -> liftEffect $ throw "pickTwo could not retrieve randomly selected lines"
+
+renderState :: forall m. Monad m => Renderer.Renderer m => State -> m Unit
+renderState (State { left, right, lines }) = do
+  drawBound left
+  drawBound right
+  for_ lines \line -> do
+    drawLine line
+
+  where
+    drawBound line =
+      Renderer.drawLineVertical line (modify (_ { opaqueness = Opaqueness 0.3, lineStyle = DashDot }) def)
+    drawLine line = Renderer.drawLineVertical line def
