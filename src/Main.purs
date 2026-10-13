@@ -30,13 +30,13 @@ main = do
   state <- Ref.new { route: "", algoState: Nothing }
   setupRoutes (drawRoute state) (handleAction state)
 
-drawRoute :: Ref.Ref State -> String -> Number -> Effect Unit
-drawRoute state route surfaceWidth = do
+drawRoute :: Ref.Ref State -> String -> Number -> Number -> Effect Unit
+drawRoute state route surfaceWidth surfaceHeight = do
   Ref.modify_ (_ { route = route }) state
   currentState <- Ref.read state
   if isBlankRoute route then do
     let algoState = case currentState.algoState of
-          Nothing -> Algo.mkState (surfaceWidth * 0.25) (surfaceWidth * 0.75)
+          Nothing -> Algo.mkState (surfaceWidth * 0.25) (surfaceWidth * 0.75) (surfaceHeight * 0.25) (surfaceHeight * 0.75)
           Just existing -> existing
     Ref.modify_ (_ { algoState = Just algoState }) state
     renderBlankRoute route algoState
@@ -76,4 +76,7 @@ renderDemoRoute route = case route of
   "/demo/purescript-drawing" -> PureScriptDrawingDemo.draw
   _ -> pure unit
 
-foreign import setupRoutes :: (String -> Number -> Effect Unit) -> Effect Unit -> Effect Unit
+foreign import setupRoutes
+  :: (String -> Number -> Number -> Effect Unit)
+  -> Effect Unit
+  -> Effect Unit

@@ -42,9 +42,11 @@ const updateRoute = onRouteChange => {
   if (!(pageSurface instanceof SVGSVGElement || pageSurface instanceof HTMLCanvasElement)) {
     throw new Error(`Missing drawing surface for ${route}`);
   }
-  const surfaceWidth = pageSurface.getBoundingClientRect().width;
-  if (surfaceWidth === 0) {
-    throw new Error(`Drawing surface for ${route} has no visible width`);
+  const surfaceBounds = pageSurface.getBoundingClientRect();
+  const surfaceWidth = surfaceBounds.width;
+  const surfaceHeight = surfaceBounds.height;
+  if (surfaceWidth === 0 || surfaceHeight === 0) {
+    throw new Error(`Drawing surface for ${route} has no visible area`);
   }
 
   const routeLinks = document.querySelectorAll(".route-link");
@@ -68,7 +70,7 @@ const updateRoute = onRouteChange => {
     }
   });
 
-  onRouteChange(route)(surfaceWidth)();
+  onRouteChange(route)(surfaceWidth)(surfaceHeight)();
 };
 
 let currentRoute = "/";
