@@ -36,6 +36,16 @@ const updateRoute = onRouteChange => {
   demoPageElement.classList.toggle("has-page-actions", showPageActions);
 
   resizeCanvasForRoute(route);
+  const pageSurface = document.querySelector(
+    `[data-demo-page="${demoPage}"] .demo-square`
+  );
+  if (!(pageSurface instanceof SVGSVGElement || pageSurface instanceof HTMLCanvasElement)) {
+    throw new Error(`Missing drawing surface for ${route}`);
+  }
+  const surfaceWidth = pageSurface.getBoundingClientRect().width;
+  if (surfaceWidth === 0) {
+    throw new Error(`Drawing surface for ${route} has no visible width`);
+  }
 
   const routeLinks = document.querySelectorAll(".route-link");
   routeLinks.forEach(link => {
@@ -58,7 +68,7 @@ const updateRoute = onRouteChange => {
     }
   });
 
-  onRouteChange(route)();
+  onRouteChange(route)(surfaceWidth)();
 };
 
 let currentRoute = "/";
@@ -97,21 +107,18 @@ const resizeCanvasForRoute = route => {
 export const setupRoutes = onRouteChange => onAction => () => {
   updateRoute(onRouteChange);
   window.addEventListener("popstate", () => updateRoute(onRouteChange));
-  window.addEventListener("resize", () => {
-    resizeCanvasForRoute(currentRoute);
-    onRouteChange(currentRoute)();
-  });
+  window.addEventListener("resize", () => updateRoute(onRouteChange));
 
   const routeNav = document.querySelector(".route-nav");
   if (!(routeNav instanceof HTMLElement)) {
     throw new Error("Missing .route-nav element");
   }
 
-  const increaseRadiusButton = document.querySelector("#increase-radius");
-  if (!(increaseRadiusButton instanceof HTMLButtonElement)) {
-    throw new Error("Missing #increase-radius button");
+  const stepButton = document.querySelector("#step-algorithm");
+  if (!(stepButton instanceof HTMLButtonElement)) {
+    throw new Error("Missing #step-algorithm button");
   }
-  increaseRadiusButton.addEventListener("click", () => onAction());
+  stepButton.addEventListener("click", () => onAction());
 
   routeNav.addEventListener("click", event => {
     if (

@@ -5,8 +5,9 @@ import Prelude
 import Effect (Effect)
 import Renderer.Page as Page
 import SVG.Impl as Renderer
+import Algo as Algo
 
-draw :: Number -> Effect Unit
-draw radius = do
-  dimensions <- Renderer.prepareSvg
-  Renderer.runSVGRenderer (Page.draw dimensions.width dimensions.height radius)
+draw :: Algo.State -> Effect Unit
+draw algoState = do
+  void Renderer.prepareSvg
+  Renderer.runSVGRenderer (Page.draw algoState)

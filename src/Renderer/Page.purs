@@ -2,18 +2,13 @@ module Renderer.Page (draw) where
 
 import Prelude
 
-import Data.Default (class Default, def)
-import Data.Maybe (Maybe(..))
+import Algo as Algo
 import Renderer as Renderer
 
 draw
   :: forall m
-   . Renderer.Renderer m
-  => Default Renderer.Contour
-  => Number
-  -> Number
-  -> Number
+   . Monad m
+  => Renderer.Renderer m
+  => Algo.State
   -> m Unit
-draw width height radius =
-  Renderer.drawCircle (Renderer.point (width / 2.0) (height / 2.0)) radius
-    (Just def) Nothing
+draw algoState = Algo.renderState algoState

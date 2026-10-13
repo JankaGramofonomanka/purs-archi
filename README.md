@@ -1,10 +1,10 @@
 # PureScript drawing demo
 
 A small browser drawing demo written in PureScript. The `/svg`, `/canvas`, and
-`/purescript-drawing` routes show a circle on their drawing surfaces. Use the
-left-side **Increase radius** button to grow the circle by 10; its radius is
-shared while switching between these routes. Their `/demo/...` counterparts
-render the SVG, Canvas, and PureScript Drawing examples.
+`/purescript-drawing` routes render the algorithm state on their drawing
+surfaces. Use the left-side **Step algorithm** button to advance the algorithm;
+its state is shared while switching between these routes. Their `/demo/...`
+counterparts render the SVG, Canvas, and PureScript Drawing examples.
 
 ## Run locally
 
