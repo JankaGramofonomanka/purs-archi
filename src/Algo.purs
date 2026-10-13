@@ -45,14 +45,10 @@ pickLines state = do
 
 pickTwo :: State -> Gen.Gen (Tuple Number Number)
 pickTwo (State { left,  right, lines }) = do
-  let values = [left, right] <> lines
-  let lastIndex = Array.length values - 1
-  firstIndex <- Gen.chooseInt 0 lastIndex
-  secondIndex <- Gen.chooseInt 0 (lastIndex - 1)
-  let distinctSecondIndex = if secondIndex == firstIndex then secondIndex + 1 else secondIndex
-  pure $ Tuple
-    (unsafePartial $ Array.unsafeIndex values firstIndex)
-    (unsafePartial $ Array.unsafeIndex values distinctSecondIndex)
+  shuffled <- Gen.shuffle (Array.nub ([left, right] <> lines))
+  pure $ unsafePartial $ Tuple
+    (Array.unsafeIndex shuffled 0)
+    (Array.unsafeIndex shuffled 1)
 
 renderState :: forall m. Monad m => Renderer.Renderer m => State -> m Unit
 renderState (State { left, right, lines }) = do
