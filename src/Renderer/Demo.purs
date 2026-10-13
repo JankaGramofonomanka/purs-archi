@@ -50,8 +50,8 @@ draw width height = do
     (modify (_ { lineStyle = Dotted, color = teal }) def)
   Renderer.drawLine (point 0.0 (centerY - 150.0)) (point width (centerY - 150.0))
     (modify (_ { lineStyle = DashDot, color = purple }) def)
-  Renderer.drawLine (point 0.0 (centerY - 50.0)) (point width (centerY - 50.0)) def
-  Renderer.drawLineSegment (point (centerX + 100.0) (centerY - 150.0)) (point (centerX + 100.0) (centerY + 150.0)) def
+  Renderer.drawLineHorizontal (centerY - 50.0) def
+  Renderer.drawLineVertical (centerX + 100.0) def
   Renderer.drawLineSegment (point (centerX + 200.0) (centerY - 150.0))
     (point (centerX + 200.0) (centerY + 150.0))
     (modify (_ { thickness = Thickness 6.0, opaqueness = Opaqueness 0.1 }) def)

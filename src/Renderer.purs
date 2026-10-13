@@ -84,9 +84,9 @@ drawTriangle first second third contour fill =
   drawPolygon [ first, second, third ] contour fill
 
 drawLineHorizontal :: forall m. Renderer m => Number -> LineRenderer m
-drawLineHorizontal y = drawLineSegment (point 0.0 y) (point 100.0 y)
+drawLineHorizontal y = drawLine (point 0.0 y) (point 100.0 y)
 drawLineVertical :: forall m. Renderer m => Number -> LineRenderer m
-drawLineVertical x = drawLineSegment (point x 0.0) (point x 100.0)
+drawLineVertical x = drawLine (point x 0.0) (point x 100.0)
 
 drawLineSegmentHorizontal :: forall m. Renderer m => Number -> Number -> Number -> LineRenderer m
 drawLineSegmentHorizontal y x1 x2 = drawLineSegment (point x1 y) (point x2 y)
