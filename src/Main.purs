@@ -3,7 +3,9 @@ module Main where
 import Prelude
 
 import Control.Monad (when)
+import Control.Monad.State (runStateT)
 import Data.Maybe (Maybe(..))
+import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
@@ -50,7 +52,8 @@ handleAction state = handle StepAlgorithm
       case currentState.algoState of
         Nothing -> throw "Algorithm state has not been initialized"
         Just algoState -> do
-          nextAlgoState <- Gen.randomSampleOne (Algo.step algoState)
+          Tuple _ nextAlgoState <- Gen.randomSampleOne
+            (runStateT Algo.step algoState)
           let nextState = currentState { algoState = Just nextAlgoState }
           Ref.write nextState state
           renderBlankRoute nextState.route nextAlgoState

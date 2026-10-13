@@ -9,6 +9,7 @@ module Algo
 
 import Prelude
 
+import Control.Monad.State (StateT, get, lift, modify_)
 import Data.Array as Array
 import Data.Default (def)
 import Data.Foldable (for_)
@@ -33,31 +34,34 @@ data Action = AddVertical
 mkState :: Number -> Number -> State
 mkState left right = State { left, right, lines: [] }
 
-step :: State -> Gen.Gen State
-step state = do
+step :: StateT State Gen.Gen Unit
+step = do
   action <- chooseAction
-  handleAction state action
+  handleAction action
 
-chooseAction :: Gen.Gen Action
-chooseAction = pure AddVertical
+chooseAction :: StateT State Gen.Gen Action
+chooseAction = lift $ pure AddVertical
 
-handleAction :: State -> Action -> Gen.Gen State
-handleAction state AddVertical = addVertical state
+handleAction :: Action -> StateT State Gen.Gen Unit
+handleAction AddVertical = addVertical
 
-addVertical state@(State { lines }) = do
-  Tuple left right <- pickLines state
+addVertical :: StateT State Gen.Gen Unit
+addVertical = do
+  State { lines } <- get
+  Tuple left right <- pickLines
   let middle = (right + left) / 2.0
   let newLines = Array.nub (lines <> [middle])
-  pure (Newtype.modify (_ { lines = newLines }) state)
+  modify_ (Newtype.modify (_ { lines = newLines }))
 
-pickLines :: State -> Gen.Gen (Tuple Number Number)
-pickLines state = do
-  Tuple one two <- pickTwo state
+pickLines :: StateT State Gen.Gen (Tuple Number Number)
+pickLines = do
+  Tuple one two <- pickTwo
   pure $ Tuple (min one two) (max one two)
 
-pickTwo :: State -> Gen.Gen (Tuple Number Number)
-pickTwo (State { left,  right, lines }) = do
-  shuffled <- Gen.shuffle (Array.nub ([left, right] <> lines))
+pickTwo :: StateT State Gen.Gen (Tuple Number Number)
+pickTwo = do
+  State { left, right, lines } <- get
+  shuffled <- lift $ Gen.shuffle (Array.nub ([left, right] <> lines))
   pure $ unsafePartial $ Tuple
     (Array.unsafeIndex shuffled 0)
     (Array.unsafeIndex shuffled 1)
