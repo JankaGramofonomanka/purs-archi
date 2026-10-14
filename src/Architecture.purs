@@ -1,6 +1,7 @@
 module Architecture
   ( Minutes(..)
   , Element
+  , EntablatureElement
   , Column
   , Entablature
   , Order
@@ -25,6 +26,12 @@ type Element =
   , height :: Minutes
   }
 
+type EntablatureElement =
+  { -- | Distance from the column centerline to the outermost face of the element.
+    depth :: Minutes
+  , height :: Minutes
+  }
+
 type Column =
   { lowerDiameter :: Minutes
   , upperDiameter :: Minutes
@@ -33,11 +40,10 @@ type Column =
   }
 
 type Entablature =
-  { width :: Minutes
-  , height :: Minutes
-  , architrave :: Element
-  , frieze :: Element
-  , cornice :: Element
+  { height :: Minutes
+  , architrave :: EntablatureElement
+  , frieze :: EntablatureElement
+  , cornice :: EntablatureElement
   }
 
 type Order =
@@ -67,6 +73,10 @@ minuteFromProportion :: Minutes -> Number -> Number
 minuteFromProportion (Minutes proportion) measurement =
   measurement / Int.toNumber proportion
 
+-- Widths and depths after Palladio, Quattro Libri, Book I (Ware's 1738 translation):
+-- bases and capitals project a stated fraction of the lower diameter, the frieze is
+-- plumb with the top of the shaft, and the architrave's crowning member and the
+-- cornice each project as far as they are high.
 doric :: Order
 doric =
   { height: Minutes 600
@@ -76,14 +86,13 @@ doric =
       , shaftHeight: Minutes 420
       , height: Minutes 480
       }
-  , base: { width: Minutes 90, height: Minutes 30 }
-  , capital: { width: Minutes 90, height: Minutes 30 }
+  , base: { width: Minutes 80, height: Minutes 30 }
+  , capital: { width: Minutes 84, height: Minutes 30 }
   , entablature:
-      { width: Minutes 90
-      , height: Minutes 120
-      , architrave: { width: Minutes 90, height: Minutes 40 }
-      , frieze: { width: Minutes 90, height: Minutes 40 }
-      , cornice: { width: Minutes 90, height: Minutes 40 }
+      { height: Minutes 120
+      , architrave: { depth: Minutes 31, height: Minutes 40 }
+      , frieze: { depth: Minutes 25, height: Minutes 40 }
+      , cornice: { depth: Minutes 65, height: Minutes 40 }
       }
   }
 
@@ -96,14 +105,13 @@ ionic =
       , shaftHeight: Minutes 450
       , height: Minutes 540
       }
-  , base: { width: Minutes 90, height: Minutes 30 }
+  , base: { width: Minutes 82, height: Minutes 30 }
   , capital: { width: Minutes 90, height: Minutes 60 }
   , entablature:
-      { width: Minutes 90
-      , height: Minutes 135
-      , architrave: { width: Minutes 90, height: Minutes 45 }
-      , frieze: { width: Minutes 90, height: Minutes 45 }
-      , cornice: { width: Minutes 90, height: Minutes 45 }
+      { height: Minutes 135
+      , architrave: { depth: Minutes 34, height: Minutes 45 }
+      , frieze: { depth: Minutes 25, height: Minutes 45 }
+      , cornice: { depth: Minutes 70, height: Minutes 45 }
       }
   }
 
@@ -116,13 +124,12 @@ corynthian =
       , shaftHeight: Minutes 510
       , height: Minutes 600
       }
-  , base: { width: Minutes 90, height: Minutes 30 }
+  , base: { width: Minutes 84, height: Minutes 30 }
   , capital: { width: Minutes 90, height: Minutes 60 }
   , entablature:
-      { width: Minutes 90
-      , height: Minutes 150
-      , architrave: { width: Minutes 90, height: Minutes 50 }
-      , frieze: { width: Minutes 90, height: Minutes 50 }
-      , cornice: { width: Minutes 90, height: Minutes 50 }
+      { height: Minutes 150
+      , architrave: { depth: Minutes 35, height: Minutes 50 }
+      , frieze: { depth: Minutes 25, height: Minutes 50 }
+      , cornice: { depth: Minutes 75, height: Minutes 50 }
       }
   }
