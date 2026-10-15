@@ -10,6 +10,7 @@ module Architecture
   , minuteFromColumnHeight
   , minuteFromColumnAndEntablatureHeight
   , minuteFromLowerDiameter
+  , minuteFromUpperDiameter
   , orderHeight
   , sizeOf
   , doric
@@ -78,6 +79,10 @@ minuteFromColumnAndEntablatureHeight order height =
 minuteFromLowerDiameter :: Order -> Number -> Number
 minuteFromLowerDiameter order diameter =
   minuteFromProportion order.column.lowerDiameter diameter
+
+minuteFromUpperDiameter :: Order -> Number -> Number
+minuteFromUpperDiameter order diameter =
+  minuteFromProportion order.column.upperDiameter diameter
 
 sizeOf :: Minutes -> Number -> Number
 sizeOf (Minutes proportion) minute =

@@ -2,8 +2,8 @@ module Renderer.Demo (draw) where
 
 import Prelude
 
-import Architecture (corynthian, doric, ionic, minuteFromColumnAndEntablatureHeight, orderHeight)
-import Architecture.Draw (drawOrder)
+import Architecture (corynthian, doric, ionic, minuteFromColumnAndEntablatureHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, orderHeight, sizeOf)
+import Architecture.Draw (drawOrder, drawOrderFromLowerDiameter, drawOrderFromOrderHeight, drawOrderFromUpperDiameter)
 import Data.Default (class Default, def)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, modify)
@@ -86,17 +86,23 @@ draw width height = do
   --orders
   let centerX = screenCenterX + 500.0
   let ionicHeight = 200.0
-  let minute = minuteFromColumnAndEntablatureHeight ionic ionicHeight
+  let ionicMinute = minuteFromColumnAndEntablatureHeight ionic ionicHeight
   let ionicBottom = screenCenterY + ionicHeight / 2.0
+  let ionicLowerDiameter = sizeOf ionic.column.lowerDiameter ionicMinute
+  let ionicUpperDiameter = sizeOf ionic.column.upperDiameter ionicMinute
 
-  let doricHeight = orderHeight minute doric
+  let doricUpperDiameter = ionicLowerDiameter
+  let doricMinute = minuteFromUpperDiameter doric doricUpperDiameter
+  let doricHeight = orderHeight doricMinute doric
   let doricBottom = ionicBottom + doricHeight
 
+  let corynthianLowerDiameter = ionicUpperDiameter
+  let corynthianMinute = minuteFromLowerDiameter corynthian corynthianLowerDiameter
   let corynthianBottom = screenCenterY - ionicHeight / 2.0
 
-  drawOrder (point centerX doricBottom) minute doric
-  drawOrder (point centerX ionicBottom) minute ionic
-  drawOrder (point centerX corynthianBottom) minute corynthian
+  drawOrderFromUpperDiameter (point centerX doricBottom) doricUpperDiameter doric
+  drawOrderFromOrderHeight (point centerX ionicBottom) ionicHeight ionic
+  drawOrderFromLowerDiameter (point centerX corynthianBottom) corynthianLowerDiameter corynthian
 
 blue :: Color
 blue = RGB { r: 82.0, g: 104.0, b: 216.0 }

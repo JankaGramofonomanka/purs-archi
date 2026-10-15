@@ -5,14 +5,16 @@ module Architecture.Draw
   , drawColumnFromOrderHeight
   , drawColumnFromColumnHeight
   , drawColumnFromLowerDiameter
+  , drawColumnFromUpperDiameter
   , drawOrderFromOrderHeight
   , drawOrderFromColumnHeight
   , drawOrderFromLowerDiameter
+  , drawOrderFromUpperDiameter
   ) where
 
 import Prelude
 
-import Architecture (Order, OrderKind(..), minuteFromColumnAndEntablatureHeight, minuteFromColumnHeight, minuteFromLowerDiameter, sizeOf)
+import Architecture (Order, OrderKind(..), minuteFromColumnAndEntablatureHeight, minuteFromColumnHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, sizeOf)
 import Data.Default (def)
 import Data.Maybe (Maybe(..))
 import Renderer (Point(..), point)
@@ -70,6 +72,11 @@ drawColumnFromLowerDiameter :: forall m. Monad m => Renderer.Renderer m => Point
 drawColumnFromLowerDiameter bottom diameter order =
   drawColumn bottom (minuteFromLowerDiameter order diameter) order
 
+-- | Draw the column so that its upper diameter is the given width.
+drawColumnFromUpperDiameter :: forall m. Monad m => Renderer.Renderer m => Point -> Number -> Order -> m Unit
+drawColumnFromUpperDiameter bottom diameter order =
+  drawColumn bottom (minuteFromUpperDiameter order diameter) order
+
 -- | Draw the order so that, including the entablature, it has the given height.
 drawOrderFromOrderHeight :: forall m. Monad m => Renderer.Renderer m => Point -> Number -> Order -> m Unit
 drawOrderFromOrderHeight bottom height order =
@@ -84,6 +91,11 @@ drawOrderFromColumnHeight bottom height order =
 drawOrderFromLowerDiameter :: forall m. Monad m => Renderer.Renderer m => Point -> Number -> Order -> m Unit
 drawOrderFromLowerDiameter bottom diameter order =
   drawOrder bottom (minuteFromLowerDiameter order diameter) order
+
+-- | Draw the order so that the upper diameter of its column is the given width.
+drawOrderFromUpperDiameter :: forall m. Monad m => Renderer.Renderer m => Point -> Number -> Order -> m Unit
+drawOrderFromUpperDiameter bottom diameter order =
+  drawOrder bottom (minuteFromUpperDiameter order diameter) order
 
 -- Rectangle centered on x, spanning from bottom up to top.
 drawBox :: forall m. Renderer.Renderer m => Number -> Number -> Number -> Number -> m Unit
