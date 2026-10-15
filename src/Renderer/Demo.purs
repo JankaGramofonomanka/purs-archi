@@ -2,7 +2,7 @@ module Renderer.Demo (draw) where
 
 import Prelude
 
-import Architecture (corynthian, doric, ionic, minuteFromColumnAndEntablatureHeight, orderHeight, sizeOf)
+import Architecture (corynthian, doric, ionic, minuteFromColumnAndEntablatureHeight, orderHeight)
 import Architecture.Draw (drawOrder)
 import Data.Default (class Default, def)
 import Data.Maybe (Maybe(..))
@@ -94,9 +94,9 @@ draw width height = do
 
   let corynthianBottom = screenCenterY - ionicHeight / 2.0
 
-  drawOrder (point centerX doricBottom) (sizeOf doric.column.height minute) doric
-  drawOrder (point centerX ionicBottom) (sizeOf ionic.column.height minute) ionic
-  drawOrder (point centerX corynthianBottom) (sizeOf corynthian.column.height minute) corynthian
+  drawOrder (point centerX doricBottom) minute doric
+  drawOrder (point centerX ionicBottom) minute ionic
+  drawOrder (point centerX corynthianBottom) minute corynthian
 
 blue :: Color
 blue = RGB { r: 82.0, g: 104.0, b: 216.0 }
