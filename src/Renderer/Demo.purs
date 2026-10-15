@@ -2,26 +2,24 @@ module Renderer.Demo (draw) where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
-import Renderer
-  ( Color(..)
-  , LineStyle(..)
-  , Opaqueness(..)
-  , PointStyle(..)
-  , Thickness(..)
-  , point
-  )
-import Renderer as Renderer
-import Data.Number (pi)
+import Architecture (corynthian, doric, ionic, minuteFromColumnAndEntablatureHeight, orderHeight, sizeOf)
+import Architecture.Draw (drawOrder)
 import Data.Default (class Default, def)
+import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, modify)
-import Ortogonal as Ortogonal
+import Data.Number (pi)
 import Geometry (Rectangle(..))
+import Ortogonal as Ortogonal
+import Renderer (Color(..), LineStyle(..), Opaqueness(..), PointStyle(..), Thickness(..), point)
+import Renderer as Renderer
 
 draw :: forall m. Monad m => Renderer.Renderer m => Number -> Number -> m Unit
 draw width height = do
-  let centerX = width / 2.0
-  let centerY = height / 2.0
+  let screenCenterX = width / 2.0
+  let screenCenterY = height / 2.0
+
+  let centerX = screenCenterX
+  let centerY = screenCenterY
   Renderer.drawRectangle (point (centerX - 100.0) (centerY - 50.0)) 100.0 100.0 Nothing (Just $ modify (_ { color = blue }) def)
   Renderer.drawRectangle (point centerX (centerY - 50.0)) 100.0 100.0 Nothing (Just $ modify (_ { color = red }) def)
   Renderer.drawTriangle
@@ -69,7 +67,7 @@ draw width height = do
   Renderer.drawPoint (point (centerX - 100.0) (centerY + 150.0)) X ink
 
   -- render ortogonal
-  centerX <- pure $ centerX - 500.0
+  let centerX = screenCenterY - 500.0
   let rectangle = Rectangle { width: 100.0, height: 200.0 }
   let left = centerX - 60.0
   let right = centerX + 70.0
@@ -84,6 +82,21 @@ draw width height = do
   Ortogonal.drawTopRight       (point right   top)     rectangle
   Ortogonal.drawBottomLeft     (point left    bottom)  rectangle
   Ortogonal.drawBottomRight    (point right   bottom)  rectangle
+
+  --orders
+  let centerX = screenCenterX + 500.0
+  let ionicHeight = 200.0
+  let minute = minuteFromColumnAndEntablatureHeight ionic ionicHeight
+  let ionicBottom = screenCenterY + ionicHeight / 2.0
+
+  let doricHeight = orderHeight minute doric
+  let doricBottom = ionicBottom + doricHeight
+
+  let corynthianBottom = screenCenterY - ionicHeight / 2.0
+
+  drawOrder (point centerX doricBottom) (sizeOf doric.column.height minute) doric
+  drawOrder (point centerX ionicBottom) (sizeOf ionic.column.height minute) ionic
+  drawOrder (point centerX corynthianBottom) (sizeOf corynthian.column.height minute) corynthian
 
 blue :: Color
 blue = RGB { r: 82.0, g: 104.0, b: 216.0 }

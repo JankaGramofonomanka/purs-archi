@@ -5,10 +5,13 @@ module Architecture
   , Column
   , Entablature
   , Order
+  , OrderKind(..)
   , minutesPerDiameter
   , minuteFromColumnHeight
   , minuteFromColumnAndEntablatureHeight
   , minuteFromLowerDiameter
+  , orderHeight
+  , sizeOf
   , doric
   , ionic
   , corynthian
@@ -46,13 +49,20 @@ type Entablature =
   , cornice :: EntablatureElement
   }
 
+data OrderKind = Doric | Ionic | Corynthian
+
 type Order =
-  { height :: Minutes
+  { kind :: OrderKind
+  , height :: Minutes
   , column :: Column
   , base :: Element
   , capital :: Element
   , entablature :: Entablature
   }
+
+orderHeight :: Number -> Order -> Number
+orderHeight minute order =
+  sizeOf order.height minute
 
 minutesPerDiameter :: Int
 minutesPerDiameter = 60
@@ -69,6 +79,10 @@ minuteFromLowerDiameter :: Order -> Number -> Number
 minuteFromLowerDiameter order diameter =
   minuteFromProportion order.column.lowerDiameter diameter
 
+sizeOf :: Minutes -> Number -> Number
+sizeOf (Minutes proportion) minute =
+  minute * Int.toNumber proportion
+
 minuteFromProportion :: Minutes -> Number -> Number
 minuteFromProportion (Minutes proportion) measurement =
   measurement / Int.toNumber proportion
@@ -79,7 +93,8 @@ minuteFromProportion (Minutes proportion) measurement =
 -- cornice each project as far as they are high.
 doric :: Order
 doric =
-  { height: Minutes 600
+  { kind: Doric
+  , height: Minutes 600
   , column:
       { lowerDiameter: Minutes 60
       , upperDiameter: Minutes 50
@@ -98,7 +113,8 @@ doric =
 
 ionic :: Order
 ionic =
-  { height: Minutes 675
+  { kind: Ionic
+  , height: Minutes 675
   , column:
       { lowerDiameter: Minutes 60
       , upperDiameter: Minutes 50
@@ -117,7 +133,8 @@ ionic =
 
 corynthian :: Order
 corynthian =
-  { height: Minutes 750
+  { kind: Corynthian
+  , height: Minutes 750
   , column:
       { lowerDiameter: Minutes 60
       , upperDiameter: Minutes 50
