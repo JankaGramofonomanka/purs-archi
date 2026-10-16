@@ -111,19 +111,68 @@ instance RenderOrtogonal m a => Render m (Tuple OrtogonalAnchor a) where
     H (ARight p) -> drawLeftCentered p fig
     R r -> render (Tuple r fig)
 
-instance PointLike (Tuple PointAnchor HLine) where
-instance PointLike (Tuple PointAnchor VLine) where
-instance PointLike (Tuple PointAnchor Rectangle) where
-instance PointLike (Tuple PointAnchor Circle) where
-instance Horizontal (Tuple HorizontalAnchor HLine) where
-instance Horizontal (Tuple HorizontalAnchor Rectanlge) where
-instance Horizontal (Tuple HorizontalAnchor Circle) where
-instance Vertical (Tuple VerticalAnchor VLine) where
-instance Vertical (Tuple VerticalAnchor Rectanlge) where
-instance Vertical (Tuple VerticalAnchor Circle) where
-instance Rectangular (Tuple RectangularAnchor Rectangle) where
-instance Rectangular (Tuple RectangularAnchor Circle) where
+shift :: Number -> Number -> Point -> Point
+shift dx dy (Point p) = point (p.x + dx) (p.y + dy)
 
+-- | Left and right ends of a figure of the given width, anchored horizontally.
+horizontalEnds :: Number -> HorizontalAnchor -> { left :: Point, right :: Point }
+horizontalEnds width = case _ of
+  ALeft p -> { left: p, right: shift width 0.0 p }
+  ARight p -> { left: shift (-width) 0.0 p, right: p }
+
+-- | Top and bottom ends of a figure of the given height, anchored vertically.
+verticalEnds :: Number -> VerticalAnchor -> { top :: Point, bottom :: Point }
+verticalEnds height = case _ of
+  ATop p -> { top: p, bottom: shift 0.0 height p }
+  ABottom p -> { top: shift 0.0 (-height) p, bottom: p }
+
+-- | Top-left corner of a box of the given size, anchored at one of its corners.
+boxTopLeft :: Number -> Number -> RectangularAnchor -> Point
+boxTopLeft width height = case _ of
+  ATopLeft p -> p
+  ATopRight p -> shift (-width) 0.0 p
+  ABottomLeft p -> shift 0.0 (-height) p
+  ABottomRight p -> shift (-width) (-height) p
+
+instance PointLike (Tuple PointAnchor HLine) where
+  center (Tuple (ACenter p) _) = p
+instance PointLike (Tuple PointAnchor VLine) where
+  center (Tuple (ACenter p) _) = p
+instance PointLike (Tuple PointAnchor Rectangle) where
+  center (Tuple (ACenter p) _) = p
+instance PointLike (Tuple PointAnchor Circle) where
+  center (Tuple (ACenter p) _) = p
+
+instance Horizontal (Tuple HorizontalAnchor HLine) where
+  left (Tuple anchor (HLine { hLength })) = (horizontalEnds hLength anchor).left
+  right (Tuple anchor (HLine { hLength })) = (horizontalEnds hLength anchor).right
+instance Horizontal (Tuple HorizontalAnchor Rectangle) where
+  left (Tuple anchor (Rectangle { width })) = (horizontalEnds width anchor).left
+  right (Tuple anchor (Rectangle { width })) = (horizontalEnds width anchor).right
+instance Horizontal (Tuple HorizontalAnchor Circle) where
+  left (Tuple anchor (Circle { radius })) = (horizontalEnds (2.0 * radius) anchor).left
+  right (Tuple anchor (Circle { radius })) = (horizontalEnds (2.0 * radius) anchor).right
+
+instance Vertical (Tuple VerticalAnchor VLine) where
+  top (Tuple anchor (VLine { vLength })) = (verticalEnds vLength anchor).top
+  bottom (Tuple anchor (VLine { vLength })) = (verticalEnds vLength anchor).bottom
+instance Vertical (Tuple VerticalAnchor Rectangle) where
+  top (Tuple anchor (Rectangle { height })) = (verticalEnds height anchor).top
+  bottom (Tuple anchor (Rectangle { height })) = (verticalEnds height anchor).bottom
+instance Vertical (Tuple VerticalAnchor Circle) where
+  top (Tuple anchor (Circle { radius })) = (verticalEnds (2.0 * radius) anchor).top
+  bottom (Tuple anchor (Circle { radius })) = (verticalEnds (2.0 * radius) anchor).bottom
+
+instance Rectangular (Tuple RectangularAnchor Rectangle) where
+  topLeft (Tuple anchor (Rectangle { width, height })) = boxTopLeft width height anchor
+  topRight (Tuple anchor (Rectangle { width, height })) = shift width 0.0 (boxTopLeft width height anchor)
+  bottomLeft (Tuple anchor (Rectangle { width, height })) = shift 0.0 height (boxTopLeft width height anchor)
+  bottomRight (Tuple anchor (Rectangle { width, height })) = shift width height (boxTopLeft width height anchor)
+instance Rectangular (Tuple RectangularAnchor Circle) where
+  topLeft (Tuple anchor (Circle { radius })) = boxTopLeft (2.0 * radius) (2.0 * radius) anchor
+  topRight (Tuple anchor (Circle { radius })) = shift (2.0 * radius) 0.0 (boxTopLeft (2.0 * radius) (2.0 * radius) anchor)
+  bottomLeft (Tuple anchor (Circle { radius })) = shift 0.0 (2.0 * radius) (boxTopLeft (2.0 * radius) (2.0 * radius) anchor)
+  bottomRight (Tuple anchor (Circle { radius })) = shift (2.0 * radius) (2.0 * radius) (boxTopLeft (2.0 * radius) (2.0 * radius) anchor)
 
 {-
 prototype :: forall m . Monad m => Renderer m => m Unit
