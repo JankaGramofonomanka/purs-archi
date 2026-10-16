@@ -2,8 +2,11 @@ module Renderer.Demo (draw) where
 
 import Prelude
 
-import Architecture.Order (corynthian, doric, ionic, minuteFromColumnAndEntablatureHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, orderHeight, sizeOf)
+import Anchor (placeBottomRight, render, size)
+import Architecture (Column(..), Portico(..))
+import Architecture.Order (SizeDeterminant(..), corynthian, doric, ionic, minuteFromColumnAndEntablatureHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, orderHeight, sizeOf)
 import Architecture.Order.Draw (drawOrder, drawOrderFromLowerDiameter, drawOrderFromOrderHeight, drawOrderFromUpperDiameter)
+import Data.Int as Int
 import Data.Default (class Default, def)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, modify)
@@ -104,6 +107,24 @@ draw width height = do
   drawOrderFromUpperDiameter (point centerX doricBottom) doricUpperDiameter doric
   drawOrderFromOrderHeight (point centerX ionicBottom) ionicHeight ionic
   drawOrderFromLowerDiameter (point centerX corynthianBottom) corynthianLowerDiameter corynthian
+
+  --porticos, same orders and minutes as the stacked orders, 50px to their left
+  let columnHalfWidth order minute = (size (Column { order, size: Minute minute })).width / 2.0
+  let columnsLeft = centerX - max (columnHalfWidth doric doricMinute) (max (columnHalfWidth ionic ionicMinute) (columnHalfWidth corynthian corynthianMinute))
+  let numOfColumns = 4
+  let bayWidth = 3.0 * sizeOf doric.column.lowerDiameter doricMinute
+  let portico order minute = Portico { order, size: Minute minute, numOfColumns, bayWidth }
+  -- distance from the outermost column centerline to the portico's edge
+  let overhang p = ((size p).width - Int.toNumber (numOfColumns - 1) * bayWidth) / 2.0
+  let doricPortico = portico doric doricMinute
+  let ionicPortico = portico ionic ionicMinute
+  let corynthianPortico = portico corynthian corynthianMinute
+  -- rightmost column centerline, shared by all porticos so their columns line up
+  let porticoCenterline = columnsLeft - 50.0 - max (overhang doricPortico) (max (overhang ionicPortico) (overhang corynthianPortico))
+  let placePortico orderBottom p = placeBottomRight (point (porticoCenterline + overhang p) orderBottom) p
+  render (placePortico doricBottom doricPortico)
+  render (placePortico ionicBottom ionicPortico)
+  render (placePortico corynthianBottom corynthianPortico)
 
   --prototype
   let centerX = screenCenterX + 700.00
