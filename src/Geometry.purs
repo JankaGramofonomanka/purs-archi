@@ -1,6 +1,8 @@
 module Geometry where
 
-import Prelude
+import Prelude hiding (top, bottom)
+
+import Anchor (class Anchor, class Sized, Placed, boxAt, figureBox)
 
 import Data.Default (def)
 import Data.Maybe (Maybe(..))
@@ -12,9 +14,23 @@ newtype Circle = Circle { radius :: Number }
 newtype VLine = VLine { vLength :: Number }
 newtype HLine = HLine { hLength :: Number }
 
--- | Figures with a bounding box size.
-class Sized a where
-  size :: a -> { width :: Number, height :: Number }
+-- | Positions of a placed figure.
+class PointLike a where
+  center :: a -> Point
+
+class Vertical a where
+  top :: a -> Point
+  bottom :: a -> Point
+
+class Horizontal a where
+  left :: a -> Point
+  right :: a -> Point
+
+class Rectangular a where
+  topLeft :: a -> Point
+  topRight :: a -> Point
+  bottomLeft :: a -> Point
+  bottomRight :: a -> Point
 
 -- | Draw a rectangle given its top-left corner.
 rectangleAt :: forall m. Renderer m => Number -> Number -> Number -> Number -> m Unit
@@ -109,3 +125,43 @@ instance Sized HLine where
 
 instance Sized VLine where
   size (VLine { vLength }) = { width: 0.0, height: vLength }
+
+instance Anchor anc => PointLike (Placed anc Rectangle) where
+  center = boxAt 0.5 0.5 <<< figureBox
+instance Anchor anc => PointLike (Placed anc Circle) where
+  center = boxAt 0.5 0.5 <<< figureBox
+instance Anchor anc => PointLike (Placed anc HLine) where
+  center = boxAt 0.5 0.5 <<< figureBox
+instance Anchor anc => PointLike (Placed anc VLine) where
+  center = boxAt 0.5 0.5 <<< figureBox
+
+instance Anchor anc => Horizontal (Placed anc Rectangle) where
+  left = boxAt 0.0 0.5 <<< figureBox
+  right = boxAt 1.0 0.5 <<< figureBox
+instance Anchor anc => Horizontal (Placed anc Circle) where
+  left = boxAt 0.0 0.5 <<< figureBox
+  right = boxAt 1.0 0.5 <<< figureBox
+instance Anchor anc => Horizontal (Placed anc HLine) where
+  left = boxAt 0.0 0.5 <<< figureBox
+  right = boxAt 1.0 0.5 <<< figureBox
+
+instance Anchor anc => Vertical (Placed anc Rectangle) where
+  top = boxAt 0.5 0.0 <<< figureBox
+  bottom = boxAt 0.5 1.0 <<< figureBox
+instance Anchor anc => Vertical (Placed anc Circle) where
+  top = boxAt 0.5 0.0 <<< figureBox
+  bottom = boxAt 0.5 1.0 <<< figureBox
+instance Anchor anc => Vertical (Placed anc VLine) where
+  top = boxAt 0.5 0.0 <<< figureBox
+  bottom = boxAt 0.5 1.0 <<< figureBox
+
+instance Anchor anc => Rectangular (Placed anc Rectangle) where
+  topLeft = boxAt 0.0 0.0 <<< figureBox
+  topRight = boxAt 1.0 0.0 <<< figureBox
+  bottomLeft = boxAt 0.0 1.0 <<< figureBox
+  bottomRight = boxAt 1.0 1.0 <<< figureBox
+instance Anchor anc => Rectangular (Placed anc Circle) where
+  topLeft = boxAt 0.0 0.0 <<< figureBox
+  topRight = boxAt 1.0 0.0 <<< figureBox
+  bottomLeft = boxAt 0.0 1.0 <<< figureBox
+  bottomRight = boxAt 1.0 1.0 <<< figureBox

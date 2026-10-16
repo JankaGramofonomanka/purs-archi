@@ -2,8 +2,8 @@ module Prototype where
 
 import Prelude hiding (top, bottom)
 
-import Anchor (bottom, bottomLeft, bottomRight, center, left, right, top, placeBottom, placeBottomCentered, placeBottomLeft, placeBottomRight, placeCentered, placeLeftCentered, placeRightCentered, render)
-import Geometry (Circle(..), HLine(..), Rectangle(..), VLine(..))
+import Anchor (placeBottom, placeBottomCentered, placeBottomLeft, placeBottomRight, placeCentered, placeLeftCentered, placeRightCentered, render)
+import Geometry (Circle(..), HLine(..), Rectangle(..), VLine(..), bottom, bottomLeft, bottomRight, center, left, right, top)
 import Renderer (point, class Renderer)
 
 prototype :: forall m . Monad m => Number -> Number -> Renderer m => m Unit
