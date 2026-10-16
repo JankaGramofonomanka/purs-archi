@@ -296,29 +296,27 @@ instance Anchor anc => Rectangular (Tuple anc Circle) where
   bottomLeft = boxAt 0.0 1.0 <<< figureBox
   bottomRight = boxAt 1.0 1.0 <<< figureBox
 
-prototype :: forall m . Monad m => Renderer m => m Unit
-prototype = do
-  let square = Rectangle { width: 5.0, height: 5.0}
-  let rect = Rectangle { width: 5.0, height: 8.0 }
-  let circ = Circle { radius: 2.5 }
-  let vline5 = VLine { vLength: 5.0 }
-  let vline8 = VLine { vLength: 8.0 }
-  let hline5 = HLine { hLength: 5.0 }
-  let hline15 = HLine { hLength: 15.0 }
+prototype :: forall m . Monad m => Number -> Number -> Renderer m => m Unit
+prototype centerX centerY = do
+  let square = Rectangle { width: 50.0, height: 50.0 }
+  let rect = Rectangle { width: 50.0, height: 80.0 }
+  let circ = Circle { radius: 25.0 }
+  let vline5 = VLine { vLength: 50.0 }
+  let vline8 = VLine { vLength: 80.0 }
+  let hline5 = HLine { hLength: 50.0 }
+  let hline15 = HLine { hLength: 150.0 }
 
-  let centerX = 0.0
-  let centerY = 0.0
-  let center = point centerX centerY
+  let pCenter = point centerX centerY
 
-  sqMid <- pure $ placeBottomCentered center square
+  sqMid <- pure $ placeBottomCentered pCenter square
   rectL <- pure $ placeBottomRight (bottomLeft sqMid) rect
-  sqL1  <- pure $ placeBottomRight (bottomLeft rectL) rect
-  sqL2  <- pure $ placeBottomRight (bottomLeft sqL1) rect
+  sqL1  <- pure $ placeBottomRight (bottomLeft rectL) square
+  sqL2  <- pure $ placeBottomRight (bottomLeft sqL1) square
   rectR <- pure $ placeBottomLeft (bottomRight sqMid) rect
-  sqR1  <- pure $ placeBottomLeft (bottomRight rectR) rect
-  sqR2  <- pure $ placeBottomLeft (bottomRight sqR1) rect
+  sqR1  <- pure $ placeBottomLeft (bottomRight rectR) square
+  sqR2  <- pure $ placeBottomLeft (bottomRight sqR1) square
 
-  hlineMid <- pure $ placeCentered center hline15
+  hlineMid <- pure $ placeCentered (center sqMid) hline15
   hlineL <- pure $ placeLeftCentered (left sqL2) hline5
   hLineR <- pure $ placeRightCentered (right sqR2) hline5
 
@@ -327,10 +325,10 @@ prototype = do
   vline5L <- pure $ placeBottom (bottom sqL2) vline5
   vline5R <- pure $ placeBottom (bottom sqR2) vline5
 
-  circL1 <- pure $ placeTop (top rectL) circ
-  circL2 <- pure $ placeTop (top sqL2) circ
-  circR1 <- pure $ placeTop (top rectR) circ
-  circR2 <- pure $ placeTop (top sqR2) circ
+  circL1 <- pure $ placeCentered (top rectL) circ
+  circL2 <- pure $ placeCentered (top sqL2) circ
+  circR1 <- pure $ placeCentered (top rectR) circ
+  circR2 <- pure $ placeCentered (top sqR2) circ
 
   render sqMid
   render rectL

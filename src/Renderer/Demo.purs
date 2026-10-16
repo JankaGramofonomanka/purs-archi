@@ -12,6 +12,7 @@ import Geometry (Rectangle(..))
 import Ortogonal as Ortogonal
 import Renderer (Color(..), LineStyle(..), Opaqueness(..), PointStyle(..), Thickness(..), point)
 import Renderer as Renderer
+import Prototype as Prototype
 
 draw :: forall m. Monad m => Renderer.Renderer m => Number -> Number -> m Unit
 draw width height = do
@@ -67,7 +68,7 @@ draw width height = do
   Renderer.drawPoint (point (centerX - 100.0) (centerY + 150.0)) X ink
 
   -- render ortogonal
-  let centerX = screenCenterY - 500.0
+  let centerX = screenCenterX - 500.0
   let rectangle = Rectangle { width: 100.0, height: 200.0 }
   let left = centerX - 60.0
   let right = centerX + 70.0
@@ -103,6 +104,11 @@ draw width height = do
   drawOrderFromUpperDiameter (point centerX doricBottom) doricUpperDiameter doric
   drawOrderFromOrderHeight (point centerX ionicBottom) ionicHeight ionic
   drawOrderFromLowerDiameter (point centerX corynthianBottom) corynthianLowerDiameter corynthian
+
+  --prototype
+  let centerX = screenCenterX + 700.00
+  let centerY = screenCenterY + 200.00
+  Prototype.prototype centerX centerY
 
 blue :: Color
 blue = RGB { r: 82.0, g: 104.0, b: 216.0 }
