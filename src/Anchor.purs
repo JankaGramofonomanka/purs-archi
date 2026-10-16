@@ -137,3 +137,7 @@ figureBox (Placed (Tuple anchor fig)) =
 
 boxAt :: Number -> Number -> Box -> Point
 boxAt fx fy b = shift (fx * b.width) (fy * b.height) b.topLeft
+
+-- | Draw a figure placed at an anchor, given a function drawing it from the top-left corner of its bounding box.
+drawAnchored :: forall m anc a. Anchor anc => Sized a => (Point -> a -> m Unit) -> anc -> a -> m Unit
+drawAnchored drawFromTopLeft anchor fig = drawFromTopLeft (figureBox (Placed (Tuple anchor fig))).topLeft fig

@@ -1,6 +1,7 @@
 module Architecture.Order.Draw
   ( drawColumn
   , drawEntablature
+  , drawSpanningEntablature
   , drawOrder
   , drawColumnFromOrderHeight
   , drawColumnFromColumnHeight
@@ -49,6 +50,21 @@ drawEntablature (Point bottom) minute order = do
   drawBox x bottom.y width architraveTop
   drawBox x architraveTop width friezeTop
   drawBox x friezeTop width corniceTop
+
+-- | Draw an entablature resting on columns whose centerlines span the given width,
+-- | with each element projecting its depth beyond the outermost centerlines.
+-- | The point is the center of the bottom edge of the architrave.
+drawSpanningEntablature :: forall m. Monad m => Renderer.Renderer m => Point -> Number -> Number -> Order -> m Unit
+drawSpanningEntablature (Point bottom) span minute order = do
+  let size proportion = sizeOf proportion minute
+  let x = bottom.x
+  let width element = span + 2.0 * size element.depth
+  let architraveTop = bottom.y - size order.entablature.architrave.height
+  let friezeTop = architraveTop - size order.entablature.frieze.height
+  let corniceTop = friezeTop - size order.entablature.cornice.height
+  drawBox x bottom.y (width order.entablature.architrave) architraveTop
+  drawBox x architraveTop (width order.entablature.frieze) friezeTop
+  drawBox x friezeTop (width order.entablature.cornice) corniceTop
 
 -- | Draw the entire order, from the column base up to the cornice, with the given size of a minute.
 -- | The point is the center of the bottom edge of the column base.

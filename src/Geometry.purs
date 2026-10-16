@@ -32,6 +32,13 @@ class Rectangular a where
   bottomLeft :: a -> Point
   bottomRight :: a -> Point
 
+-- | Figures whose placed form has the corresponding positions.
+-- | Declare an instance next to the figure type to get the position instance for `Placed anc figure`.
+class Sized a <= PointLikeFigure a
+class Sized a <= HorizontalFigure a
+class Sized a <= VerticalFigure a
+class Sized a <= RectangularFigure a
+
 -- | Draw a rectangle given its top-left corner.
 rectangleAt :: forall m. Renderer m => Number -> Number -> Number -> Number -> m Unit
 rectangleAt x y width height = drawRectangle (point x y) width height (Just def) Nothing
@@ -126,41 +133,34 @@ instance Sized HLine where
 instance Sized VLine where
   size (VLine { vLength }) = { width: 0.0, height: vLength }
 
-instance Anchor anc => PointLike (Placed anc Rectangle) where
-  center = boxAt 0.5 0.5 <<< figureBox
-instance Anchor anc => PointLike (Placed anc Circle) where
-  center = boxAt 0.5 0.5 <<< figureBox
-instance Anchor anc => PointLike (Placed anc HLine) where
-  center = boxAt 0.5 0.5 <<< figureBox
-instance Anchor anc => PointLike (Placed anc VLine) where
+instance PointLikeFigure Rectangle
+instance PointLikeFigure Circle
+instance PointLikeFigure HLine
+instance PointLikeFigure VLine
+
+instance HorizontalFigure Rectangle
+instance HorizontalFigure Circle
+instance HorizontalFigure HLine
+
+instance VerticalFigure Rectangle
+instance VerticalFigure Circle
+instance VerticalFigure VLine
+
+instance RectangularFigure Rectangle
+instance RectangularFigure Circle
+
+instance (Anchor anc, PointLikeFigure a) => PointLike (Placed anc a) where
   center = boxAt 0.5 0.5 <<< figureBox
 
-instance Anchor anc => Horizontal (Placed anc Rectangle) where
-  left = boxAt 0.0 0.5 <<< figureBox
-  right = boxAt 1.0 0.5 <<< figureBox
-instance Anchor anc => Horizontal (Placed anc Circle) where
-  left = boxAt 0.0 0.5 <<< figureBox
-  right = boxAt 1.0 0.5 <<< figureBox
-instance Anchor anc => Horizontal (Placed anc HLine) where
+instance (Anchor anc, HorizontalFigure a) => Horizontal (Placed anc a) where
   left = boxAt 0.0 0.5 <<< figureBox
   right = boxAt 1.0 0.5 <<< figureBox
 
-instance Anchor anc => Vertical (Placed anc Rectangle) where
-  top = boxAt 0.5 0.0 <<< figureBox
-  bottom = boxAt 0.5 1.0 <<< figureBox
-instance Anchor anc => Vertical (Placed anc Circle) where
-  top = boxAt 0.5 0.0 <<< figureBox
-  bottom = boxAt 0.5 1.0 <<< figureBox
-instance Anchor anc => Vertical (Placed anc VLine) where
+instance (Anchor anc, VerticalFigure a) => Vertical (Placed anc a) where
   top = boxAt 0.5 0.0 <<< figureBox
   bottom = boxAt 0.5 1.0 <<< figureBox
 
-instance Anchor anc => Rectangular (Placed anc Rectangle) where
-  topLeft = boxAt 0.0 0.0 <<< figureBox
-  topRight = boxAt 1.0 0.0 <<< figureBox
-  bottomLeft = boxAt 0.0 1.0 <<< figureBox
-  bottomRight = boxAt 1.0 1.0 <<< figureBox
-instance Anchor anc => Rectangular (Placed anc Circle) where
+instance (Anchor anc, RectangularFigure a) => Rectangular (Placed anc a) where
   topLeft = boxAt 0.0 0.0 <<< figureBox
   topRight = boxAt 1.0 0.0 <<< figureBox
   bottomLeft = boxAt 0.0 1.0 <<< figureBox

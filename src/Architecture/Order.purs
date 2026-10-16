@@ -12,6 +12,8 @@ module Architecture.Order
   , ionic
   , minuteFromColumnAndEntablatureHeight
   , minuteFromColumnHeight
+  , minuteFromEntablatureHeight
+  , minuteFromSize
   , minuteFromLowerDiameter
   , minuteFromUpperDiameter
   , minutesPerDiameter
@@ -76,6 +78,19 @@ minuteFromColumnHeight order height =
 minuteFromColumnAndEntablatureHeight :: Order -> Number -> Number
 minuteFromColumnAndEntablatureHeight order height =
   minuteFromProportion order.height height
+
+minuteFromEntablatureHeight :: Order -> Number -> Number
+minuteFromEntablatureHeight order height =
+  minuteFromProportion order.entablature.height height
+
+minuteFromSize :: Order -> SizeDeterminant -> Number
+minuteFromSize order = case _ of
+  Minute minute -> minute
+  LowerDiameter diameter -> minuteFromLowerDiameter order diameter
+  UpperDiameter diameter -> minuteFromUpperDiameter order diameter
+  ColumnHeight height -> minuteFromColumnHeight order height
+  EntablatureHeight height -> minuteFromEntablatureHeight order height
+  OrderHeight height -> minuteFromColumnAndEntablatureHeight order height
 
 minuteFromLowerDiameter :: Order -> Number -> Number
 minuteFromLowerDiameter order diameter =
@@ -157,4 +172,4 @@ corynthian =
       }
   }
 
-data SizeDeterminant = Minute Number | LowerDiameter Number | UpperDiameter Number | ColumnHeight Number | EntablatureHeight | OrderHeight Number
+data SizeDeterminant = Minute Number | LowerDiameter Number | UpperDiameter Number | ColumnHeight Number | EntablatureHeight Number | OrderHeight Number
