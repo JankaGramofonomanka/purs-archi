@@ -6,7 +6,7 @@ import Prelude
 
 import Data.Default (def)
 import Data.Maybe (Maybe(..))
-import Ortogonal (class RenderOrtogonal)
+import Ortogonal (class RenderOrtogonal, class RenderPoint)
 import Renderer (Point(..), point)
 import Renderer as Renderer
 
@@ -15,10 +15,11 @@ data Rectangle = Rectangle
   , height :: Number
   }
 
-instance Renderer.Renderer m => RenderOrtogonal m Rectangle where
+instance Renderer.Renderer m => RenderPoint m Rectangle where
   drawCentered (Point p) (Rectangle { width, height }) =
     drawRectangleAt (p.x - width / 2.0) (p.y - height / 2.0) width height
 
+instance Renderer.Renderer m => RenderOrtogonal m Rectangle where
   drawLeftCentered (Point p) (Rectangle { width, height }) =
     drawRectangleAt (p.x - width) (p.y - height / 2.0) width height
 
