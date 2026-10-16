@@ -1,4 +1,4 @@
-module Architecture.Draw
+module Architecture.Order.Draw
   ( drawColumn
   , drawEntablature
   , drawOrder
@@ -14,7 +14,7 @@ module Architecture.Draw
 
 import Prelude
 
-import Architecture (Order, OrderKind(..), minuteFromColumnAndEntablatureHeight, minuteFromColumnHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, sizeOf)
+import Architecture.Order (Order, OrderKind(..), minuteFromColumnAndEntablatureHeight, minuteFromColumnHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, sizeOf)
 import Data.Default (def)
 import Data.Maybe (Maybe(..))
 import Renderer (Point(..), point)

@@ -2,8 +2,8 @@ module Renderer.Demo (draw) where
 
 import Prelude
 
-import Architecture (corynthian, doric, ionic, minuteFromColumnAndEntablatureHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, orderHeight, sizeOf)
-import Architecture.Draw (drawOrder, drawOrderFromLowerDiameter, drawOrderFromOrderHeight, drawOrderFromUpperDiameter)
+import Architecture.Order (corynthian, doric, ionic, minuteFromColumnAndEntablatureHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, orderHeight, sizeOf)
+import Architecture.Order.Draw (drawOrder, drawOrderFromLowerDiameter, drawOrderFromOrderHeight, drawOrderFromUpperDiameter)
 import Data.Default (class Default, def)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (class Newtype, modify)
