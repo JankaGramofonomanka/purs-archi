@@ -92,20 +92,3 @@ instance RenderOrtogonal m a => RenderVertical m (VerticalRight a) where
 instance RenderOrtogonal m a => RenderVertical m (VerticalCentered a) where
   drawAbove point (VerticalCentered a) = drawTopCentered point a
   drawBelow point (VerticalCentered a) = drawBottomCentered point a
-
-class Point a where
-  center :: a -> Point
-
-class Vertical a where
-  top :: a -> Point
-  bottom :: a -> Point
-
-class Horizontal a where
-  left :: a -> Point
-  right :: a -> Point
-
-class Rectangular a where
-  topLeft :: a -> Point
-  topRight :: a -> Point
-  bottomLeft :: a -> Point
-  bottomRight :: a -> Point
