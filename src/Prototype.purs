@@ -1,6 +1,6 @@
 module Prototype where
 
-import Prelude
+import Prelude hiding (top, bottom)
 
 import Data.Default (def)
 import Data.Maybe (Maybe(..))
@@ -198,67 +198,104 @@ instance RenderOrtogonal m a => Render m (Tuple OrtogonalAnchor a) where
 shift :: Number -> Number -> Point -> Point
 shift dx dy (Point p) = point (p.x + dx) (p.y + dy)
 
--- | Left and right ends of a figure of the given width, anchored horizontally.
-horizontalEnds :: Number -> HorizontalAnchor -> { left :: Point, right :: Point }
-horizontalEnds width = case _ of
-  ALeft p -> { left: p, right: shift width 0.0 p }
-  ARight p -> { left: shift (-width) 0.0 p, right: p }
+-- | Axis-aligned bounding box, given by its top-left corner and size.
+type Box = { topLeft :: Point, width :: Number, height :: Number }
 
--- | Top and bottom ends of a figure of the given height, anchored vertically.
-verticalEnds :: Number -> VerticalAnchor -> { top :: Point, bottom :: Point }
-verticalEnds height = case _ of
-  ATop p -> { top: p, bottom: shift 0.0 height p }
-  ABottom p -> { top: shift 0.0 (-height) p, bottom: p }
+-- | Figures with a bounding box size.
+class Sized a where
+  size :: a -> { width :: Number, height :: Number }
 
--- | Top-left corner of a box of the given size, anchored at one of its corners.
-boxTopLeft :: Number -> Number -> RectangularAnchor -> Point
-boxTopLeft width height = case _ of
-  ATopLeft p -> p
-  ATopRight p -> shift (-width) 0.0 p
-  ABottomLeft p -> shift 0.0 (-height) p
-  ABottomRight p -> shift (-width) (-height) p
+instance Sized Rectangle where
+  size (Rectangle { width, height }) = { width, height }
 
-instance PointLike (Tuple PointAnchor HLine) where
-  center (Tuple (ACenter p) _) = p
-instance PointLike (Tuple PointAnchor VLine) where
-  center (Tuple (ACenter p) _) = p
-instance PointLike (Tuple PointAnchor Rectangle) where
-  center (Tuple (ACenter p) _) = p
-instance PointLike (Tuple PointAnchor Circle) where
-  center (Tuple (ACenter p) _) = p
+instance Sized Circle where
+  size (Circle { radius }) = { width: 2.0 * radius, height: 2.0 * radius }
 
-instance Horizontal (Tuple HorizontalAnchor HLine) where
-  left (Tuple anchor (HLine { hLength })) = (horizontalEnds hLength anchor).left
-  right (Tuple anchor (HLine { hLength })) = (horizontalEnds hLength anchor).right
-instance Horizontal (Tuple HorizontalAnchor Rectangle) where
-  left (Tuple anchor (Rectangle { width })) = (horizontalEnds width anchor).left
-  right (Tuple anchor (Rectangle { width })) = (horizontalEnds width anchor).right
-instance Horizontal (Tuple HorizontalAnchor Circle) where
-  left (Tuple anchor (Circle { radius })) = (horizontalEnds (2.0 * radius) anchor).left
-  right (Tuple anchor (Circle { radius })) = (horizontalEnds (2.0 * radius) anchor).right
+instance Sized HLine where
+  size (HLine { hLength }) = { width: hLength, height: 0.0 }
 
-instance Vertical (Tuple VerticalAnchor VLine) where
-  top (Tuple anchor (VLine { vLength })) = (verticalEnds vLength anchor).top
-  bottom (Tuple anchor (VLine { vLength })) = (verticalEnds vLength anchor).bottom
-instance Vertical (Tuple VerticalAnchor Rectangle) where
-  top (Tuple anchor (Rectangle { height })) = (verticalEnds height anchor).top
-  bottom (Tuple anchor (Rectangle { height })) = (verticalEnds height anchor).bottom
-instance Vertical (Tuple VerticalAnchor Circle) where
-  top (Tuple anchor (Circle { radius })) = (verticalEnds (2.0 * radius) anchor).top
-  bottom (Tuple anchor (Circle { radius })) = (verticalEnds (2.0 * radius) anchor).bottom
+instance Sized VLine where
+  size (VLine { vLength }) = { width: 0.0, height: vLength }
 
-instance Rectangular (Tuple RectangularAnchor Rectangle) where
-  topLeft (Tuple anchor (Rectangle { width, height })) = boxTopLeft width height anchor
-  topRight (Tuple anchor (Rectangle { width, height })) = shift width 0.0 (boxTopLeft width height anchor)
-  bottomLeft (Tuple anchor (Rectangle { width, height })) = shift 0.0 height (boxTopLeft width height anchor)
-  bottomRight (Tuple anchor (Rectangle { width, height })) = shift width height (boxTopLeft width height anchor)
-instance Rectangular (Tuple RectangularAnchor Circle) where
-  topLeft (Tuple anchor (Circle { radius })) = boxTopLeft (2.0 * radius) (2.0 * radius) anchor
-  topRight (Tuple anchor (Circle { radius })) = shift (2.0 * radius) 0.0 (boxTopLeft (2.0 * radius) (2.0 * radius) anchor)
-  bottomLeft (Tuple anchor (Circle { radius })) = shift 0.0 (2.0 * radius) (boxTopLeft (2.0 * radius) (2.0 * radius) anchor)
-  bottomRight (Tuple anchor (Circle { radius })) = shift (2.0 * radius) (2.0 * radius) (boxTopLeft (2.0 * radius) (2.0 * radius) anchor)
+-- | Anchors that locate a box of a given size. Edge anchors are centered on the other axis.
+class Anchor anc where
+  anchorTopLeft :: Number -> Number -> anc -> Point
 
-{-
+instance Anchor PointAnchor where
+  anchorTopLeft w h (ACenter p) = shift (-w / 2.0) (-h / 2.0) p
+
+instance Anchor VerticalAnchor where
+  anchorTopLeft w h = case _ of
+    ATop p -> shift (-w / 2.0) 0.0 p
+    ABottom p -> shift (-w / 2.0) (-h) p
+
+instance Anchor HorizontalAnchor where
+  anchorTopLeft w h = case _ of
+    ALeft p -> shift 0.0 (-h / 2.0) p
+    ARight p -> shift (-w) (-h / 2.0) p
+
+instance Anchor RectangularAnchor where
+  anchorTopLeft w h = case _ of
+    ATopLeft p -> p
+    ATopRight p -> shift (-w) 0.0 p
+    ABottomLeft p -> shift 0.0 (-h) p
+    ABottomRight p -> shift (-w) (-h) p
+
+instance Anchor OrtogonalAnchor where
+  anchorTopLeft w h = case _ of
+    P a -> anchorTopLeft w h a
+    V a -> anchorTopLeft w h a
+    H a -> anchorTopLeft w h a
+    R a -> anchorTopLeft w h a
+
+figureBox :: forall anc a. Anchor anc => Sized a => Tuple anc a -> Box
+figureBox (Tuple anchor fig) =
+  let { width, height } = size fig
+  in { topLeft: anchorTopLeft width height anchor, width, height }
+
+boxAt :: Number -> Number -> Box -> Point
+boxAt fx fy b = shift (fx * b.width) (fy * b.height) b.topLeft
+
+instance Anchor anc => PointLike (Tuple anc Rectangle) where
+  center = boxAt 0.5 0.5 <<< figureBox
+instance Anchor anc => PointLike (Tuple anc Circle) where
+  center = boxAt 0.5 0.5 <<< figureBox
+instance Anchor anc => PointLike (Tuple anc HLine) where
+  center = boxAt 0.5 0.5 <<< figureBox
+instance Anchor anc => PointLike (Tuple anc VLine) where
+  center = boxAt 0.5 0.5 <<< figureBox
+
+instance Anchor anc => Horizontal (Tuple anc Rectangle) where
+  left = boxAt 0.0 0.5 <<< figureBox
+  right = boxAt 1.0 0.5 <<< figureBox
+instance Anchor anc => Horizontal (Tuple anc Circle) where
+  left = boxAt 0.0 0.5 <<< figureBox
+  right = boxAt 1.0 0.5 <<< figureBox
+instance Anchor anc => Horizontal (Tuple anc HLine) where
+  left = boxAt 0.0 0.5 <<< figureBox
+  right = boxAt 1.0 0.5 <<< figureBox
+
+instance Anchor anc => Vertical (Tuple anc Rectangle) where
+  top = boxAt 0.5 0.0 <<< figureBox
+  bottom = boxAt 0.5 1.0 <<< figureBox
+instance Anchor anc => Vertical (Tuple anc Circle) where
+  top = boxAt 0.5 0.0 <<< figureBox
+  bottom = boxAt 0.5 1.0 <<< figureBox
+instance Anchor anc => Vertical (Tuple anc VLine) where
+  top = boxAt 0.5 0.0 <<< figureBox
+  bottom = boxAt 0.5 1.0 <<< figureBox
+
+instance Anchor anc => Rectangular (Tuple anc Rectangle) where
+  topLeft = boxAt 0.0 0.0 <<< figureBox
+  topRight = boxAt 1.0 0.0 <<< figureBox
+  bottomLeft = boxAt 0.0 1.0 <<< figureBox
+  bottomRight = boxAt 1.0 1.0 <<< figureBox
+instance Anchor anc => Rectangular (Tuple anc Circle) where
+  topLeft = boxAt 0.0 0.0 <<< figureBox
+  topRight = boxAt 1.0 0.0 <<< figureBox
+  bottomLeft = boxAt 0.0 1.0 <<< figureBox
+  bottomRight = boxAt 1.0 1.0 <<< figureBox
+
 prototype :: forall m . Monad m => Renderer m => m Unit
 prototype = do
   let square = Rectangle { width: 5.0, height: 5.0}
@@ -316,4 +353,3 @@ prototype = do
   render circL2
   render circR1
   render circR2
--}
