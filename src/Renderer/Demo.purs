@@ -3,7 +3,7 @@ module Renderer.Demo (draw) where
 import Prelude
 
 import Anchor (placeBottomRight, render, size)
-import Architecture (Column(..), Portico(..))
+import Architecture (Column(..), Portico(..), StackedCollonade(..))
 import Architecture.Order (SizeDeterminant(..), corynthian, doric, ionic, minuteFromColumnAndEntablatureHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, orderHeight, sizeOf)
 import Architecture.Order.Draw (drawOrder, drawOrderFromLowerDiameter, drawOrderFromOrderHeight, drawOrderFromUpperDiameter)
 import Data.Int as Int
@@ -125,6 +125,17 @@ draw width height = do
   render (placePortico doricBottom doricPortico)
   render (placePortico ionicBottom ionicPortico)
   render (placePortico corynthianBottom corynthianPortico)
+
+  --stacked collonade, same orders and minutes as the porticos, 50px to their left
+  let stackedCollonade = StackedCollonade
+        { orders: [ doric, ionic, corynthian ]
+        , size: { row: 1, size: Minute ionicMinute }
+        , numOfColumns: 5
+        , bayWidth
+        }
+  let porticosLeft = porticoCenterline - Int.toNumber (numOfColumns - 1) * bayWidth
+        - max (overhang doricPortico) (max (overhang ionicPortico) (overhang corynthianPortico))
+  render (placeBottomRight (point (porticosLeft - 50.0) doricBottom) stackedCollonade)
 
   --prototype
   let centerX = screenCenterX + 700.00
