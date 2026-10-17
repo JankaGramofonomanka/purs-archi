@@ -120,6 +120,33 @@ body {
   padding: 0;
 }
 
+.treatise-switch {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.action-bar .treatise-option {
+  background: transparent;
+  color: #52617d;
+  text-align: center;
+}
+
+.action-bar .treatise-option:hover {
+  background: #f5f7fb;
+  color: #4056c4;
+}
+
+.action-bar .treatise-option[aria-pressed="true"] {
+  background: #eef0ff;
+  color: #4056c4;
+}
+
+.action-bar .treatise-option:disabled {
+  background: transparent;
+  color: #aebbd4;
+}
+
 .order-list {
   display: flex;
   flex-direction: column;

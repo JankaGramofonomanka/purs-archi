@@ -4,8 +4,9 @@ import Prelude
 
 import Anchor (placeBottomRight, render, size)
 import Architecture (Column(..), Portico(..), StackedCollonade(..))
-import Architecture.Order (SizeDeterminant(..), corynthian, doric, ionic, minuteFromColumnAndEntablatureHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, orderHeight, sizeOf)
+import Architecture.Order (SizeDeterminant(..), minuteFromColumnAndEntablatureHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, orderHeight, sizeOf)
 import Architecture.Order.Draw (drawOrder, drawOrderFromLowerDiameter, drawOrderFromOrderHeight, drawOrderFromUpperDiameter)
+import Architecture.Order.Palladio (corynthian, doric, ionic)
 import Data.Int as Int
 import Data.Default (class Default, def)
 import Data.Maybe (Maybe(..))

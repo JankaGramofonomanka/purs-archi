@@ -4,13 +4,22 @@ import Prelude
 
 import Control.Monad (when)
 import Control.Monad.State (runStateT)
-import Data.Maybe (Maybe(..))
+import Data.Array as Array
+import Data.Maybe (Maybe(..), isJust)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import Architecture.Order (Order, OrderKind(..), composite, corynthian, doric, ionic, tuscan)
+import Architecture.Order (Order, OrderKind(..), Treatise, treatiseOrder)
+import Architecture.Order.Alberti as Alberti
+import Architecture.Order.Chambers as Chambers
+import Architecture.Order.Gibbs as Gibbs
+import Architecture.Order.Palladio as Palladio
+import Architecture.Order.Scamozzi as Scamozzi
+import Architecture.Order.Serlio as Serlio
+import Architecture.Order.Vignola as Vignola
+import Architecture.Order.Vitruvius as Vitruvius
 import Canvas.Collonade as CanvasCollonade
 import Canvas.Demo as CanvasDemo
 import Canvas.Page as CanvasPage
@@ -32,19 +41,53 @@ type State =
   , collonade :: Collonade.Config
   }
 
--- | The collonade settings as exchanged with the page's form; orders are keys from `orderKey`.
-type CollonadeForm = { orders :: Array String, numOfColumns :: Int }
+-- | The collonade settings as exchanged with the page's form: the key of a treatise from
+-- | `treatises`, and orders as keys from `orderKinds`.
+type CollonadeForm = { treatise :: String, orders :: Array String, numOfColumns :: Int }
 
-initialCollonade :: Collonade.Config
-initialCollonade = { orders: [ doric, ionic, corynthian ], numOfColumns: 5 }
+-- | A treatise as offered by the page's form, with the keys of the orders it defines.
+type TreatiseOption = { key :: String, name :: String, orders :: Array String }
+
+treatises :: Array { key :: String, name :: String, treatise :: Treatise }
+treatises =
+  [ { key: "vitruvius", name: "Vitruvius", treatise: Vitruvius.treatise }
+  , { key: "alberti", name: "Alberti", treatise: Alberti.treatise }
+  , { key: "serlio", name: "Serlio", treatise: Serlio.treatise }
+  , { key: "vignola", name: "Vignola", treatise: Vignola.treatise }
+  , { key: "palladio", name: "Palladio", treatise: Palladio.treatise }
+  , { key: "scamozzi", name: "Scamozzi", treatise: Scamozzi.treatise }
+  , { key: "gibbs", name: "Gibbs", treatise: Gibbs.treatise }
+  , { key: "chambers", name: "Chambers", treatise: Chambers.treatise }
+  ]
+
+orderKinds :: Array { key :: String, kind :: OrderKind }
+orderKinds =
+  [ { key: "tuscan", kind: Tuscan }
+  , { key: "doric", kind: Doric }
+  , { key: "ionic", kind: Ionic }
+  , { key: "corynthian", kind: Corynthian }
+  , { key: "composite", kind: Composite }
+  ]
+
+treatiseOptions :: Array TreatiseOption
+treatiseOptions = treatises <#> \{ key, name, treatise } ->
+  { key
+  , name
+  , orders: _.key <$> Array.filter (\{ kind } -> isJust (treatiseOrder treatise kind)) orderKinds
+  }
+
+initialForm :: CollonadeForm
+initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ], numOfColumns: 5 }
 
 main :: Effect Unit
 main = do
+  initialCollonade <- fromForm initialForm
   state <- Ref.new { route: "", algoState: Nothing, collonade: initialCollonade }
   setupRoutes
     (drawRoute state)
     (handleAction state StepAlgorithm)
-    (toForm initialCollonade)
+    treatiseOptions
+    initialForm
     (\form -> fromForm form >>= SetCollonade >>> handleAction state)
 
 drawRoute :: Ref.Ref State -> String -> Number -> Number -> Effect Unit
@@ -109,36 +152,27 @@ renderDemoRoute route = case route of
   "/demo/purescript-drawing" -> PureScriptDrawingDemo.draw
   _ -> pure unit
 
-orderKey :: Order -> String
-orderKey order = case order.kind of
-  Tuscan -> "tuscan"
-  Doric -> "doric"
-  Ionic -> "ionic"
-  Corynthian -> "corynthian"
-  Composite -> "composite"
-
-orderFromKey :: String -> Effect Order
-orderFromKey = case _ of
-  "tuscan" -> pure tuscan
-  "doric" -> pure doric
-  "ionic" -> pure ionic
-  "corynthian" -> pure corynthian
-  "composite" -> pure composite
-  key -> throw ("Unknown order: " <> key)
-
-toForm :: Collonade.Config -> CollonadeForm
-toForm collonade = collonade { orders = map orderKey collonade.orders }
-
 fromForm :: CollonadeForm -> Effect Collonade.Config
 fromForm form = do
   when (form.numOfColumns < 1) do
     throw "A collonade needs at least one column"
+  { name, treatise } <- case Array.find (\t -> t.key == form.treatise) treatises of
+    Nothing -> throw ("Unknown treatise: " <> form.treatise)
+    Just found -> pure found
+  let
+    orderFromKey :: String -> Effect Order
+    orderFromKey key = case Array.find (\o -> o.key == key) orderKinds of
+      Nothing -> throw ("Unknown order: " <> key)
+      Just { kind } -> case treatiseOrder treatise kind of
+        Nothing -> throw (name <> " does not define the " <> key <> " order")
+        Just order -> pure order
   orders <- traverse orderFromKey form.orders
-  pure form { orders = orders }
+  pure { orders, numOfColumns: form.numOfColumns }
 
 foreign import setupRoutes
   :: (String -> Number -> Number -> Effect Unit)
   -> Effect Unit
+  -> Array TreatiseOption
   -> CollonadeForm
   -> (CollonadeForm -> Effect Unit)
   -> Effect Unit

@@ -118,12 +118,15 @@ const orderNames = {
 
 const maxColumns = 20;
 
-// Renders the collonade form from `initial` and reports every edit to `onChange`.
-const setupCollonadeForm = (initial, onChange) => {
+// Renders the collonade form from `initial` and reports every edit to `onChange`. Each of
+// `treatises` lists the keys of the orders it defines; the form only offers those.
+const setupCollonadeForm = (treatises, initial, onChange) => {
+  const treatiseGroup = document.querySelector("#collonade-treatises");
   const orderList = document.querySelector("#collonade-orders");
   const addButton = document.querySelector("#collonade-add-order");
   const columnsInput = document.querySelector("#collonade-columns");
   if (
+    !(treatiseGroup instanceof HTMLElement) ||
     !(orderList instanceof HTMLOListElement) ||
     !(addButton instanceof HTMLButtonElement) ||
     !(columnsInput instanceof HTMLInputElement)
@@ -131,10 +134,49 @@ const setupCollonadeForm = (initial, onChange) => {
     throw new Error("Missing collonade form controls");
   }
 
-  const form = { orders: [...initial.orders], numOfColumns: initial.numOfColumns };
-  const report = () => onChange({ orders: [...form.orders], numOfColumns: form.numOfColumns })();
+  const form = {
+    treatise: initial.treatise,
+    orders: [...initial.orders],
+    numOfColumns: initial.numOfColumns
+  };
+  const report = () => onChange({
+    treatise: form.treatise,
+    orders: [...form.orders],
+    numOfColumns: form.numOfColumns
+  })();
+
+  const currentTreatise = () => {
+    const treatise = treatises.find(({ key }) => key === form.treatise);
+    if (treatise === undefined) {
+      throw new Error(`Unknown treatise: ${form.treatise}`);
+    }
+    return treatise;
+  };
+
+  const renderTreatises = () => {
+    treatiseGroup.replaceChildren(...treatises.map(treatise => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "treatise-option";
+      button.textContent = treatise.name;
+      button.setAttribute("aria-pressed", String(treatise.key === form.treatise));
+      const missing = form.orders.filter(order => !treatise.orders.includes(order));
+      button.disabled = missing.length > 0;
+      if (button.disabled) {
+        const names = [...new Set(missing)].map(order => orderNames[order]).join(", ");
+        button.title = `${treatise.name} does not define the ${names} order`;
+      }
+      button.addEventListener("click", () => {
+        form.treatise = treatise.key;
+        render();
+        report();
+      });
+      return button;
+    }));
+  };
 
   const renderOrders = () => {
+    const available = currentTreatise().orders;
     orderList.replaceChildren(...form.orders.map((order, index) => {
       const item = document.createElement("li");
       item.className = "order-row";
@@ -142,10 +184,13 @@ const setupCollonadeForm = (initial, onChange) => {
       const select = document.createElement("select");
       select.setAttribute("aria-label", `Order ${index + 1} from the bottom`);
       for (const [key, name] of Object.entries(orderNames)) {
-        select.append(new Option(name, key, false, key === order));
+        const option = new Option(name, key, false, key === order);
+        option.disabled = !available.includes(key);
+        select.append(option);
       }
       select.addEventListener("change", () => {
         form.orders[index] = select.value;
+        render();
         report();
       });
 
@@ -157,7 +202,7 @@ const setupCollonadeForm = (initial, onChange) => {
       remove.disabled = form.orders.length === 1;
       remove.addEventListener("click", () => {
         form.orders.splice(index, 1);
-        renderOrders();
+        render();
         report();
       });
 
@@ -166,11 +211,16 @@ const setupCollonadeForm = (initial, onChange) => {
     }));
   };
 
-  addButton.addEventListener("click", () => {
-    const keys = Object.keys(orderNames);
-    const last = form.orders[form.orders.length - 1];
-    form.orders.push(keys[Math.min(keys.indexOf(last) + 1, keys.length - 1)]);
+  const render = () => {
+    renderTreatises();
     renderOrders();
+  };
+
+  addButton.addEventListener("click", () => {
+    const available = currentTreatise().orders;
+    const last = form.orders[form.orders.length - 1];
+    form.orders.push(available.find(key => available.indexOf(key) > available.indexOf(last)) ?? last);
+    render();
     report();
   });
 
@@ -188,11 +238,11 @@ const setupCollonadeForm = (initial, onChange) => {
     columnsInput.value = String(form.numOfColumns);
   });
 
-  renderOrders();
+  render();
 };
 
-export const setupRoutes = onRouteChange => onAction => initialCollonade => onCollonadeChange => () => {
-  setupCollonadeForm(initialCollonade, onCollonadeChange);
+export const setupRoutes = onRouteChange => onAction => treatises => initialCollonade => onCollonadeChange => () => {
+  setupCollonadeForm(treatises, initialCollonade, onCollonadeChange);
   updateRoute(onRouteChange);
   window.addEventListener("popstate", () => updateRoute(onRouteChange));
   window.addEventListener("resize", () => updateRoute(onRouteChange));
