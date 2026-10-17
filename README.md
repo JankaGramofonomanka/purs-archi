@@ -6,6 +6,10 @@ surfaces. Use the left-side **Step algorithm** button to advance the algorithm;
 its state is shared while switching between these routes. Their `/demo/...`
 counterparts render the SVG, Canvas, and PureScript Drawing examples.
 
+The `/collonade/...` routes draw a stacked collonade centered on the surface,
+with the lower diameter of the bottom row's columns 10px. Use the left-side bar
+to choose the orders from bottom to top and the number of columns.
+
 ## Run locally
 
 Requirements: Node.js 20 or newer and npm. The PureScript compiler, Spago, and

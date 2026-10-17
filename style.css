@@ -71,6 +71,7 @@ body {
   inset: 0 auto 0 0;
   width: 200px;
   padding: 16px;
+  overflow-y: auto;
   border-right: 1px solid #e3e8f2;
   background: #fff;
 }
@@ -94,6 +95,69 @@ body {
 .action-bar button:focus-visible {
   outline: 3px solid #aab5ff;
   outline-offset: 2px;
+}
+
+.action-bar button:disabled {
+  background: #f5f7fb;
+  color: #aebbd4;
+  cursor: default;
+}
+
+.action-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 20px;
+  padding: 0;
+  border: 0;
+  color: #52617d;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.action-group legend {
+  margin-bottom: 8px;
+  padding: 0;
+}
+
+.order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.order-row {
+  display: flex;
+  gap: 6px;
+}
+
+.action-bar select,
+.action-bar input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid #d5dcea;
+  border-radius: 10px;
+  background: #fff;
+  color: #1c2540;
+  font: inherit;
+  font-weight: 500;
+}
+
+.action-bar select:focus-visible,
+.action-bar input:focus-visible {
+  outline: 3px solid #aab5ff;
+  outline-offset: 1px;
+}
+
+.action-bar .order-remove {
+  flex: 0 0 38px;
+  width: 38px;
+  padding: 0;
+  font-size: 1.1rem;
 }
 
 .demo-stage[hidden] {

@@ -1,18 +1,16 @@
+// Each mode prefixes the backend routes ("" is the algorithm page); a mode may have its own action bar.
+const modes = ["", "/demo", "/collonade"];
+const backends = ["/svg", "/canvas", "/purescript-drawing"];
+
 const updateRoute = onRouteChange => {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
-  const routes = {
-    "/svg": "SVG",
-    "/demo/svg": "SVG Demo",
-    "/canvas": "Canvas",
-    "/demo/canvas": "Canvas Demo",
-    "/purescript-drawing": "PureScript Drawing",
-    "/demo/purescript-drawing": "PureScript Drawing Demo"
-  };
-  const route = Object.hasOwn(routes, path) ? path : "/svg";
+  const routes = modes.flatMap(mode => backends.map(backend => mode + backend));
+  const route = routes.includes(path) ? path : "/svg";
   if (path !== route) {
     window.history.replaceState({}, "", route);
   }
   currentRoute = route;
+  const mode = getMode(route);
   const demoPage = getDemoPage(route);
 
   for (const page of document.querySelectorAll("[data-demo-page]")) {
@@ -22,12 +20,14 @@ const updateRoute = onRouteChange => {
     page.hidden = page.dataset.demoPage !== demoPage;
   }
 
-  const actionBar = document.querySelector("[data-page-actions]");
-  if (!(actionBar instanceof HTMLElement)) {
-    throw new Error("Missing page action bar");
+  let showPageActions = false;
+  for (const actionBar of document.querySelectorAll("[data-page-actions]")) {
+    if (!(actionBar instanceof HTMLElement)) {
+      throw new Error("Invalid page action bar");
+    }
+    actionBar.hidden = actionBar.dataset.pageActions !== mode;
+    showPageActions ||= !actionBar.hidden;
   }
-  const showPageActions = !route.startsWith("/demo/");
-  actionBar.hidden = !showPageActions;
 
   const demoPageElement = document.querySelector(".demo-page");
   if (!(demoPageElement instanceof HTMLElement)) {
@@ -59,7 +59,7 @@ const updateRoute = onRouteChange => {
     if (pageRoute === undefined) {
       throw new Error("Route link is missing its page");
     }
-    const linkRoute = route.startsWith("/demo/") ? `/demo${pageRoute}` : pageRoute;
+    const linkRoute = mode + pageRoute;
     link.dataset.route = linkRoute;
     link.href = linkRoute;
 
@@ -75,7 +75,9 @@ const updateRoute = onRouteChange => {
 
 let currentRoute = "/";
 
-const getDemoPage = route => route.startsWith("/demo/") ? route.slice(5) : route;
+const getMode = route => route.slice(0, route.lastIndexOf("/"));
+
+const getDemoPage = route => route.slice(getMode(route).length);
 
 const resizeCanvasForRoute = route => {
   const page = getDemoPage(route);
@@ -106,7 +108,89 @@ const resizeCanvasForRoute = route => {
   }
 };
 
-export const setupRoutes = onRouteChange => onAction => () => {
+const orderNames = {
+  doric: "Doric",
+  ionic: "Ionic",
+  corynthian: "Corynthian"
+};
+
+const maxColumns = 20;
+
+// Renders the collonade form from `initial` and reports every edit to `onChange`.
+const setupCollonadeForm = (initial, onChange) => {
+  const orderList = document.querySelector("#collonade-orders");
+  const addButton = document.querySelector("#collonade-add-order");
+  const columnsInput = document.querySelector("#collonade-columns");
+  if (
+    !(orderList instanceof HTMLOListElement) ||
+    !(addButton instanceof HTMLButtonElement) ||
+    !(columnsInput instanceof HTMLInputElement)
+  ) {
+    throw new Error("Missing collonade form controls");
+  }
+
+  const form = { orders: [...initial.orders], numOfColumns: initial.numOfColumns };
+  const report = () => onChange({ orders: [...form.orders], numOfColumns: form.numOfColumns })();
+
+  const renderOrders = () => {
+    orderList.replaceChildren(...form.orders.map((order, index) => {
+      const item = document.createElement("li");
+      item.className = "order-row";
+
+      const select = document.createElement("select");
+      select.setAttribute("aria-label", `Order ${index + 1} from the bottom`);
+      for (const [key, name] of Object.entries(orderNames)) {
+        select.append(new Option(name, key, false, key === order));
+      }
+      select.addEventListener("change", () => {
+        form.orders[index] = select.value;
+        report();
+      });
+
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "order-remove";
+      remove.textContent = "×";
+      remove.setAttribute("aria-label", `Remove order ${index + 1}`);
+      remove.disabled = form.orders.length === 1;
+      remove.addEventListener("click", () => {
+        form.orders.splice(index, 1);
+        renderOrders();
+        report();
+      });
+
+      item.append(select, remove);
+      return item;
+    }));
+  };
+
+  addButton.addEventListener("click", () => {
+    const keys = Object.keys(orderNames);
+    const last = form.orders[form.orders.length - 1];
+    form.orders.push(keys[Math.min(keys.indexOf(last) + 1, keys.length - 1)]);
+    renderOrders();
+    report();
+  });
+
+  columnsInput.min = "1";
+  columnsInput.max = String(maxColumns);
+  columnsInput.value = String(form.numOfColumns);
+  columnsInput.addEventListener("input", () => {
+    const value = Number(columnsInput.value);
+    if (Number.isInteger(value) && value >= 1 && value <= maxColumns && value !== form.numOfColumns) {
+      form.numOfColumns = value;
+      report();
+    }
+  });
+  columnsInput.addEventListener("change", () => {
+    columnsInput.value = String(form.numOfColumns);
+  });
+
+  renderOrders();
+};
+
+export const setupRoutes = onRouteChange => onAction => initialCollonade => onCollonadeChange => () => {
+  setupCollonadeForm(initialCollonade, onCollonadeChange);
   updateRoute(onRouteChange);
   window.addEventListener("popstate", () => updateRoute(onRouteChange));
   window.addEventListener("resize", () => updateRoute(onRouteChange));
