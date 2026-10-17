@@ -1,5 +1,9 @@
 module Architecture
   ( Portico(..)
+  , Collonade(..)
+  , StackedCollonade(..)
+  , RowSizeDeterminant
+  , collonades
   , SizedOrder
   , Column(..)
   , Entablature(..)
@@ -9,9 +13,13 @@ module Architecture
 import Prelude
 
 import Anchor (class Sized, HorizontalAnchor(..), PointAnchor(..), RectangularAnchor(..), VerticalAnchor(..), drawAnchored, size)
-import Architecture.Order (Order, SizeDeterminant, minuteFromSize, sizeOf)
+import Architecture.Order (Order, SizeDeterminant(..), minuteFromLowerDiameter, minuteFromSize, minuteFromUpperDiameter, sizeOf)
 import Architecture.Order.Draw (drawColumn, drawEntablature, drawSpanningEntablature)
+import Data.Array as Array
+import Data.Foldable (foldl, sum)
 import Data.Int as Int
+import Data.Maybe (Maybe(..))
+import Data.Tuple (Tuple(..), snd)
 import Geometry (class HorizontalFigure, class RectangularFigure, class VerticalFigure)
 import Ortogonal (class RenderHorizontal, class RenderOrtogonal, class RenderPoint, class RenderVertical, drawBottomCentered, drawLeftCentered, drawRightCentered, drawTopCentered)
 import Renderer (Point(..), point, class Renderer)
@@ -25,6 +33,22 @@ newtype Entablature = Entablature SizedOrder
 newtype Portico = Portico {
   order :: Order,
   size :: SizeDeterminant,
+  numOfColumns :: Int,
+  bayWidth :: Number
+}
+
+-- | One row of columns of a `StackedCollonade`; drawn exactly like a `Portico`.
+newtype Collonade = Collonade Portico
+
+-- | A size determinant of the given row of a `StackedCollonade` (0 is the bottom row).
+type RowSizeDeterminant = { row :: Int, size :: SizeDeterminant }
+
+-- | Rows of columns stacked on each other, `orders` listed from bottom to top.
+-- | All rows share the column centerlines; the lower diameter of each row's columns
+-- | equals the upper diameter of the columns below, so every row has its own minute.
+newtype StackedCollonade = StackedCollonade {
+  orders :: Array Order,
+  size :: RowSizeDeterminant,
   numOfColumns :: Int,
   bayWidth :: Number
 }
@@ -148,3 +172,66 @@ instance (Monad m, Renderer m) => RenderOrtogonal m Portico where
   drawTopRight p = drawAnchored drawPorticoFromTopLeft (ABottomLeft p)
   drawBottomLeft p = drawAnchored drawPorticoFromTopLeft (ATopRight p)
   drawBottomRight p = drawAnchored drawPorticoFromTopLeft (ATopLeft p)
+
+-- Collonade
+
+derive newtype instance Sized Collonade
+instance RectangularFigure Collonade
+derive newtype instance (Monad m, Renderer m) => RenderPoint m Collonade
+derive newtype instance (Monad m, Renderer m) => RenderOrtogonal m Collonade
+
+-- StackedCollonade
+
+-- | Minutes of the rows, bottom to top. Empty if `size.row` is not a row of the stack.
+rowMinutes :: StackedCollonade -> Array Number
+rowMinutes (StackedCollonade { orders, size: { row, size } }) = case Array.index orders row of
+  Nothing -> []
+  Just anchor ->
+    let anchorMinute = minuteFromSize anchor size
+        start = Tuple anchor anchorMinute
+        propagate next = map snd <<< Array.scanl (\(Tuple prev minute) order -> Tuple order (next prev minute order)) start
+        above = propagate (\below minute order -> minuteFromLowerDiameter order (sizeOf below.column.upperDiameter minute))
+          (Array.drop (row + 1) orders)
+        below = propagate (\above' minute order -> minuteFromUpperDiameter order (sizeOf above'.column.lowerDiameter minute))
+          (Array.reverse (Array.take row orders))
+    in Array.reverse below <> [ anchorMinute ] <> above
+
+-- | Rows of the stack, bottom to top.
+collonades :: StackedCollonade -> Array Collonade
+collonades stack@(StackedCollonade { orders, numOfColumns, bayWidth }) =
+  Array.zipWith
+    (\order minute -> Collonade (Portico { order, size: Minute minute, numOfColumns, bayWidth }))
+    orders
+    (rowMinutes stack)
+
+-- | All rows share the span, so the widest row is the one with the largest overhang.
+instance Sized StackedCollonade where
+  size stack =
+    let sizes = map size (collonades stack)
+    in { width: foldl max 0.0 (map _.width sizes)
+       , height: sum (map _.height sizes)
+       }
+
+instance RectangularFigure StackedCollonade
+
+drawStackedCollonadeFromTopLeft :: forall m. Monad m => Renderer m => Point -> StackedCollonade -> m Unit
+drawStackedCollonadeFromTopLeft (Point topLeft) stack = do
+  let { width, height } = size stack
+  let centerline = topLeft.x + width / 2.0
+  let drawRow bottom collonade = do
+        drawTopCentered (point centerline bottom) collonade
+        pure (bottom - (size collonade).height)
+  void $ Array.foldM drawRow (topLeft.y + height) (collonades stack)
+
+instance (Monad m, Renderer m) => RenderPoint m StackedCollonade where
+  drawCentered p = drawAnchored drawStackedCollonadeFromTopLeft (ACenter p)
+
+instance (Monad m, Renderer m) => RenderOrtogonal m StackedCollonade where
+  drawLeftCentered p = drawAnchored drawStackedCollonadeFromTopLeft (ARight p)
+  drawRightCentered p = drawAnchored drawStackedCollonadeFromTopLeft (ALeft p)
+  drawTopCentered p = drawAnchored drawStackedCollonadeFromTopLeft (ABottom p)
+  drawBottomCentered p = drawAnchored drawStackedCollonadeFromTopLeft (ATop p)
+  drawTopLeft p = drawAnchored drawStackedCollonadeFromTopLeft (ABottomRight p)
+  drawTopRight p = drawAnchored drawStackedCollonadeFromTopLeft (ABottomLeft p)
+  drawBottomLeft p = drawAnchored drawStackedCollonadeFromTopLeft (ATopRight p)
+  drawBottomRight p = drawAnchored drawStackedCollonadeFromTopLeft (ATopLeft p)
