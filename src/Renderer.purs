@@ -33,7 +33,7 @@ newtype Contour = Contour
 derive instance Newtype Contour _
 
 instance Default Contour where
-  def = Contour { thickness: Thickness 4.0, opaqueness: Opaqueness 1.0, lineStyle: Solid, color: Basic Black }
+  def = Contour { thickness: Thickness 1.0, opaqueness: Opaqueness 1.0, lineStyle: Solid, color: Basic Black }
 
 newtype Fill = Fill
   { opaqueness :: Opaqueness
