@@ -109,9 +109,11 @@ const resizeCanvasForRoute = route => {
 };
 
 const orderNames = {
+  tuscan: "Tuscan",
   doric: "Doric",
   ionic: "Ionic",
-  corynthian: "Corynthian"
+  corynthian: "Corynthian",
+  composite: "Composite"
 };
 
 const maxColumns = 20;

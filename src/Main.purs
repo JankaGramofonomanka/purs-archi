@@ -10,7 +10,7 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import Architecture.Order (Order, OrderKind(..), corynthian, doric, ionic)
+import Architecture.Order (Order, OrderKind(..), composite, corynthian, doric, ionic, tuscan)
 import Canvas.Collonade as CanvasCollonade
 import Canvas.Demo as CanvasDemo
 import Canvas.Page as CanvasPage
@@ -111,15 +111,19 @@ renderDemoRoute route = case route of
 
 orderKey :: Order -> String
 orderKey order = case order.kind of
+  Tuscan -> "tuscan"
   Doric -> "doric"
   Ionic -> "ionic"
   Corynthian -> "corynthian"
+  Composite -> "composite"
 
 orderFromKey :: String -> Effect Order
 orderFromKey = case _ of
+  "tuscan" -> pure tuscan
   "doric" -> pure doric
   "ionic" -> pure ionic
   "corynthian" -> pure corynthian
+  "composite" -> pure composite
   key -> throw ("Unknown order: " <> key)
 
 toForm :: Collonade.Config -> CollonadeForm
