@@ -117,6 +117,8 @@ const orderNames = {
 };
 
 const maxColumns = 20;
+const minBayWidth = 1;
+const maxBayWidth = 12;
 
 // Renders the collonade form from `initial` and reports every edit to `onChange`. Each of
 // `treatises` lists the keys of the orders it defines; the form only offers those.
@@ -125,11 +127,13 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   const orderList = document.querySelector("#collonade-orders");
   const addButton = document.querySelector("#collonade-add-order");
   const columnsInput = document.querySelector("#collonade-columns");
+  const bayWidthInput = document.querySelector("#collonade-bay-width");
   if (
     !(treatiseGroup instanceof HTMLElement) ||
     !(orderList instanceof HTMLOListElement) ||
     !(addButton instanceof HTMLButtonElement) ||
-    !(columnsInput instanceof HTMLInputElement)
+    !(columnsInput instanceof HTMLInputElement) ||
+    !(bayWidthInput instanceof HTMLInputElement)
   ) {
     throw new Error("Missing collonade form controls");
   }
@@ -137,12 +141,14 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   const form = {
     treatise: initial.treatise,
     orders: [...initial.orders],
-    numOfColumns: initial.numOfColumns
+    numOfColumns: initial.numOfColumns,
+    bayWidth: initial.bayWidth
   };
   const report = () => onChange({
     treatise: form.treatise,
     orders: [...form.orders],
-    numOfColumns: form.numOfColumns
+    numOfColumns: form.numOfColumns,
+    bayWidth: form.bayWidth
   })();
 
   const currentTreatise = () => {
@@ -236,6 +242,26 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   });
   columnsInput.addEventListener("change", () => {
     columnsInput.value = String(form.numOfColumns);
+  });
+
+  bayWidthInput.min = String(minBayWidth);
+  bayWidthInput.max = String(maxBayWidth);
+  bayWidthInput.value = String(form.bayWidth);
+  bayWidthInput.addEventListener("input", () => {
+    const value = Number(bayWidthInput.value);
+    if (
+      bayWidthInput.value !== "" &&
+      Number.isFinite(value) &&
+      value >= minBayWidth &&
+      value <= maxBayWidth &&
+      value !== form.bayWidth
+    ) {
+      form.bayWidth = value;
+      report();
+    }
+  });
+  bayWidthInput.addEventListener("change", () => {
+    bayWidthInput.value = String(form.bayWidth);
   });
 
   render();

@@ -42,8 +42,8 @@ type State =
   }
 
 -- | The collonade settings as exchanged with the page's form: the key of a treatise from
--- | `treatises`, and orders as keys from `orderKinds`.
-type CollonadeForm = { treatise :: String, orders :: Array String, numOfColumns :: Int }
+-- | `treatises`, orders as keys from `orderKinds`, and the bay width in lower diameters.
+type CollonadeForm = { treatise :: String, orders :: Array String, numOfColumns :: Int, bayWidth :: Number }
 
 -- | A treatise as offered by the page's form, with the keys of the orders it defines.
 type TreatiseOption = { key :: String, name :: String, orders :: Array String }
@@ -77,7 +77,7 @@ treatiseOptions = treatises <#> \{ key, name, treatise } ->
   }
 
 initialForm :: CollonadeForm
-initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ], numOfColumns: 5 }
+initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ], numOfColumns: 5, bayWidth: 3.0 }
 
 main :: Effect Unit
 main = do
@@ -156,6 +156,8 @@ fromForm :: CollonadeForm -> Effect Collonade.Config
 fromForm form = do
   when (form.numOfColumns < 1) do
     throw "A collonade needs at least one column"
+  when (form.bayWidth <= 0.0) do
+    throw "The bay width must be positive"
   { name, treatise } <- case Array.find (\t -> t.key == form.treatise) treatises of
     Nothing -> throw ("Unknown treatise: " <> form.treatise)
     Just found -> pure found
@@ -167,7 +169,7 @@ fromForm form = do
         Nothing -> throw (name <> " does not define the " <> key <> " order")
         Just order -> pure order
   orders <- traverse orderFromKey form.orders
-  pure { orders, numOfColumns: form.numOfColumns }
+  pure { orders, numOfColumns: form.numOfColumns, bayWidth: form.bayWidth }
 
 foreign import setupRoutes
   :: (String -> Number -> Number -> Effect Unit)
