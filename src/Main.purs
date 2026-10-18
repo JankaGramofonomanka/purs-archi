@@ -48,7 +48,7 @@ type State =
 -- | `treatises`, orders as keys from `orderKinds` with a key from `pedestalModes` each, and
 -- | the bay width in lower diameters with a key from `bayMeasures` saying what it measures, and the motif
 -- | of the columns' rythm as the number of columns standing on each of its beats. The number of columns
--- | (beats, in fact) is rounded down to whole periods of the rythm if `wholePeriods` is set, and then
+-- | (beats, in fact) is rounded down to whole periods of the rythm and its first beat if `endOnFirstBeat` is set, and then
 -- | stripped of the trailing empty beats if `stripTrailingBlanks` is set.
 type CollonadeForm =
   { treatise :: String
@@ -57,7 +57,7 @@ type CollonadeForm =
   , bayWidth :: Number
   , bayMeasure :: String
   , rythm :: Array Int
-  , wholePeriods :: Boolean
+  , endOnFirstBeat :: Boolean
   , stripTrailingBlanks :: Boolean
   }
 
@@ -108,7 +108,7 @@ treatiseOptions = treatises <#> \{ key, name, treatise } ->
   }
 
 initialForm :: CollonadeForm
-initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none" }, numOfColumns: 5, bayWidth: 3.0, bayMeasure: "beats", rythm: [ 1 ], wholePeriods: false, stripTrailingBlanks: false }
+initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none" }, numOfColumns: 5, bayWidth: 3.0, bayMeasure: "beats", rythm: [ 1 ], endOnFirstBeat: false, stripTrailingBlanks: false }
 
 main :: Effect Unit
 main = do
@@ -217,7 +217,7 @@ fromForm form = do
     Just { measure } -> pure measure
   let
     numOfColumns = form.numOfColumns
-      # (if form.wholePeriods then flip Rythm.wholePeriods rythm else identity)
+      # (if form.endOnFirstBeat then flip Rythm.endOnFirstBeat rythm else identity)
       # (if form.stripTrailingBlanks then \n -> Rythm.dropTrailing (\(ColumnBeat columns) -> columns <= 0) n rythm else identity)
   pure { orders, numOfColumns, bayWidth: form.bayWidth, bayMeasure, rythm }
 

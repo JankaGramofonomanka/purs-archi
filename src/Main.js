@@ -183,7 +183,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   const addButton = document.querySelector("#collonade-add-order");
   const columnsInput = document.querySelector("#collonade-columns");
   const bayWidthInput = document.querySelector("#collonade-bay-width");
-  const wholePeriodsInput = document.querySelector("#collonade-whole-periods");
+  const endOnFirstBeatInput = document.querySelector("#collonade-end-on-first-beat");
   const stripBlanksInput = document.querySelector("#collonade-strip-blanks");
   const beatList = document.querySelector("#collonade-rythm");
   const addBeatButton = document.querySelector("#collonade-add-beat");
@@ -194,7 +194,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     !(addButton instanceof HTMLButtonElement) ||
     !(columnsInput instanceof HTMLInputElement) ||
     !(bayWidthInput instanceof HTMLInputElement) ||
-    !(wholePeriodsInput instanceof HTMLInputElement) ||
+    !(endOnFirstBeatInput instanceof HTMLInputElement) ||
     !(stripBlanksInput instanceof HTMLInputElement) ||
     !(beatList instanceof HTMLOListElement) ||
     !(addBeatButton instanceof HTMLButtonElement) ||
@@ -210,7 +210,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     bayWidth: initial.bayWidth,
     bayMeasure: initial.bayMeasure,
     rythm: [...initial.rythm],
-    wholePeriods: initial.wholePeriods,
+    endOnFirstBeat: initial.endOnFirstBeat,
     stripTrailingBlanks: initial.stripTrailingBlanks
   };
   const report = () => onChange({
@@ -220,7 +220,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     bayWidth: form.bayWidth,
     bayMeasure: form.bayMeasure,
     rythm: [...form.rythm],
-    wholePeriods: form.wholePeriods,
+    endOnFirstBeat: form.endOnFirstBeat,
     stripTrailingBlanks: form.stripTrailingBlanks
   })();
 
@@ -414,9 +414,9 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     columnsInput.value = String(form.numOfColumns);
   });
 
-  wholePeriodsInput.checked = form.wholePeriods;
-  wholePeriodsInput.addEventListener("change", () => {
-    form.wholePeriods = wholePeriodsInput.checked;
+  endOnFirstBeatInput.checked = form.endOnFirstBeat;
+  endOnFirstBeatInput.addEventListener("change", () => {
+    form.endOnFirstBeat = endOnFirstBeatInput.checked;
     report();
   });
   stripBlanksInput.checked = form.stripTrailingBlanks;
