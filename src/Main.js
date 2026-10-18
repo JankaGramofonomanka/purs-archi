@@ -183,6 +183,8 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   const addButton = document.querySelector("#collonade-add-order");
   const columnsInput = document.querySelector("#collonade-columns");
   const bayWidthInput = document.querySelector("#collonade-bay-width");
+  const wholePeriodsInput = document.querySelector("#collonade-whole-periods");
+  const stripBlanksInput = document.querySelector("#collonade-strip-blanks");
   const beatList = document.querySelector("#collonade-rythm");
   const addBeatButton = document.querySelector("#collonade-add-beat");
   const bayMeasureButton = document.querySelector("#collonade-bay-measure");
@@ -192,6 +194,8 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     !(addButton instanceof HTMLButtonElement) ||
     !(columnsInput instanceof HTMLInputElement) ||
     !(bayWidthInput instanceof HTMLInputElement) ||
+    !(wholePeriodsInput instanceof HTMLInputElement) ||
+    !(stripBlanksInput instanceof HTMLInputElement) ||
     !(beatList instanceof HTMLOListElement) ||
     !(addBeatButton instanceof HTMLButtonElement) ||
     !(bayMeasureButton instanceof HTMLButtonElement)
@@ -205,7 +209,9 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     numOfColumns: initial.numOfColumns,
     bayWidth: initial.bayWidth,
     bayMeasure: initial.bayMeasure,
-    rythm: [...initial.rythm]
+    rythm: [...initial.rythm],
+    wholePeriods: initial.wholePeriods,
+    stripTrailingBlanks: initial.stripTrailingBlanks
   };
   const report = () => onChange({
     treatise: form.treatise,
@@ -213,7 +219,9 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     numOfColumns: form.numOfColumns,
     bayWidth: form.bayWidth,
     bayMeasure: form.bayMeasure,
-    rythm: [...form.rythm]
+    rythm: [...form.rythm],
+    wholePeriods: form.wholePeriods,
+    stripTrailingBlanks: form.stripTrailingBlanks
   })();
 
   const currentTreatise = () => {
@@ -404,6 +412,17 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   });
   columnsInput.addEventListener("change", () => {
     columnsInput.value = String(form.numOfColumns);
+  });
+
+  wholePeriodsInput.checked = form.wholePeriods;
+  wholePeriodsInput.addEventListener("change", () => {
+    form.wholePeriods = wholePeriodsInput.checked;
+    report();
+  });
+  stripBlanksInput.checked = form.stripTrailingBlanks;
+  stripBlanksInput.addEventListener("change", () => {
+    form.stripTrailingBlanks = stripBlanksInput.checked;
+    report();
   });
 
   bayWidthInput.min = String(minBayWidth);

@@ -8,6 +8,8 @@ module Architecture.Rythm
   , period
   , beatAt
   , take
+  , wholePeriods
+  , dropTrailing
   , toPulse
   )
   where
@@ -66,6 +68,17 @@ take :: forall beat. Int -> Rythm beat -> Array beat
 take n r
   | n <= 0 = []
   | otherwise = map (\i -> beatAt i r) (Array.range 0 (n - 1))
+
+-- | `n` rounded down to whole periods of the rythm, but not below one period.
+wholePeriods :: forall beat. Int -> Rythm beat -> Int
+wholePeriods n r = max (period r) (n - n `mod` period r)
+
+-- | How many of the first `n` beats of the rythm are left once the trailing beats that `isBlank`
+-- | says are blank are dropped; the first beat is always kept.
+dropTrailing :: forall beat. (beat -> Boolean) -> Int -> Rythm beat -> Int
+dropTrailing isBlank n r
+  | n > 1 && isBlank (beatAt (n - 1) r) = dropTrailing isBlank (n - 1) r
+  | otherwise = n
 
 -- | The pulse the rythm is laid on.
 toPulse :: forall beat. Rythm beat -> Pulse

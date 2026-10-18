@@ -47,7 +47,9 @@ type State =
 -- | The collonade settings as exchanged with the page's form: the key of a treatise from
 -- | `treatises`, orders as keys from `orderKinds` with a key from `pedestalModes` each, and
 -- | the bay width in lower diameters with a key from `bayMeasures` saying what it measures, and the motif
--- | of the columns' rythm as the number of columns standing on each of its beats.
+-- | of the columns' rythm as the number of columns standing on each of its beats. The number of columns
+-- | (beats, in fact) is rounded down to whole periods of the rythm if `wholePeriods` is set, and then
+-- | stripped of the trailing empty beats if `stripTrailingBlanks` is set.
 type CollonadeForm =
   { treatise :: String
   , orders :: Array { order :: String, pedestal :: String }
@@ -55,6 +57,8 @@ type CollonadeForm =
   , bayWidth :: Number
   , bayMeasure :: String
   , rythm :: Array Int
+  , wholePeriods :: Boolean
+  , stripTrailingBlanks :: Boolean
   }
 
 -- | A treatise as offered by the page's form, with the keys of the orders it defines and of
@@ -104,7 +108,7 @@ treatiseOptions = treatises <#> \{ key, name, treatise } ->
   }
 
 initialForm :: CollonadeForm
-initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none" }, numOfColumns: 5, bayWidth: 3.0, bayMeasure: "beats", rythm: [ 1 ] }
+initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none" }, numOfColumns: 5, bayWidth: 3.0, bayMeasure: "beats", rythm: [ 1 ], wholePeriods: false, stripTrailingBlanks: false }
 
 main :: Effect Unit
 main = do
@@ -211,7 +215,11 @@ fromForm form = do
   bayMeasure <- case Array.find (\m -> m.key == form.bayMeasure) bayMeasures of
     Nothing -> throw ("Unknown bay measure: " <> form.bayMeasure)
     Just { measure } -> pure measure
-  pure { orders, numOfColumns: form.numOfColumns, bayWidth: form.bayWidth, bayMeasure, rythm }
+  let
+    numOfColumns = form.numOfColumns
+      # (if form.wholePeriods then flip Rythm.wholePeriods rythm else identity)
+      # (if form.stripTrailingBlanks then \n -> Rythm.dropTrailing (\(ColumnBeat columns) -> columns <= 0) n rythm else identity)
+  pure { orders, numOfColumns, bayWidth: form.bayWidth, bayMeasure, rythm }
 
 foreign import setupRoutes
   :: (String -> Number -> Number -> Effect Unit)

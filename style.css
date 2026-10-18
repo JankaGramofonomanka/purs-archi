@@ -201,7 +201,7 @@ body {
   font-weight: 650;
 }
 
-/* Stays at the right edge of the bar while the beats scroll beside it. */
+/* Stays at the right of the bar, before the options, while the beats scroll beside it. */
 .action-bar .add-beat {
   flex: 0 0 auto;
   width: auto;
@@ -211,6 +211,15 @@ body {
 
 /* Takes the room between the label and the button and scrolls sideways when the beats need more;
    the padding keeps the focus outlines of the cells from being clipped. */
+.bottom-bar-options {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
 .beat-list {
   display: flex;
   flex: 1 1 auto;
@@ -247,6 +256,22 @@ body {
   padding: 2px 0;
   border-radius: 6px;
   font-size: 0.9rem;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.action-bar .checkbox input {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  accent-color: #4056c4;
 }
 
 .action-bar select:focus-visible,
