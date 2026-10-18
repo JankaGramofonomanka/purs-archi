@@ -141,6 +141,13 @@ const pedestalIcon = mode => {
 const maxColumns = 20;
 const minBayWidth = 1;
 const maxBayWidth = 12;
+// What the bay width measures: the distance between the centerlines of neighbouring beats, or
+// between the facing outer columns of neighbouring groups of columns.
+const bayMeasureNames = {
+  beats: "Between beats",
+  groups: "Between groups"
+};
+
 // The motif of the columns' rythm: beats separated by `:`, each a `|` per column or `.` for none.
 const rythmPattern = /^(\.|\|+)(:(\.|\|+))*$/;
 
@@ -155,13 +162,15 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   const columnsInput = document.querySelector("#collonade-columns");
   const bayWidthInput = document.querySelector("#collonade-bay-width");
   const rythmInput = document.querySelector("#collonade-rythm");
+  const bayMeasureButton = document.querySelector("#collonade-bay-measure");
   if (
     !(treatiseGroup instanceof HTMLElement) ||
     !(orderList instanceof HTMLOListElement) ||
     !(addButton instanceof HTMLButtonElement) ||
     !(columnsInput instanceof HTMLInputElement) ||
     !(bayWidthInput instanceof HTMLInputElement) ||
-    !(rythmInput instanceof HTMLInputElement)
+    !(rythmInput instanceof HTMLInputElement) ||
+    !(bayMeasureButton instanceof HTMLButtonElement)
   ) {
     throw new Error("Missing collonade form controls");
   }
@@ -171,6 +180,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     orders: initial.orders.map(storey => ({ ...storey })),
     numOfColumns: initial.numOfColumns,
     bayWidth: initial.bayWidth,
+    bayMeasure: initial.bayMeasure,
     rythm: initial.rythm
   };
   const report = () => onChange({
@@ -178,6 +188,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     orders: form.orders.map(storey => ({ ...storey })),
     numOfColumns: form.numOfColumns,
     bayWidth: form.bayWidth,
+    bayMeasure: form.bayMeasure,
     rythm: form.rythm
   })();
 
@@ -287,9 +298,23 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     }));
   };
 
+  const bayMeasureKeys = Object.keys(bayMeasureNames);
+  const nextBayMeasure = () =>
+    bayMeasureKeys[(bayMeasureKeys.indexOf(form.bayMeasure) + 1) % bayMeasureKeys.length];
+  const renderBayMeasures = () => {
+    bayMeasureButton.textContent = bayMeasureNames[form.bayMeasure];
+    bayMeasureButton.title = `Click for ${bayMeasureNames[nextBayMeasure()].toLowerCase()}`;
+  };
+  bayMeasureButton.addEventListener("click", () => {
+    form.bayMeasure = nextBayMeasure();
+    render();
+    report();
+  });
+
   const render = () => {
     renderTreatises();
     renderOrders();
+    renderBayMeasures();
   };
 
   addButton.addEventListener("click", () => {

@@ -13,7 +13,7 @@ import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import Architecture (ColumnBeat(..), Storey)
+import Architecture (BayMeasure(..), ColumnBeat(..), Storey)
 import Architecture.Order (OrderKind(..), PedestalMode(..), Treatise, treatiseOrder)
 import Architecture.Order.Alberti as Alberti
 import Architecture.Order.Chambers as Chambers
@@ -47,13 +47,14 @@ type State =
 
 -- | The collonade settings as exchanged with the page's form: the key of a treatise from
 -- | `treatises`, orders as keys from `orderKinds` with a key from `pedestalModes` each, and
--- | the bay width in lower diameters, and the motif of the columns' rythm: beats separated by `:`,
+-- | the bay width in lower diameters with a key from `bayMeasures` saying what it measures, and the motif of the columns' rythm: beats separated by `:`,
 -- | each written as a `|` per column standing on it, or as `.` for none (e.g. `||:|:.:|`).
 type CollonadeForm =
   { treatise :: String
   , orders :: Array { order :: String, pedestal :: String }
   , numOfColumns :: Int
   , bayWidth :: Number
+  , bayMeasure :: String
   , rythm :: String
   }
 
@@ -82,6 +83,12 @@ orderKinds =
   , { key: "composite", kind: Composite }
   ]
 
+bayMeasures :: Array { key :: String, measure :: BayMeasure }
+bayMeasures =
+  [ { key: "beats", measure: BetweenBeats }
+  , { key: "groups", measure: BetweenGroups }
+  ]
+
 pedestalModes :: Array { key :: String, mode :: PedestalMode }
 pedestalModes =
   [ { key: "none", mode: NoPedestal }
@@ -98,7 +105,7 @@ treatiseOptions = treatises <#> \{ key, name, treatise } ->
   }
 
 initialForm :: CollonadeForm
-initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none" }, numOfColumns: 5, bayWidth: 3.0, rythm: "|" }
+initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none" }, numOfColumns: 5, bayWidth: 3.0, bayMeasure: "beats", rythm: "|" }
 
 main :: Effect Unit
 main = do
@@ -200,7 +207,10 @@ fromForm form = do
   rythm <- case Rythm.fromString ":" columnBeat form.rythm of
     Nothing -> throw ("A rythm of columns is a sequence of beats separated by ':', each a '|' per column or '.' for none: " <> form.rythm)
     Just rythm -> pure rythm
-  pure { orders, numOfColumns: form.numOfColumns, bayWidth: form.bayWidth, rythm }
+  bayMeasure <- case Array.find (\m -> m.key == form.bayMeasure) bayMeasures of
+    Nothing -> throw ("Unknown bay measure: " <> form.bayMeasure)
+    Just { measure } -> pure measure
+  pure { orders, numOfColumns: form.numOfColumns, bayWidth: form.bayWidth, bayMeasure, rythm }
   where
   columnBeat = case _ of
     "." -> Just (ColumnBeat 0)

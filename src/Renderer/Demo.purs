@@ -3,7 +3,7 @@ module Renderer.Demo (draw) where
 import Prelude
 
 import Anchor (placeBottomRight, render, size)
-import Architecture (Column(..), ColumnBeat(..), Portico(..), StackedCollonade(..), minGroupSpacing)
+import Architecture (BayMeasure(..), Column(..), ColumnBeat(..), Portico(..), StackedCollonade(..), minGroupSpacing)
 import Architecture.Order (PedestalMode(..), SizeDeterminant(..), minuteFromColumnAndEntablatureHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, orderHeight, sizeOf)
 import Architecture.Order.Draw (drawOrder, drawOrderFromLowerDiameter, drawOrderFromOrderHeight, drawOrderFromUpperDiameter)
 import Architecture.Order.Palladio (corynthian, doric, ionic)
@@ -116,7 +116,7 @@ draw width height = do
   let columnsLeft = centerX - max (columnHalfWidth doric doricMinute) (max (columnHalfWidth ionic ionicMinute) (columnHalfWidth corynthian corynthianMinute))
   let numOfColumns = 4
   let bayWidth = 3.0 * sizeOf doric.column.lowerDiameter doricMinute
-  let portico order minute = Portico { order, size: Minute minute, numOfColumns, bayWidth, rythm: ColumnBeat 1 <$ pulse, groupSpacing: minGroupSpacing order (Minute minute), pedestal: NoPedestal }
+  let portico order minute = Portico { order, size: Minute minute, numOfColumns, bayWidth, bayMeasure: BetweenBeats, rythm: ColumnBeat 1 <$ pulse, groupSpacing: minGroupSpacing order (Minute minute), pedestal: NoPedestal }
   -- distance from the outermost column centerline to the portico's edge
   let overhang p = ((size p).width - Int.toNumber (numOfColumns - 1) * bayWidth) / 2.0
   let doricPortico = portico doric doricMinute
@@ -135,6 +135,7 @@ draw width height = do
         , size: { row: 1, size: Minute ionicMinute }
         , numOfColumns: 5
         , bayWidth
+        , bayMeasure: BetweenBeats
         -- coupled columns at the ends and in the middle, single ones between: ||:|:||:|:||
         , rythm: rythm (NonEmptyArray.cons' (ColumnBeat 2) [ ColumnBeat 1 ])
         }

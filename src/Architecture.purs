@@ -9,6 +9,7 @@ module Architecture
   , Column(..)
   , Entablature(..)
   , ColumnBeat(..)
+  , BayMeasure(..)
   , minGroupSpacing
   )
   where
@@ -45,15 +46,25 @@ derive newtype instance Show ColumnBeat
 groupSpan :: Number -> ColumnBeat -> Number
 groupSpan spacing (ColumnBeat n) = Int.toNumber (max 0 (n - 1)) * spacing
 
+-- | What the bay width of a row of columns measures.
+-- | `BetweenBeats`: the distance between the centerlines of neighbouring beats, so the beats keep
+-- | an even pulse and groups of columns are centered on it.
+-- | `BetweenGroups`: the distance between the last column of a group and the first column of the next
+-- | (an empty beat counts as a group with no width), so wider groups stretch the pulse.
+data BayMeasure = BetweenBeats | BetweenGroups
+
+derive instance Eq BayMeasure
+
 -- | Columns of the same order in a row under a common entablature, standing on pedestals or a podium
--- | as `pedestal` says (and the order defines one). The row is a pulse of `numOfColumns` beats,
--- | `bayWidth` apart (centerline to centerline), and `rythm` says what stands on each of them.
--- | The entablature (and a podium) span the whole pulse.
+-- | as `pedestal` says (and the order defines one). The row is a sequence of `numOfColumns` beats,
+-- | `bayWidth` apart as `bayMeasure` says, and `rythm` says what stands on each of them.
+-- | The entablature (and a podium) span the whole row.
 newtype Portico = Portico {
   order :: Order,
   size :: SizeDeterminant,
   numOfColumns :: Int,
   bayWidth :: Number,
+  bayMeasure :: BayMeasure,
   rythm :: Rythm ColumnBeat,
   -- | Distance between the centerlines of neighbouring columns of a group; see `minGroupSpacing`.
   groupSpacing :: Number,
@@ -70,13 +81,14 @@ type RowSizeDeterminant = { row :: Int, size :: SizeDeterminant }
 type Storey = { order :: Order, pedestal :: PedestalMode }
 
 -- | Rows of columns stacked on each other, `orders` listed from bottom to top.
--- | All rows share the pulse and the `rythm` of the columns (see `Portico`); the lower diameter
+-- | All rows share the beats and the `rythm` of the columns (see `Portico`); the lower diameter
 -- | of each row's columns equals the upper diameter of the columns below, so every row has its own minute.
 newtype StackedCollonade = StackedCollonade {
   orders :: Array Storey,
   size :: RowSizeDeterminant,
   numOfColumns :: Int,
   bayWidth :: Number,
+  bayMeasure :: BayMeasure,
   rythm :: Rythm ColumnBeat
 }
 
@@ -160,18 +172,24 @@ minGroupSpacing order size' =
   let minute = minuteFromSize order size'
   in max (sizeOf order.base.width minute) (sizeOf order.capital.width minute)
 
--- | How far the outermost column centerlines lie beyond the first and the last beat of the pulse.
-porticoExtensions :: Portico -> { left :: Number, right :: Number }
-porticoExtensions (Portico portico) =
-  let extension i = groupSpan portico.groupSpacing (beatAt i portico.rythm) / 2.0
-  in if portico.numOfColumns < 1 then { left: 0.0, right: 0.0 }
-     else { left: extension 0, right: extension (portico.numOfColumns - 1) }
+-- | The beats of the row, each with its centerline measured from the centerline of the leftmost column.
+porticoBeats :: Portico -> Array { centerline :: Number, beat :: ColumnBeat }
+porticoBeats (Portico portico) =
+  let beats = map (\i -> beatAt i portico.rythm) (Array.range 0 (portico.numOfColumns - 1))
+      halfSpan beat = groupSpan portico.groupSpacing beat / 2.0
+      distance previous next = case portico.bayMeasure of
+        BetweenBeats -> portico.bayWidth
+        BetweenGroups -> halfSpan previous + portico.bayWidth + halfSpan next
+      place placed beat = case Array.last placed of
+        Nothing -> [ { centerline: halfSpan beat, beat } ]
+        Just previous -> Array.snoc placed { centerline: previous.centerline + distance previous.beat beat, beat }
+  in if portico.numOfColumns < 1 then [] else foldl place [] beats
 
 -- | Distance between the centerlines of the outermost columns.
 porticoSpan :: Portico -> Number
-porticoSpan p@(Portico portico) =
-  let { left, right } = porticoExtensions p
-  in Int.toNumber (max 0 (portico.numOfColumns - 1)) * portico.bayWidth + left + right
+porticoSpan p@(Portico portico) = case Array.last (porticoBeats p) of
+  Nothing -> 0.0
+  Just { centerline, beat } -> centerline + groupSpan portico.groupSpacing beat / 2.0
 
 -- | The pedestal the portico's columns stand on, if any.
 porticoPedestal :: Portico -> Maybe Pedestal
@@ -208,13 +226,8 @@ drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
   let { width, height } = size p
   let ground = topLeft.y + height
   let bottom = ground - sizeOf (pedestalHeight portico.pedestal order) minute
-  let firstCenterline = topLeft.x + porticoOverhang p + (porticoExtensions p).left
-  let centerline i = firstCenterline + Int.toNumber i * portico.bayWidth
-  let forBeats draw =
-        let go i = when (i < portico.numOfColumns) do
-              draw (centerline i) (beatAt i portico.rythm)
-              go (i + 1)
-        in go 0
+  let left = topLeft.x + porticoOverhang p
+  let forBeats draw = for_ (porticoBeats p) \{ centerline, beat } -> draw (left + centerline) beat
   case porticoPedestal p of
     Nothing -> pure unit
     Just pedestal -> case portico.pedestal of
@@ -268,11 +281,11 @@ rowMinutes (StackedCollonade { orders: storeys, size: { row, size } }) = case Ar
 -- | Rows of the stack, bottom to top. Grouped columns of all rows are as far apart as the row
 -- | that needs the most room requires, so the columns of each row stand on those below.
 collonades :: StackedCollonade -> Array Collonade
-collonades stack@(StackedCollonade { orders, numOfColumns, bayWidth, rythm }) =
+collonades stack@(StackedCollonade { orders, numOfColumns, bayWidth, bayMeasure, rythm }) =
   let rows = Array.zip orders (rowMinutes stack)
       groupSpacing = foldl max 0.0 (map (\(Tuple { order } minute) -> minGroupSpacing order (Minute minute)) rows)
   in rows <#> \(Tuple { order, pedestal } minute) ->
-       Collonade (Portico { order, size: Minute minute, numOfColumns, bayWidth, rythm, groupSpacing, pedestal })
+       Collonade (Portico { order, size: Minute minute, numOfColumns, bayWidth, bayMeasure, rythm, groupSpacing, pedestal })
 
 -- | All rows share the span, so the widest row is the one with the largest overhang.
 instance Sized StackedCollonade where
