@@ -11,6 +11,7 @@ module Architecture.Order.Gibbs
 import Prelude
 
 import Architecture.Order (Minutes(..), Order, OrderKind(..), Treatise, mkOrder, mkPedestal)
+import Architecture.Superposition (continuousTaper)
 import Data.Maybe (Maybe(..))
 
 -- After Gibbs, Rules for Drawing the Several Parts of Architecture (1753 edition). Columns
@@ -27,6 +28,8 @@ treatise =
   , ionic: Just ionic
   , corynthian: Just corynthian
   , composite: Just composite
+  -- Not checked against Gibbs's text; Scamozzi's rule, the later convention, stands in.
+  , superposition: continuousTaper
   }
 
 -- Diminished a fifth of the semidiameter on each side. The capital projects a fourth of the

@@ -9,6 +9,7 @@ module Architecture.Order.Serlio
   where
 
 import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder)
+import Architecture.Superposition (continuousTaper)
 import Data.Maybe (Maybe(..))
 
 -- After Serlio's Book IV, as measured in Fréart de Chambray's Parallel of the Antient
@@ -23,6 +24,8 @@ treatise =
   , ionic: Just ionic
   , corynthian: Just corynthian
   , composite: Just composite
+  -- Not checked against Serlio's text; Scamozzi's rule, the later convention, stands in.
+  , superposition: continuousTaper
   }
 
 -- Six diameters, with base, capital, architrave, frieze and cornice all equally high; the

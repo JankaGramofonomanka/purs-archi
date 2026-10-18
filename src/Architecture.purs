@@ -17,7 +17,9 @@ module Architecture
 import Prelude
 
 import Anchor (class Sized, HorizontalAnchor(..), PointAnchor(..), RectangularAnchor(..), VerticalAnchor(..), drawAnchored, size)
-import Architecture.Order (Order, Pedestal, PedestalMode(..), SizeDeterminant(..), minuteFromLowerDiameter, minuteFromSize, minuteFromUpperDiameter, pedestalHeight, sizeOf)
+import Architecture.Measure (Measure(..), SizeDeterminant)
+import Architecture.Order (Order, Pedestal, PedestalMode(..), lowerMinute, minuteFromSize, pedestalHeight, sizeOf, upperMinute)
+import Architecture.Superposition (SuperpositionRule)
 import Architecture.Order.Draw (drawColumn, drawEntablature, drawSpanningEntablature, drawSpanningPedestal)
 import Architecture.Rythm (Rythm, beatAt)
 import Data.Array as Array
@@ -81,10 +83,11 @@ type RowSizeDeterminant = { row :: Int, size :: SizeDeterminant }
 type Storey = { order :: Order, pedestal :: PedestalMode }
 
 -- | Rows of columns stacked on each other, `orders` listed from bottom to top.
--- | All rows share the beats and the `rythm` of the columns (see `Portico`); the lower diameter
--- | of each row's columns equals the upper diameter of the columns below, so every row has its own minute.
+-- | All rows share the beats and the `rythm` of the columns (see `Portico`); `superposition` relates
+-- | the size of each row to the row below, so every row has its own minute.
 newtype StackedCollonade = StackedCollonade {
   orders :: Array Storey,
+  superposition :: SuperpositionRule,
   size :: RowSizeDeterminant,
   numOfColumns :: Int,
   bayWidth :: Number,
@@ -93,7 +96,7 @@ newtype StackedCollonade = StackedCollonade {
 }
 
 minuteOf :: SizedOrder -> Number
-minuteOf sized = minuteFromSize sized.order sized.size
+minuteOf sized = minuteFromSize NoPedestal sized.order sized.size
 
 -- Column
 
@@ -167,10 +170,9 @@ instance (Monad m, Renderer m) => RenderHorizontal m Entablature where
 
 -- | The smallest distance between the centerlines of neighbouring columns of a group at which
 -- | neither their bases nor their capitals overlap.
-minGroupSpacing :: Order -> SizeDeterminant -> Number
-minGroupSpacing order size' =
-  let minute = minuteFromSize order size'
-  in max (sizeOf order.base.width minute) (sizeOf order.capital.width minute)
+minGroupSpacing :: Order -> Number -> Number
+minGroupSpacing order minute =
+  max (sizeOf order.base.width minute) (sizeOf order.capital.width minute)
 
 -- | The beats of the row, each with its centerline measured from the centerline of the leftmost column.
 porticoBeats :: Portico -> Array { centerline :: Number, beat :: ColumnBeat }
@@ -200,7 +202,7 @@ porticoPedestal (Portico portico) = case portico.pedestal of
 -- | How far the portico reaches beyond the centerlines of the outermost columns.
 porticoOverhang :: Portico -> Number
 porticoOverhang p@(Portico portico@{ order }) =
-  let minute = minuteFromSize order portico.size
+  let minute = minuteFromSize portico.pedestal order portico.size
       size' proportion = sizeOf proportion minute
       pedestalOverhang = case porticoPedestal p of
         Nothing -> 0.0
@@ -213,7 +215,7 @@ porticoOverhang p@(Portico portico@{ order }) =
 
 instance Sized Portico where
   size p@(Portico portico) =
-    let minute = minuteFromSize portico.order portico.size
+    let minute = minuteFromSize portico.pedestal portico.order portico.size
     in { width: porticoSpan p + 2.0 * porticoOverhang p
        , height: sizeOf portico.order.height minute + sizeOf (pedestalHeight portico.pedestal portico.order) minute
        }
@@ -222,7 +224,7 @@ instance RectangularFigure Portico
 
 drawPorticoFromTopLeft :: forall m. Monad m => Renderer m => Point -> Portico -> m Unit
 drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
-  let minute = minuteFromSize order portico.size
+  let minute = minuteFromSize portico.pedestal order portico.size
   let { width, height } = size p
   let ground = topLeft.y + height
   let bottom = ground - sizeOf (pedestalHeight portico.pedestal order) minute
@@ -264,28 +266,24 @@ derive newtype instance (Monad m, Renderer m) => RenderOrtogonal m Collonade
 
 -- | Minutes of the rows, bottom to top. Empty if `size.row` is not a row of the stack.
 rowMinutes :: StackedCollonade -> Array Number
-rowMinutes (StackedCollonade { orders: storeys, size: { row, size } }) = case Array.index orders row of
+rowMinutes (StackedCollonade { orders: storeys, superposition, size: { row, size } }) = case Array.index storeys row of
   Nothing -> []
   Just anchor ->
-    let anchorMinute = minuteFromSize anchor size
+    let anchorMinute = minuteFromSize anchor.pedestal anchor.order size
         start = Tuple anchor anchorMinute
-        propagate next = map snd <<< Array.scanl (\(Tuple prev minute) order -> Tuple order (next prev minute order)) start
-        above = propagate (\below minute order -> minuteFromLowerDiameter order (sizeOf below.column.upperDiameter minute))
-          (Array.drop (row + 1) orders)
-        below = propagate (\above' minute order -> minuteFromUpperDiameter order (sizeOf above'.column.lowerDiameter minute))
-          (Array.reverse (Array.take row orders))
+        propagate next = map snd <<< Array.scanl (\(Tuple prev minute) storey -> Tuple storey (next prev minute storey)) start
+        above = propagate (upperMinute superposition) (Array.drop (row + 1) storeys)
+        below = propagate (lowerMinute superposition) (Array.reverse (Array.take row storeys))
     in Array.reverse below <> [ anchorMinute ] <> above
-  where
-  orders = map _.order storeys
 
 -- | Rows of the stack, bottom to top. Grouped columns of all rows are as far apart as the row
 -- | that needs the most room requires, so the columns of each row stand on those below.
 collonades :: StackedCollonade -> Array Collonade
 collonades stack@(StackedCollonade { orders, numOfColumns, bayWidth, bayMeasure, rythm }) =
   let rows = Array.zip orders (rowMinutes stack)
-      groupSpacing = foldl max 0.0 (map (\(Tuple { order } minute) -> minGroupSpacing order (Minute minute)) rows)
+      groupSpacing = foldl max 0.0 (map (\(Tuple { order } minute) -> minGroupSpacing order minute) rows)
   in rows <#> \(Tuple { order, pedestal } minute) ->
-       Collonade (Portico { order, size: Minute minute, numOfColumns, bayWidth, bayMeasure, rythm, groupSpacing, pedestal })
+       Collonade (Portico { order, size: { measure: Minute, value: minute }, numOfColumns, bayWidth, bayMeasure, rythm, groupSpacing, pedestal })
 
 -- | All rows share the span, so the widest row is the one with the largest overhang.
 instance Sized StackedCollonade where

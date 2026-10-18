@@ -4,11 +4,13 @@ import Prelude
 
 import Anchor (placeBottomRight, render, size)
 import Architecture (BayMeasure(..), Column(..), ColumnBeat(..), Portico(..), StackedCollonade(..), minGroupSpacing)
-import Architecture.Order (PedestalMode(..), SizeDeterminant(..), minuteFromColumnAndEntablatureHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, orderHeight, sizeOf)
+import Architecture.Measure (Measure(..))
+import Architecture.Order (PedestalMode(..), minuteFromColumnAndEntablatureHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, orderHeight, sizeOf)
 import Architecture.Order.Draw (drawOrder, drawOrderFromLowerDiameter, drawOrderFromOrderHeight, drawOrderFromUpperDiameter)
 import Architecture.Order.Palladio (corynthian, doric, ionic)
 import Architecture.Rythm (pulse, rythm)
 import Data.Array.NonEmpty as NonEmptyArray
+import Architecture.Superposition (continuousTaper)
 import Data.Int as Int
 import Data.Default (class Default, def)
 import Data.Maybe (Maybe(..))
@@ -112,11 +114,11 @@ draw width height = do
   drawOrderFromLowerDiameter (point centerX corynthianBottom) corynthianLowerDiameter corynthian
 
   --porticos, same orders and minutes as the stacked orders, 50px to their left
-  let columnHalfWidth order minute = (size (Column { order, size: Minute minute })).width / 2.0
+  let columnHalfWidth order minute = (size (Column { order, size: { measure: Minute, value: minute } })).width / 2.0
   let columnsLeft = centerX - max (columnHalfWidth doric doricMinute) (max (columnHalfWidth ionic ionicMinute) (columnHalfWidth corynthian corynthianMinute))
   let numOfColumns = 4
   let bayWidth = 3.0 * sizeOf doric.column.lowerDiameter doricMinute
-  let portico order minute = Portico { order, size: Minute minute, numOfColumns, bayWidth, bayMeasure: BetweenBeats, rythm: ColumnBeat 1 <$ pulse, groupSpacing: minGroupSpacing order (Minute minute), pedestal: NoPedestal }
+  let portico order minute = Portico { order, size: { measure: Minute, value: minute }, numOfColumns, bayWidth, bayMeasure: BetweenBeats, rythm: ColumnBeat 1 <$ pulse, groupSpacing: minGroupSpacing order minute, pedestal: NoPedestal }
   -- distance from the outermost column centerline to the portico's edge
   let overhang p = ((size p).width - Int.toNumber (numOfColumns - 1) * bayWidth) / 2.0
   let doricPortico = portico doric doricMinute
@@ -132,7 +134,8 @@ draw width height = do
   --stacked collonade, same orders and minutes as the porticos, 50px to their left
   let stackedCollonade = StackedCollonade
         { orders: [ doric, ionic, corynthian ] <#> \order -> { order, pedestal: NoPedestal }
-        , size: { row: 1, size: Minute ionicMinute }
+        , superposition: continuousTaper
+        , size: { row: 1, size: { measure: Minute, value: ionicMinute } }
         , numOfColumns: 5
         , bayWidth
         , bayMeasure: BetweenBeats

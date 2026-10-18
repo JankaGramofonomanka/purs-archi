@@ -11,6 +11,7 @@ module Architecture.Order.Chambers
 import Prelude
 
 import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder, withPedestal)
+import Architecture.Superposition (continuousTaper)
 import Data.Maybe (Maybe(..))
 
 -- After Chambers, A Treatise on the Decorative Part of Civil Architecture (Gwilt's 1862
@@ -29,6 +30,8 @@ treatise =
   , ionic: Just ionic
   , corynthian: Just corynthian
   , composite: Just composite
+  -- Chambers adopts Scamozzi's rule as "universally esteemed the best".
+  , superposition: continuousTaper
   }
 
 -- Entablature in ten parts: architrave 3, frieze 3, cornice 4; capital one module.

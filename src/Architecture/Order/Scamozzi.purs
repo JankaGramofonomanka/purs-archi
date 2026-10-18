@@ -11,6 +11,7 @@ module Architecture.Order.Scamozzi
 import Prelude
 
 import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder, mkPedestal, withPedestal)
+import Architecture.Superposition (continuousTaper)
 import Data.Maybe (Maybe(..))
 
 -- After Scamozzi, L'idea dell'architettura universale, Book VI, in "The Mirror of
@@ -32,6 +33,8 @@ treatise =
   , ionic: Just ionic
   , corynthian: Just corynthian
   , composite: Just composite
+  -- Book VI, chapter 11: each column as thick below as the one beneath it is above.
+  , superposition: continuousTaper
   }
 
 -- Entablature 1 7/8 diameters: architrave 32 1/2 minutes, frieze 41, cornice 39.

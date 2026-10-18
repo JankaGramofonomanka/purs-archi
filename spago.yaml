@@ -2,6 +2,7 @@ package:
   name: purs-archi
   dependencies:
     - canvas
+    - codec-json
     - colors
     - console
     - data-default

@@ -220,7 +220,7 @@ fromForm form = do
     { length: numOfColumns, rythm } =
       if form.stripBlanks then Rythm.trim (\(ColumnBeat columns) -> columns <= 0) rounded motif
       else { length: rounded, rythm: motif }
-  pure { orders, numOfColumns, bayWidth: form.bayWidth, bayMeasure, rythm }
+  pure { orders, superposition: treatise.superposition, numOfColumns, bayWidth: form.bayWidth, bayMeasure, rythm }
 
 foreign import setupRoutes
   :: (String -> Number -> Number -> Effect Unit)

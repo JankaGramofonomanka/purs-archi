@@ -8,7 +8,6 @@ module Architecture.Order
   , OrderKind(..)
   , Pedestal
   , PedestalMode(..)
-  , SizeDeterminant(..)
   , Treatise
   , mkOrder
   , mkPedestal
@@ -19,6 +18,9 @@ module Architecture.Order
   , minuteFromSize
   , minuteFromLowerDiameter
   , minuteFromUpperDiameter
+  , measureOf
+  , lowerMinute
+  , upperMinute
   , minutesPerDiameter
   , orderHeight
   , sizeOf
@@ -29,6 +31,8 @@ module Architecture.Order
 
 import Prelude
 
+import Architecture.Measure (Measure(..), SizeDeterminant)
+import Architecture.Superposition (SuperpositionRule(..), ratioValue)
 import Data.Int as Int
 import Data.Maybe (Maybe(..), maybe)
 
@@ -111,14 +115,10 @@ minuteFromEntablatureHeight :: Order -> Number -> Number
 minuteFromEntablatureHeight order height =
   minuteFromProportion order.entablature.height height
 
-minuteFromSize :: Order -> SizeDeterminant -> Number
-minuteFromSize order = case _ of
-  Minute minute -> minute
-  LowerDiameter diameter -> minuteFromLowerDiameter order diameter
-  UpperDiameter diameter -> minuteFromUpperDiameter order diameter
-  ColumnHeight height -> minuteFromColumnHeight order height
-  EntablatureHeight height -> minuteFromEntablatureHeight order height
-  OrderHeight height -> minuteFromColumnAndEntablatureHeight order height
+-- | The minute of an order whose columns stand as `mode` says (which matters for `StoreyHeight`).
+minuteFromSize :: PedestalMode -> Order -> SizeDeterminant -> Number
+minuteFromSize mode order { measure, value } =
+  minuteFromProportion (measureOf measure mode order) value
 
 minuteFromLowerDiameter :: Order -> Number -> Number
 minuteFromLowerDiameter order diameter =
@@ -136,7 +136,31 @@ minuteFromProportion :: Minutes -> Number -> Number
 minuteFromProportion (Minutes proportion) measurement =
   measurement / Int.toNumber proportion
 
-data SizeDeterminant = Minute Number | LowerDiameter Number | UpperDiameter Number | ColumnHeight Number | EntablatureHeight Number | OrderHeight Number
+-- | The given measure of an order whose columns stand as `mode` says, in minutes.
+measureOf :: Measure -> PedestalMode -> Order -> Minutes
+measureOf measure mode order = case measure of
+  Minute -> Minutes 1
+  LowerDiameter -> order.column.lowerDiameter
+  UpperDiameter -> order.column.upperDiameter
+  ColumnHeight -> order.column.height
+  EntablatureHeight -> order.entablature.height
+  OrderHeight -> order.height
+  StoreyHeight ->
+    let Minutes height = order.height
+        Minutes pedestal = pedestalHeight mode order
+    in Minutes (height + pedestal)
+
+-- | The minute of an order stacked on `lower`, whose minute is given, as `rule` says.
+upperMinute :: SuperpositionRule -> { order :: Order, pedestal :: PedestalMode } -> Number -> { order :: Order, pedestal :: PedestalMode } -> Number
+upperMinute (Match rule) lower minute upper =
+  minuteFromProportion (measureOf rule.upper upper.pedestal upper.order)
+    (ratioValue rule.ratio * sizeOf (measureOf rule.lower lower.pedestal lower.order) minute)
+
+-- | The minute of the order under `upper`, whose minute is given, as `rule` says; the inverse of `upperMinute`.
+lowerMinute :: SuperpositionRule -> { order :: Order, pedestal :: PedestalMode } -> Number -> { order :: Order, pedestal :: PedestalMode } -> Number
+lowerMinute (Match rule) upper minute lower =
+  minuteFromProportion (measureOf rule.lower lower.pedestal lower.order)
+    (sizeOf (measureOf rule.upper upper.pedestal upper.order) minute / ratioValue rule.ratio)
 
 -- | The orders as one author of a treatise proportions them; `Nothing` where the author
 -- | does not define the order.
@@ -146,6 +170,8 @@ type Treatise =
   , ionic :: Maybe Order
   , corynthian :: Maybe Order
   , composite :: Maybe Order
+  -- | How large an order stacked on another is.
+  , superposition :: SuperpositionRule
   }
 
 treatiseOrder :: Treatise -> OrderKind -> Maybe Order

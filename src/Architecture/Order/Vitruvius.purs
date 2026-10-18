@@ -7,6 +7,7 @@ module Architecture.Order.Vitruvius
   where
 
 import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder)
+import Architecture.Superposition (fourthLess)
 import Data.Maybe (Maybe(..))
 
 -- After Vitruvius, The Ten Books on Architecture (Morgan's 1914 translation).
@@ -20,6 +21,8 @@ treatise =
   , ionic: Just ionic
   , corynthian: Just corynthian
   , composite: Nothing
+  -- Book V, chapters 1 and 7: the upper columns a fourth less than the lower.
+  , superposition: fourthLess
   }
 
 -- Book IV, ch. 3: the module is half a diameter; the column, with its capital and without a

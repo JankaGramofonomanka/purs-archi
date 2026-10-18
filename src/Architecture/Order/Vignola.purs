@@ -11,6 +11,7 @@ module Architecture.Order.Vignola
 import Prelude
 
 import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder, withPedestal)
+import Architecture.Superposition (continuousTaper)
 import Data.Maybe (Maybe(..))
 
 -- After Vignola, Regola delli cinque ordini (Moxon's translation, "Vignola, or the Compleat
@@ -31,6 +32,8 @@ treatise =
   , ionic: Just ionic
   , corynthian: Just corynthian
   , composite: Just composite
+  -- Not checked against Vignola's text; Scamozzi's rule, the later convention, stands in.
+  , superposition: continuousTaper
   }
 
 -- Architrave 1 module, frieze 1 1/6, cornice 1 1/3; capital 1.
