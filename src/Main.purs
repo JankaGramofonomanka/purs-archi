@@ -49,7 +49,7 @@ type State =
 -- | the bay width in lower diameters with a key from `bayMeasures` saying what it measures, and the motif
 -- | of the columns' rythm as the number of columns standing on each of its beats. The number of columns
 -- | (beats, in fact) is rounded down to whole periods of the rythm and its first beat if `endOnFirstBeat` is set, and then
--- | stripped of the trailing empty beats if `stripTrailingBlanks` is set.
+-- | stripped of the empty beats at both ends if `stripBlanks` is set.
 type CollonadeForm =
   { treatise :: String
   , orders :: Array { order :: String, pedestal :: String }
@@ -58,7 +58,7 @@ type CollonadeForm =
   , bayMeasure :: String
   , rythm :: Array Int
   , endOnFirstBeat :: Boolean
-  , stripTrailingBlanks :: Boolean
+  , stripBlanks :: Boolean
   }
 
 -- | A treatise as offered by the page's form, with the keys of the orders it defines and of
@@ -108,7 +108,7 @@ treatiseOptions = treatises <#> \{ key, name, treatise } ->
   }
 
 initialForm :: CollonadeForm
-initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none" }, numOfColumns: 5, bayWidth: 3.0, bayMeasure: "beats", rythm: [ 1 ], endOnFirstBeat: false, stripTrailingBlanks: false }
+initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none" }, numOfColumns: 5, bayWidth: 3.0, bayMeasure: "beats", rythm: [ 1 ], endOnFirstBeat: false, stripBlanks: false }
 
 main :: Effect Unit
 main = do
@@ -209,16 +209,17 @@ fromForm form = do
   orders <- traverse storeyFromForm form.orders
   when (Array.any (_ < 0) form.rythm) do
     throw "A beat cannot have a negative number of columns"
-  rythm <- case NonEmptyArray.fromArray (map ColumnBeat form.rythm) of
+  motif <- case NonEmptyArray.fromArray (map ColumnBeat form.rythm) of
     Nothing -> throw "A rythm of columns needs at least one beat"
     Just beats -> pure (Rythm.rythm beats)
   bayMeasure <- case Array.find (\m -> m.key == form.bayMeasure) bayMeasures of
     Nothing -> throw ("Unknown bay measure: " <> form.bayMeasure)
     Just { measure } -> pure measure
   let
-    numOfColumns = form.numOfColumns
-      # (if form.endOnFirstBeat then flip Rythm.endOnFirstBeat rythm else identity)
-      # (if form.stripTrailingBlanks then \n -> Rythm.dropTrailing (\(ColumnBeat columns) -> columns <= 0) n rythm else identity)
+    rounded = if form.endOnFirstBeat then Rythm.endOnFirstBeat form.numOfColumns motif else form.numOfColumns
+    { length: numOfColumns, rythm } =
+      if form.stripBlanks then Rythm.trim (\(ColumnBeat columns) -> columns <= 0) rounded motif
+      else { length: rounded, rythm: motif }
   pure { orders, numOfColumns, bayWidth: form.bayWidth, bayMeasure, rythm }
 
 foreign import setupRoutes

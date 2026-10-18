@@ -211,7 +211,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     bayMeasure: initial.bayMeasure,
     rythm: [...initial.rythm],
     endOnFirstBeat: initial.endOnFirstBeat,
-    stripTrailingBlanks: initial.stripTrailingBlanks
+    stripBlanks: initial.stripBlanks
   };
   const report = () => onChange({
     treatise: form.treatise,
@@ -221,7 +221,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     bayMeasure: form.bayMeasure,
     rythm: [...form.rythm],
     endOnFirstBeat: form.endOnFirstBeat,
-    stripTrailingBlanks: form.stripTrailingBlanks
+    stripBlanks: form.stripBlanks
   })();
 
   const currentTreatise = () => {
@@ -419,9 +419,9 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     form.endOnFirstBeat = endOnFirstBeatInput.checked;
     report();
   });
-  stripBlanksInput.checked = form.stripTrailingBlanks;
+  stripBlanksInput.checked = form.stripBlanks;
   stripBlanksInput.addEventListener("change", () => {
-    form.stripTrailingBlanks = stripBlanksInput.checked;
+    form.stripBlanks = stripBlanksInput.checked;
     report();
   });
 

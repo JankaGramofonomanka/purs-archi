@@ -9,7 +9,8 @@ module Architecture.Rythm
   , beatAt
   , take
   , endOnFirstBeat
-  , dropTrailing
+  , rotate
+  , trim
   , toPulse
   )
   where
@@ -76,12 +77,24 @@ endOnFirstBeat n r
   | n < 1 = n
   | otherwise = n - (n - 1) `mod` period r
 
--- | How many of the first `n` beats of the rythm are left once the trailing beats that `isBlank`
--- | says are blank are dropped; the first beat is always kept.
-dropTrailing :: forall beat. (beat -> Boolean) -> Int -> Rythm beat -> Int
-dropTrailing isBlank n r
-  | n > 1 && isBlank (beatAt (n - 1) r) = dropTrailing isBlank (n - 1) r
-  | otherwise = n
+-- | The same rythm started `k` beats later.
+rotate :: forall beat. Int -> Rythm beat -> Rythm beat
+rotate k r = Rythm (map (\i -> beatAt (i + k) r) (NonEmptyArray.range 0 (period r - 1)))
+
+-- | The first `n` beats of the rythm without the beats at both ends that `isBlank` says are blank:
+-- | the rythm started at the first beat that is not blank, and how many beats it takes up to the last
+-- | one that is not blank. If all of them are blank, only the first beat is kept.
+trim :: forall beat. (beat -> Boolean) -> Int -> Rythm beat -> { length :: Int, rythm :: Rythm beat }
+trim isBlank n r =
+  let leading k
+        | k < n - 1 && isBlank (beatAt k r) = leading (k + 1)
+        | otherwise = k
+      start = leading 0
+      trimmed = rotate start r
+      trailing m
+        | m > 1 && isBlank (beatAt (m - 1) trimmed) = trailing (m - 1)
+        | otherwise = m
+  in { length: trailing (n - start), rythm: trimmed }
 
 -- | The pulse the rythm is laid on.
 toPulse :: forall beat. Rythm beat -> Pulse
