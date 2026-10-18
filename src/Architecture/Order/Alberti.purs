@@ -7,7 +7,7 @@ module Architecture.Order.Alberti
   where
 
 import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder)
-import Architecture.Superposition (continuousTaper)
+import Architecture.Superposition (albertiDiminution)
 import Data.Maybe (Maybe(..))
 
 -- After Alberti, De re aedificatoria, Book VII (Leoni's 1755 translation). Alberti gives the
@@ -23,8 +23,10 @@ treatise =
   , ionic: Just ionic
   , corynthian: Just corynthian
   , composite: Nothing
-  -- Not checked against Alberti's text; Scamozzi's rule, the later convention, stands in.
-  , superposition: continuousTaper
+  -- Book IX: "If there is to be a second Order of Columns over the first, let that second Order be
+  -- one fourth Part shorter than the lower one; and if there is to be a third Order over this, let it
+  -- be one fifth Part shorter than that below it" (Leoni's 1755 translation).
+  , superposition: Just albertiDiminution
   }
 
 -- Base and capital each half a diameter; the plinth at most 1 1/2 diameters wide, the abacus

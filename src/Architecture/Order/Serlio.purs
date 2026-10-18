@@ -9,7 +9,7 @@ module Architecture.Order.Serlio
   where
 
 import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder)
-import Architecture.Superposition (continuousTaper)
+import Architecture.Superposition (storeyFourthLess)
 import Data.Maybe (Maybe(..))
 
 -- After Serlio's Book IV, as measured in Fréart de Chambray's Parallel of the Antient
@@ -24,8 +24,11 @@ treatise =
   , ionic: Just ionic
   , corynthian: Just corynthian
   , composite: Just composite
-  -- Not checked against Serlio's text; Scamozzi's rule, the later convention, stands in.
-  , superposition: continuousTaper
+  -- Book IV: for a building of moderate height, each order "a fourth part less" than the one below,
+  -- every member diminished in proportion; Book III measures the storey from its floor to the top
+  -- of its cornice. He also allows the continuous taper (as at the Theatre of Marcellus) and, for very
+  -- tall buildings, the nearly equal storeys of the Colosseum.
+  , superposition: Just storeyFourthLess
   }
 
 -- Six diameters, with base, capital, architrave, frieze and cornice all equally high; the

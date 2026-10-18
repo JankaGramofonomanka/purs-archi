@@ -22,7 +22,7 @@ treatise =
   , corynthian: Just corynthian
   , composite: Just composite
   -- Books II and III repeat Vitruvius: upper columns "one fourth part less than those below".
-  , superposition: fourthLess
+  , superposition: Just fourthLess
   }
 
 -- Pedestals after Book I: the Tuscan "plain, and one module in height"; the Doric die square,

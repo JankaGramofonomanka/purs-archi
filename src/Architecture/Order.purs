@@ -32,7 +32,7 @@ module Architecture.Order
 import Prelude
 
 import Architecture.Measure (Measure(..), SizeDeterminant)
-import Architecture.Superposition (SuperpositionRule(..), ratioValue)
+import Architecture.Superposition (SuperpositionRule, ratioValue, stepAt)
 import Data.Int as Int
 import Data.Maybe (Maybe(..), maybe)
 
@@ -150,17 +150,21 @@ measureOf measure mode order = case measure of
         Minutes pedestal = pedestalHeight mode order
     in Minutes (height + pedestal)
 
--- | The minute of an order stacked on `lower`, whose minute is given, as `rule` says.
-upperMinute :: SuperpositionRule -> { order :: Order, pedestal :: PedestalMode } -> Number -> { order :: Order, pedestal :: PedestalMode } -> Number
-upperMinute (Match rule) lower minute upper =
-  minuteFromProportion (measureOf rule.upper upper.pedestal upper.order)
-    (ratioValue rule.ratio * sizeOf (measureOf rule.lower lower.pedestal lower.order) minute)
+-- | The minute of an order stacked on `lower`, whose minute is given, as `rule` says; `joint` is the
+-- | index of `lower` in the stack (0 is the bottom storey).
+upperMinute :: SuperpositionRule -> Int -> { order :: Order, pedestal :: PedestalMode } -> Number -> { order :: Order, pedestal :: PedestalMode } -> Number
+upperMinute rule joint lower minute upper =
+  let step = stepAt joint rule
+  in minuteFromProportion (measureOf step.upper upper.pedestal upper.order)
+       (ratioValue step.ratio * sizeOf (measureOf step.lower lower.pedestal lower.order) minute)
 
--- | The minute of the order under `upper`, whose minute is given, as `rule` says; the inverse of `upperMinute`.
-lowerMinute :: SuperpositionRule -> { order :: Order, pedestal :: PedestalMode } -> Number -> { order :: Order, pedestal :: PedestalMode } -> Number
-lowerMinute (Match rule) upper minute lower =
-  minuteFromProportion (measureOf rule.lower lower.pedestal lower.order)
-    (sizeOf (measureOf rule.upper upper.pedestal upper.order) minute / ratioValue rule.ratio)
+-- | The minute of the order under `upper`, whose minute is given, as `rule` says; `joint` is the
+-- | index of the lower order in the stack. The inverse of `upperMinute`.
+lowerMinute :: SuperpositionRule -> Int -> { order :: Order, pedestal :: PedestalMode } -> Number -> { order :: Order, pedestal :: PedestalMode } -> Number
+lowerMinute rule joint upper minute lower =
+  let step = stepAt joint rule
+  in minuteFromProportion (measureOf step.lower lower.pedestal lower.order)
+       (sizeOf (measureOf step.upper upper.pedestal upper.order) minute / ratioValue step.ratio)
 
 -- | The orders as one author of a treatise proportions them; `Nothing` where the author
 -- | does not define the order.
@@ -170,8 +174,8 @@ type Treatise =
   , ionic :: Maybe Order
   , corynthian :: Maybe Order
   , composite :: Maybe Order
-  -- | How large an order stacked on another is.
-  , superposition :: SuperpositionRule
+  -- | How large an order stacked on another is; `Nothing` where the author gives no rule.
+  , superposition :: Maybe SuperpositionRule
   }
 
 treatiseOrder :: Treatise -> OrderKind -> Maybe Order

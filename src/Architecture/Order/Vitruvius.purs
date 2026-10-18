@@ -22,7 +22,7 @@ treatise =
   , corynthian: Just corynthian
   , composite: Nothing
   -- Book V, chapters 1 and 7: the upper columns a fourth less than the lower.
-  , superposition: fourthLess
+  , superposition: Just fourthLess
   }
 
 -- Book IV, ch. 3: the module is half a diameter; the column, with its capital and without a

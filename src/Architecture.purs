@@ -26,7 +26,7 @@ import Data.Array as Array
 import Data.Foldable (foldl, for_, sum)
 import Data.Int as Int
 import Data.Maybe (Maybe(..))
-import Data.Tuple (Tuple(..), snd)
+import Data.Tuple (Tuple(..))
 import Geometry (class HorizontalFigure, class RectangularFigure, class VerticalFigure)
 import Ortogonal (class RenderHorizontal, class RenderOrtogonal, class RenderPoint, class RenderVertical, drawBottomCentered, drawLeftCentered, drawRightCentered, drawTopCentered)
 import Renderer (Point(..), point, class Renderer)
@@ -270,10 +270,12 @@ rowMinutes (StackedCollonade { orders: storeys, superposition, size: { row, size
   Nothing -> []
   Just anchor ->
     let anchorMinute = minuteFromSize anchor.pedestal anchor.order size
-        start = Tuple anchor anchorMinute
-        propagate next = map snd <<< Array.scanl (\(Tuple prev minute) storey -> Tuple storey (next prev minute storey)) start
-        above = propagate (upperMinute superposition) (Array.drop (row + 1) storeys)
-        below = propagate (lowerMinute superposition) (Array.reverse (Array.take row storeys))
+        -- Each step carries the storey and minute just reached, and the joint to cross next.
+        propagate next nextJoint firstJoint = map (\{ minute } -> minute) <<< Array.scanl
+          (\{ storey: prev, minute, joint } storey -> { storey, minute: next joint prev minute storey, joint: nextJoint joint })
+          { storey: anchor, minute: anchorMinute, joint: firstJoint }
+        above = propagate (upperMinute superposition) (_ + 1) row (Array.drop (row + 1) storeys)
+        below = propagate (lowerMinute superposition) (_ - 1) (row - 1) (Array.reverse (Array.take row storeys))
     in Array.reverse below <> [ anchorMinute ] <> above
 
 -- | Rows of the stack, bottom to top. Grouped columns of all rows are as far apart as the row

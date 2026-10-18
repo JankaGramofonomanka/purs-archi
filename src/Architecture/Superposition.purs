@@ -1,11 +1,16 @@
 module Architecture.Superposition
   ( Ratio
+  , Step
   , SuperpositionRule(..)
+  , albertiDiminution
   , continuousTaper
   , equalStoreys
   , fourthLess
+  , storeyFourthLess
+  , stepAt
   , ratioCodec
   , ratioValue
+  , stepCodec
   , superpositionRuleCodec
   )
   where
@@ -14,11 +19,14 @@ import Prelude
 
 import Architecture.Measure (Measure(..), measureCodec)
 import Data.Codec.JSON as CJ
+import Data.Array.NonEmpty (NonEmptyArray)
+import Data.Array.NonEmpty as NonEmptyArray
+import Data.Codec.JSON.Common as CJC
 import Data.Codec.JSON.Record as CJR
 import Data.Codec.JSON.Sum as CJS
 import Data.Either (Either(..))
 import Data.Int as Int
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (Tuple(..))
 
 -- | An exact, positive ratio.
@@ -27,13 +35,24 @@ type Ratio = { numerator :: Int, denominator :: Int }
 ratioValue :: Ratio -> Number
 ratioValue { numerator, denominator } = Int.toNumber numerator / Int.toNumber denominator
 
+-- | How large one storey is relative to the storey below: its `upper` measure is `ratio` times
+-- | the `lower` measure of the storey below. A step determines the lower storey from the upper
+-- | one as well, since a stack may be sized from any of its storeys.
+type Step = { upper :: Measure, lower :: Measure, ratio :: Ratio }
+
 -- | How large an order stacked on another is.
--- | `Match { upper, lower, ratio }`: the `upper` measure of the upper storey is `ratio` times the
--- | `lower` measure of the storey below. Every rule must determine the lower storey from the
--- | upper one as well, since a stack may be sized from any of its storeys.
-data SuperpositionRule = Match { upper :: Measure, lower :: Measure, ratio :: Ratio }
+-- | `Match step`: the same step between every two storeys.
+-- | `Successive steps`: the first step between the first and the second storey, the second between
+-- | the second and the third, and so on; the last step repeats above.
+data SuperpositionRule = Match Step | Successive (NonEmptyArray Step)
 
 derive instance Eq SuperpositionRule
+
+-- | The step between storey `joint` and storey `joint + 1`, counting from 0 at the bottom.
+stepAt :: Int -> SuperpositionRule -> Step
+stepAt joint = case _ of
+  Match step -> step
+  Successive steps -> fromMaybe (NonEmptyArray.last steps) (NonEmptyArray.index steps joint)
 
 -- | Scamozzi's rule: the lower diameter of the upper column is the upper diameter of the
 -- | lower one, "as if from one long single tree".
@@ -43,6 +62,18 @@ continuousTaper = Match { upper: LowerDiameter, lower: UpperDiameter, ratio: { n
 -- | Vitruvius' rule (Book V, chapters 1 and 7): the upper columns are a fourth less than the lower.
 fourthLess :: SuperpositionRule
 fourthLess = Match { upper: ColumnHeight, lower: ColumnHeight, ratio: { numerator: 3, denominator: 4 } }
+
+-- | Serlio's reading of Vitruvius: the whole upper storey, from its floor to the top of its cornice,
+-- | is a fourth less than the storey below, every member diminished in proportion.
+storeyFourthLess :: SuperpositionRule
+storeyFourthLess = Match { upper: StoreyHeight, lower: StoreyHeight, ratio: { numerator: 3, denominator: 4 } }
+
+-- | Alberti's rule (Book IX): the second order a fourth shorter than the first, and a third
+-- | order a fifth shorter than the second.
+albertiDiminution :: SuperpositionRule
+albertiDiminution = Successive $ NonEmptyArray.cons'
+  { upper: OrderHeight, lower: OrderHeight, ratio: { numerator: 3, denominator: 4 } }
+  [ { upper: OrderHeight, lower: OrderHeight, ratio: { numerator: 4, denominator: 5 } } ]
 
 -- | Storeys of equal height, pedestals included.
 equalStoreys :: SuperpositionRule
@@ -59,16 +90,27 @@ ratioCodec = CJ.prismaticCodec "Ratio" fromPair toPair (CJ.array CJ.int)
     _ -> Nothing
   toPair { numerator, denominator } = [ numerator, denominator ]
 
-data RuleTag = MatchTag
+-- | A step as `{ "upper": …, "lower": …, "ratio": [n, d] }`.
+stepCodec :: CJ.Codec Step
+stepCodec = CJR.object { upper: measureCodec, lower: measureCodec, ratio: ratioCodec }
 
--- | A rule as `{ "tag": "match", "value": { "upper": …, "lower": …, "ratio": [n, d] } }`.
+data RuleTag = MatchTag | SuccessiveTag
+
+-- | A rule as `{ "tag": "match", "value": step }` or `{ "tag": "successive", "value": [step, …] }`.
 superpositionRuleCodec :: CJ.Codec SuperpositionRule
 superpositionRuleCodec = CJS.taggedSum "SuperpositionRule" printTag parseTag decodeCase encodeCase
   where
-  printTag MatchTag = "match"
+  printTag = case _ of
+    MatchTag -> "match"
+    SuccessiveTag -> "successive"
   parseTag = case _ of
     "match" -> Just MatchTag
+    "successive" -> Just SuccessiveTag
     _ -> Nothing
-  decodeCase MatchTag = Right (map Match <<< CJ.decode matchCodec)
-  encodeCase (Match m) = Tuple MatchTag (Just (CJ.encode matchCodec m))
-  matchCodec = CJR.object { upper: measureCodec, lower: measureCodec, ratio: ratioCodec }
+  decodeCase = case _ of
+    MatchTag -> Right (map Match <<< CJ.decode stepCodec)
+    SuccessiveTag -> Right (map Successive <<< CJ.decode stepsCodec)
+  encodeCase = case _ of
+    Match step -> Tuple MatchTag (Just (CJ.encode stepCodec step))
+    Successive steps -> Tuple SuccessiveTag (Just (CJ.encode stepsCodec steps))
+  stepsCodec = CJC.nonEmptyArray stepCodec

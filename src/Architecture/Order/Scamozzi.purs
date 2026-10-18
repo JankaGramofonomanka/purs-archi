@@ -34,7 +34,7 @@ treatise =
   , corynthian: Just corynthian
   , composite: Just composite
   -- Book VI, chapter 11: each column as thick below as the one beneath it is above.
-  , superposition: continuousTaper
+  , superposition: Just continuousTaper
   }
 
 -- Entablature 1 7/8 diameters: architrave 32 1/2 minutes, frieze 41, cornice 39.

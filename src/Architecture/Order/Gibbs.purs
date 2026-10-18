@@ -28,8 +28,9 @@ treatise =
   , ionic: Just ionic
   , corynthian: Just corynthian
   , composite: Just composite
-  -- Not checked against Gibbs's text; Scamozzi's rule, the later convention, stands in.
-  , superposition: continuousTaper
+  -- "Of Placing Columns over Columns": the diameter of the Ionic "will be equal to the diminished
+  -- part of the Dorick", and likewise the Corinthian over the Ionic.
+  , superposition: Just continuousTaper
   }
 
 -- Diminished a fifth of the semidiameter on each side. The capital projects a fourth of the

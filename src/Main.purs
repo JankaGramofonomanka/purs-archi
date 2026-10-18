@@ -14,6 +14,7 @@ import Effect.Exception (throw)
 import Effect.Ref as Ref
 import Architecture (BayMeasure(..), ColumnBeat(..), Storey)
 import Architecture.Order (OrderKind(..), PedestalMode(..), Treatise, treatiseOrder)
+import Architecture.Superposition (continuousTaper)
 import Architecture.Order.Alberti as Alberti
 import Architecture.Order.Chambers as Chambers
 import Architecture.Order.Gibbs as Gibbs
@@ -62,8 +63,8 @@ type CollonadeForm =
   }
 
 -- | A treatise as offered by the page's form, with the keys of the orders it defines and of
--- | those it gives a pedestal.
-type TreatiseOption = { key :: String, name :: String, orders :: Array String, pedestals :: Array String }
+-- | those it gives a pedestal, and whether it gives a rule for stacking orders.
+type TreatiseOption = { key :: String, name :: String, orders :: Array String, pedestals :: Array String, stacks :: Boolean }
 
 treatises :: Array { key :: String, name :: String, treatise :: Treatise }
 treatises =
@@ -105,6 +106,7 @@ treatiseOptions = treatises <#> \{ key, name, treatise } ->
   , name
   , orders: _.key <$> Array.filter (\{ kind } -> isJust (treatiseOrder treatise kind)) orderKinds
   , pedestals: _.key <$> Array.filter (\{ kind } -> isJust (treatiseOrder treatise kind >>= _.pedestal)) orderKinds
+  , stacks: isJust treatise.superposition
   }
 
 initialForm :: CollonadeForm
@@ -207,6 +209,12 @@ fromForm form = do
         throw (name <> " gives no pedestal for the " <> key <> " order")
       pure { order, pedestal }
   orders <- traverse storeyFromForm form.orders
+  superposition <- case treatise.superposition of
+    Just rule -> pure rule
+    Nothing
+      | Array.length orders > 1 -> throw (name <> " gives no rule for stacking orders")
+      -- A single storey is never related to another, so any rule will do.
+      | otherwise -> pure continuousTaper
   when (Array.any (_ < 0) form.rythm) do
     throw "A beat cannot have a negative number of columns"
   motif <- case NonEmptyArray.fromArray (map ColumnBeat form.rythm) of
@@ -220,7 +228,7 @@ fromForm form = do
     { length: numOfColumns, rythm } =
       if form.stripBlanks then Rythm.trim (\(ColumnBeat columns) -> columns <= 0) rounded motif
       else { length: rounded, rythm: motif }
-  pure { orders, superposition: treatise.superposition, numOfColumns, bayWidth: form.bayWidth, bayMeasure, rythm }
+  pure { orders, superposition, numOfColumns, bayWidth: form.bayWidth, bayMeasure, rythm }
 
 foreign import setupRoutes
   :: (String -> Number -> Number -> Effect Unit)

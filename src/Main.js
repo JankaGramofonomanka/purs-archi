@@ -174,8 +174,8 @@ const beatIcon = columns => {
 const columnCount = n => n === 0 ? "no column" : n === 1 ? "1 column" : `${n} columns`;
 
 // Renders the collonade form from `initial` and reports every edit to `onChange`. Each of
-// `treatises` lists the keys of the orders it defines and of those it gives a pedestal; the
-// form only offers those. Each storey of `orders` is `{ order, pedestal }`, the pedestal being
+// `treatises` lists the keys of the orders it defines and of those it gives a pedestal, and says
+// whether it `stacks` orders (gives a rule for placing one over another); the form only offers those. Each storey of `orders` is `{ order, pedestal }`, the pedestal being
 // a key of `pedestalNames`.
 const setupCollonadeForm = (treatises, initial, onChange) => {
   const treatiseGroup = document.querySelector("#collonade-treatises");
@@ -252,6 +252,9 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
       }
       if (missingPedestals.length > 0) {
         reasons.push(`gives no pedestal for the ${names(missingPedestals)} order`);
+      }
+      if (form.orders.length > 1 && !treatise.stacks) {
+        reasons.push("gives no rule for stacking orders");
       }
       button.disabled = reasons.length > 0;
       if (button.disabled) {
@@ -384,9 +387,20 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     report();
   });
 
+  const renderAddButton = () => {
+    const treatise = currentTreatise();
+    addButton.disabled = !treatise.stacks;
+    if (addButton.disabled) {
+      addButton.title = `${treatise.name} gives no rule for stacking orders`;
+    } else {
+      addButton.removeAttribute("title");
+    }
+  };
+
   const render = () => {
     renderTreatises();
     renderOrders();
+    renderAddButton();
     renderBayMeasures();
     renderRythm();
   };

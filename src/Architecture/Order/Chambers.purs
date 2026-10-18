@@ -31,7 +31,7 @@ treatise =
   , corynthian: Just corynthian
   , composite: Just composite
   -- Chambers adopts Scamozzi's rule as "universally esteemed the best".
-  , superposition: continuousTaper
+  , superposition: Just continuousTaper
   }
 
 -- Entablature in ten parts: architrave 3, frieze 3, cornice 4; capital one module.
