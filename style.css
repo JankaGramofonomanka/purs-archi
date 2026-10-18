@@ -69,7 +69,7 @@ body {
 .action-bar {
   position: absolute;
   inset: 0 auto 0 0;
-  width: 200px;
+  width: 240px;
   padding: 16px;
   overflow-y: auto;
   border-right: 1px solid #e3e8f2;
@@ -159,12 +159,6 @@ body {
 
 .order-row {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.order-line {
-  display: flex;
   gap: 6px;
 }
 
@@ -187,6 +181,21 @@ body {
   outline-offset: 1px;
 }
 
+.action-bar .pedestal-toggle {
+  display: flex;
+  flex: 0 0 38px;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  padding: 0;
+}
+
+.pedestal-toggle svg {
+  width: 24px;
+  height: 20px;
+  fill: currentColor;
+}
+
 .action-bar .order-remove {
   flex: 0 0 38px;
   width: 38px;
@@ -207,7 +216,7 @@ body {
 }
 
 .demo-page.has-page-actions .demo-stage {
-  left: 216px;
+  left: 256px;
 }
 
 .demo-square {

@@ -122,6 +122,22 @@ const pedestalNames = {
   podium: "Podium"
 };
 
+// Icons of the pedestal modes: a column on the ground line, columns each on a pedestal, and
+// columns on one continuous podium.
+const pedestalIcons = {
+  none: '<path d="M5 2h2.5v15.5H5zM16.5 2H19v15.5h-2.5zM1 17.5h22V19H1z"/>',
+  pedestals: '<path d="M5 2h2.5v9H5zM16.5 2H19v9h-2.5zM2.5 11h7.5v6.5H2.5zM14 11h7.5v6.5H14zM1 17.5h22V19H1z"/>',
+  podium: '<path d="M5 2h2.5v9H5zM16.5 2H19v9h-2.5zM2.5 11h19v6.5h-19zM1 17.5h22V19H1z"/>'
+};
+
+const pedestalIcon = mode => {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 20");
+  svg.setAttribute("aria-hidden", "true");
+  svg.innerHTML = pedestalIcons[mode];
+  return svg;
+};
+
 const maxColumns = 20;
 const minBayWidth = 1;
 const maxBayWidth = 12;
@@ -208,8 +224,6 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
       const { order, pedestal } = storey;
       const item = document.createElement("li");
       item.className = "order-row";
-      const orderLine = document.createElement("div");
-      orderLine.className = "order-line";
 
       const select = document.createElement("select");
       select.setAttribute("aria-label", `Order ${index + 1} from the bottom`);
@@ -239,24 +253,30 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
         report();
       });
 
-      const pedestalSelect = document.createElement("select");
-      pedestalSelect.className = "pedestal-select";
-      pedestalSelect.setAttribute("aria-label", `Pedestal of order ${index + 1} from the bottom`);
-      for (const [key, name] of Object.entries(pedestalNames)) {
-        pedestalSelect.append(new Option(name, key, false, key === pedestal));
+      const pedestalModes = Object.keys(pedestalNames);
+      const pedestalButton = document.createElement("button");
+      pedestalButton.type = "button";
+      pedestalButton.className = "pedestal-toggle";
+      pedestalButton.append(pedestalIcon(pedestal));
+      pedestalButton.disabled = !treatise.pedestals.includes(order);
+      if (pedestalButton.disabled) {
+        pedestalButton.title = `${treatise.name} gives no pedestal for the ${orderNames[order]} order`;
+      } else {
+        const next = pedestalModes[(pedestalModes.indexOf(pedestal) + 1) % pedestalModes.length];
+        pedestalButton.title = `${pedestalNames[pedestal]} (click for ${pedestalNames[next].toLowerCase()})`;
       }
-      pedestalSelect.disabled = !treatise.pedestals.includes(order);
-      if (pedestalSelect.disabled) {
-        pedestalSelect.title = `${treatise.name} gives no pedestal for the ${orderNames[order]} order`;
-      }
-      pedestalSelect.addEventListener("change", () => {
-        storey.pedestal = pedestalSelect.value;
+      pedestalButton.setAttribute(
+        "aria-label",
+        `Pedestal of order ${index + 1} from the bottom: ${pedestalNames[pedestal]}`
+      );
+      pedestalButton.addEventListener("click", () => {
+        storey.pedestal = pedestalModes[(pedestalModes.indexOf(storey.pedestal) + 1) % pedestalModes.length];
         render();
         report();
+        orderList.querySelectorAll(".pedestal-toggle")[index]?.focus();
       });
 
-      orderLine.append(select, remove);
-      item.append(orderLine, pedestalSelect);
+      item.append(select, pedestalButton, remove);
       return item;
     }));
   };
