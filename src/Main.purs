@@ -5,9 +5,8 @@ import Prelude
 import Control.Monad (when)
 import Control.Monad.State (runStateT)
 import Data.Array as Array
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe (Maybe(..), isJust, isNothing)
-import Data.String (Pattern(..), Replacement(..))
-import Data.String as String
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
@@ -47,15 +46,15 @@ type State =
 
 -- | The collonade settings as exchanged with the page's form: the key of a treatise from
 -- | `treatises`, orders as keys from `orderKinds` with a key from `pedestalModes` each, and
--- | the bay width in lower diameters with a key from `bayMeasures` saying what it measures, and the motif of the columns' rythm: beats separated by `:`,
--- | each written as a `|` per column standing on it, or as `.` for none (e.g. `||:|:.:|`).
+-- | the bay width in lower diameters with a key from `bayMeasures` saying what it measures, and the motif
+-- | of the columns' rythm as the number of columns standing on each of its beats.
 type CollonadeForm =
   { treatise :: String
   , orders :: Array { order :: String, pedestal :: String }
   , numOfColumns :: Int
   , bayWidth :: Number
   , bayMeasure :: String
-  , rythm :: String
+  , rythm :: Array Int
   }
 
 -- | A treatise as offered by the page's form, with the keys of the orders it defines and of
@@ -105,7 +104,7 @@ treatiseOptions = treatises <#> \{ key, name, treatise } ->
   }
 
 initialForm :: CollonadeForm
-initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none" }, numOfColumns: 5, bayWidth: 3.0, bayMeasure: "beats", rythm: "|" }
+initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none" }, numOfColumns: 5, bayWidth: 3.0, bayMeasure: "beats", rythm: [ 1 ] }
 
 main :: Effect Unit
 main = do
@@ -204,19 +203,15 @@ fromForm form = do
         throw (name <> " gives no pedestal for the " <> key <> " order")
       pure { order, pedestal }
   orders <- traverse storeyFromForm form.orders
-  rythm <- case Rythm.fromString ":" columnBeat form.rythm of
-    Nothing -> throw ("A rythm of columns is a sequence of beats separated by ':', each a '|' per column or '.' for none: " <> form.rythm)
-    Just rythm -> pure rythm
+  when (Array.any (_ < 0) form.rythm) do
+    throw "A beat cannot have a negative number of columns"
+  rythm <- case NonEmptyArray.fromArray (map ColumnBeat form.rythm) of
+    Nothing -> throw "A rythm of columns needs at least one beat"
+    Just beats -> pure (Rythm.rythm beats)
   bayMeasure <- case Array.find (\m -> m.key == form.bayMeasure) bayMeasures of
     Nothing -> throw ("Unknown bay measure: " <> form.bayMeasure)
     Just { measure } -> pure measure
   pure { orders, numOfColumns: form.numOfColumns, bayWidth: form.bayWidth, bayMeasure, rythm }
-  where
-  columnBeat = case _ of
-    "." -> Just (ColumnBeat 0)
-    beat
-      | beat /= "" && String.null (String.replaceAll (Pattern "|") (Replacement "") beat) -> Just (ColumnBeat (String.length beat))
-      | otherwise -> Nothing
 
 foreign import setupRoutes
   :: (String -> Number -> Number -> Effect Unit)

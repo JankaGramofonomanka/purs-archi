@@ -20,13 +20,19 @@ const updateRoute = onRouteChange => {
     page.hidden = page.dataset.demoPage !== demoPage;
   }
 
+  // A mode's action bars sit on the left, or along the bottom if they are a `.bottom-bar`.
   let showPageActions = false;
+  let showBottomBar = false;
   for (const actionBar of document.querySelectorAll("[data-page-actions]")) {
     if (!(actionBar instanceof HTMLElement)) {
       throw new Error("Invalid page action bar");
     }
     actionBar.hidden = actionBar.dataset.pageActions !== mode;
-    showPageActions ||= !actionBar.hidden;
+    if (actionBar.classList.contains("bottom-bar")) {
+      showBottomBar ||= !actionBar.hidden;
+    } else {
+      showPageActions ||= !actionBar.hidden;
+    }
   }
 
   const demoPageElement = document.querySelector(".demo-page");
@@ -34,6 +40,7 @@ const updateRoute = onRouteChange => {
     throw new Error("Missing .demo-page element");
   }
   demoPageElement.classList.toggle("has-page-actions", showPageActions);
+  demoPageElement.classList.toggle("has-bottom-bar", showBottomBar);
 
   resizeCanvasForRoute(route);
   const pageSurface = document.querySelector(
@@ -148,8 +155,23 @@ const bayMeasureNames = {
   groups: "Between groups"
 };
 
-// The motif of the columns' rythm: beats separated by `:`, each a `|` per column or `.` for none.
-const rythmPattern = /^(\.|\|+)(:(\.|\|+))*$/;
+// Most columns a beat of the rythm can hold.
+const maxColumnsPerBeat = 6;
+
+// Icon of a beat of the rythm: its columns on a ground line.
+const beatIcon = columns => {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 32 24");
+  svg.setAttribute("aria-hidden", "true");
+  const columnWidth = 2.5;
+  const spacing = 5;
+  const left = 16 - ((columns - 1) * spacing + columnWidth) / 2;
+  const shafts = Array.from({ length: columns }, (_, i) => `M${left + i * spacing} 3h${columnWidth}v18.5h-${columnWidth}z`);
+  svg.innerHTML = `<path d="${shafts.join("")}M1 21.5h30V23H1z"/>`;
+  return svg;
+};
+
+const columnCount = n => n === 1 ? "1 column" : `${n} columns`;
 
 // Renders the collonade form from `initial` and reports every edit to `onChange`. Each of
 // `treatises` lists the keys of the orders it defines and of those it gives a pedestal; the
@@ -161,7 +183,8 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   const addButton = document.querySelector("#collonade-add-order");
   const columnsInput = document.querySelector("#collonade-columns");
   const bayWidthInput = document.querySelector("#collonade-bay-width");
-  const rythmInput = document.querySelector("#collonade-rythm");
+  const beatList = document.querySelector("#collonade-rythm");
+  const addBeatButton = document.querySelector("#collonade-add-beat");
   const bayMeasureButton = document.querySelector("#collonade-bay-measure");
   if (
     !(treatiseGroup instanceof HTMLElement) ||
@@ -169,7 +192,8 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     !(addButton instanceof HTMLButtonElement) ||
     !(columnsInput instanceof HTMLInputElement) ||
     !(bayWidthInput instanceof HTMLInputElement) ||
-    !(rythmInput instanceof HTMLInputElement) ||
+    !(beatList instanceof HTMLOListElement) ||
+    !(addBeatButton instanceof HTMLButtonElement) ||
     !(bayMeasureButton instanceof HTMLButtonElement)
   ) {
     throw new Error("Missing collonade form controls");
@@ -181,7 +205,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     numOfColumns: initial.numOfColumns,
     bayWidth: initial.bayWidth,
     bayMeasure: initial.bayMeasure,
-    rythm: initial.rythm
+    rythm: [...initial.rythm]
   };
   const report = () => onChange({
     treatise: form.treatise,
@@ -189,7 +213,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     numOfColumns: form.numOfColumns,
     bayWidth: form.bayWidth,
     bayMeasure: form.bayMeasure,
-    rythm: form.rythm
+    rythm: [...form.rythm]
   })();
 
   const currentTreatise = () => {
@@ -311,10 +335,63 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     report();
   });
 
+  // Each beat is a cell showing its columns: clicking it adds a column, `−` takes one away and
+  // `×` removes the beat.
+  const renderRythm = () => {
+    beatList.replaceChildren(...form.rythm.map((columns, index) => {
+      const item = document.createElement("li");
+      item.className = "beat-cell";
+      const edit = (focusSelector, change) => {
+        change();
+        render();
+        report();
+        beatList.querySelectorAll(focusSelector)[Math.min(index, form.rythm.length - 1)]?.focus();
+      };
+
+      const add = document.createElement("button");
+      add.type = "button";
+      add.className = "beat-columns";
+      add.append(beatIcon(columns));
+      add.disabled = columns >= maxColumnsPerBeat;
+      add.title = add.disabled ? `${columnCount(columns)}, the most a beat can hold` : `${columnCount(columns)} (click to add one)`;
+      add.setAttribute("aria-label", `Beat ${index + 1}: ${columnCount(columns)}, add a column`);
+      add.addEventListener("click", () => edit(".beat-columns", () => { form.rythm[index] += 1; }));
+
+      const subtract = document.createElement("button");
+      subtract.type = "button";
+      subtract.className = "beat-subtract";
+      subtract.textContent = "−";
+      subtract.disabled = columns === 0;
+      subtract.setAttribute("aria-label", `Beat ${index + 1}: take a column away`);
+      subtract.addEventListener("click", () => edit(".beat-subtract", () => { form.rythm[index] -= 1; }));
+
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "beat-remove";
+      remove.textContent = "×";
+      remove.disabled = form.rythm.length === 1;
+      remove.setAttribute("aria-label", `Remove beat ${index + 1}`);
+      remove.addEventListener("click", () => edit(".beat-remove", () => { form.rythm.splice(index, 1); }));
+
+      const controls = document.createElement("div");
+      controls.className = "beat-controls";
+      controls.append(subtract, remove);
+      item.append(add, controls);
+      return item;
+    }));
+  };
+
+  addBeatButton.addEventListener("click", () => {
+    form.rythm.push(1);
+    render();
+    report();
+  });
+
   const render = () => {
     renderTreatises();
     renderOrders();
     renderBayMeasures();
+    renderRythm();
   };
 
   addButton.addEventListener("click", () => {
@@ -358,18 +435,6 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   });
   bayWidthInput.addEventListener("change", () => {
     bayWidthInput.value = String(form.bayWidth);
-  });
-
-  rythmInput.value = form.rythm;
-  rythmInput.addEventListener("input", () => {
-    const value = rythmInput.value;
-    if (rythmPattern.test(value) && value !== form.rythm) {
-      form.rythm = value;
-      report();
-    }
-  });
-  rythmInput.addEventListener("change", () => {
-    rythmInput.value = form.rythm;
   });
 
   render();

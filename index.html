@@ -40,10 +40,11 @@
           <legend>Bay width measured</legend>
           <button id="collonade-bay-measure" type="button"></button>
         </fieldset>
-        <label class="action-group">
-          <span>Rythm, beats split by :, | per column, . none</span>
-          <input id="collonade-rythm" type="text" pattern="(\.|\|+)(:(\.|\|+))*" spellcheck="false" autocomplete="off" />
-        </label>
+      </aside>
+      <aside class="action-bar bottom-bar" data-page-actions="/collonade" aria-label="Collonade rythm" hidden>
+        <span class="bottom-bar-label">Rythm, columns per beat</span>
+        <ol id="collonade-rythm" class="beat-list"></ol>
+        <button id="collonade-add-beat" class="add-beat" type="button">Add beat</button>
       </aside>
       <section class="demo-stage" data-demo-page="/svg" hidden>
         <svg id="svg-target" class="demo-square" role="img" aria-label="Drawing demo"></svg>
