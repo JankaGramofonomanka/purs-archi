@@ -3,7 +3,7 @@ module Renderer.Collonade (Config, draw, lowestLowerDiameter) where
 import Prelude
 
 import Anchor (placeCentered, render)
-import Architecture (StackedCollonade(..), Storey)
+import Architecture (ColumnBeat, StackedCollonade(..), Storey)
 import Architecture.Order (SizeDeterminant(..))
 import Architecture.Rythm (Rythm)
 import Renderer (point)
@@ -11,7 +11,7 @@ import Renderer as Renderer
 
 -- | Storeys (orders and how their columns stand) listed from bottom to top; `bayWidth` is the distance between column centerlines,
 -- | in lower diameters of the bottom row's columns; `rythm` tells on which of the `numOfColumns` beats a column stands.
-type Config = { orders :: Array Storey, numOfColumns :: Int, bayWidth :: Number, rythm :: Rythm Boolean }
+type Config = { orders :: Array Storey, numOfColumns :: Int, bayWidth :: Number, rythm :: Rythm ColumnBeat }
 
 -- | Lower diameter of the columns of the bottom row, in pixels.
 lowestLowerDiameter :: Number

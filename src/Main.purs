@@ -6,12 +6,14 @@ import Control.Monad (when)
 import Control.Monad.State (runStateT)
 import Data.Array as Array
 import Data.Maybe (Maybe(..), isJust, isNothing)
+import Data.String (Pattern(..), Replacement(..))
+import Data.String as String
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import Architecture (Storey)
+import Architecture (ColumnBeat(..), Storey)
 import Architecture.Order (OrderKind(..), PedestalMode(..), Treatise, treatiseOrder)
 import Architecture.Order.Alberti as Alberti
 import Architecture.Order.Chambers as Chambers
@@ -45,7 +47,8 @@ type State =
 
 -- | The collonade settings as exchanged with the page's form: the key of a treatise from
 -- | `treatises`, orders as keys from `orderKinds` with a key from `pedestalModes` each, and
--- | the bay width in lower diameters, and the motif of the columns' rythm, `|` for a column and `.` for none.
+-- | the bay width in lower diameters, and the motif of the columns' rythm: beats separated by `:`,
+-- | each written as a `|` per column standing on it, or as `.` for none (e.g. `||:|:.:|`).
 type CollonadeForm =
   { treatise :: String
   , orders :: Array { order :: String, pedestal :: String }
@@ -194,15 +197,16 @@ fromForm form = do
         throw (name <> " gives no pedestal for the " <> key <> " order")
       pure { order, pedestal }
   orders <- traverse storeyFromForm form.orders
-  rythm <- case Rythm.fromString columnBeat form.rythm of
-    Nothing -> throw ("A rythm of columns is a non-empty sequence of '|' (column) and '.' (no column): " <> form.rythm)
+  rythm <- case Rythm.fromString ":" columnBeat form.rythm of
+    Nothing -> throw ("A rythm of columns is a sequence of beats separated by ':', each a '|' per column or '.' for none: " <> form.rythm)
     Just rythm -> pure rythm
   pure { orders, numOfColumns: form.numOfColumns, bayWidth: form.bayWidth, rythm }
   where
   columnBeat = case _ of
-    '|' -> Just true
-    '.' -> Just false
-    _ -> Nothing
+    "." -> Just (ColumnBeat 0)
+    beat
+      | beat /= "" && String.null (String.replaceAll (Pattern "|") (Replacement "") beat) -> Just (ColumnBeat (String.length beat))
+      | otherwise -> Nothing
 
 foreign import setupRoutes
   :: (String -> Number -> Number -> Effect Unit)

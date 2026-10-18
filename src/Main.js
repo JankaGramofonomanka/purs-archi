@@ -141,8 +141,8 @@ const pedestalIcon = mode => {
 const maxColumns = 20;
 const minBayWidth = 1;
 const maxBayWidth = 12;
-// The motif of the columns' rythm: `|` for a column, `.` for none.
-const rythmPattern = /^[.|]+$/;
+// The motif of the columns' rythm: beats separated by `:`, each a `|` per column or `.` for none.
+const rythmPattern = /^(\.|\|+)(:(\.|\|+))*$/;
 
 // Renders the collonade form from `initial` and reports every edit to `onChange`. Each of
 // `treatises` lists the keys of the orders it defines and of those it gives a pedestal; the

@@ -18,7 +18,8 @@ import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Maybe (Maybe)
-import Data.String.CodeUnits as CodeUnits
+import Data.String (Pattern(..))
+import Data.String as String
 import Data.Foldable (class Foldable)
 import Data.Traversable (class Traversable, traverse)
 import Partial.Unsafe (unsafePartial)
@@ -40,10 +41,10 @@ type Pulse = Rythm Unit
 rythm :: forall beat. NonEmptyArray beat -> Rythm beat
 rythm = Rythm
 
--- | Reads a rythm written as its motif, one character per beat (e.g. `*_X_**X_`).
--- | `Nothing` if the text is empty or `readBeat` does not know one of its characters.
-fromString :: forall beat. (Char -> Maybe beat) -> String -> Maybe (Rythm beat)
-fromString readBeat = map Rythm <<< (NonEmptyArray.fromArray <=< traverse readBeat <<< CodeUnits.toCharArray)
+-- | Reads a rythm written as its motif, the beats separated by `separator` (e.g. `*:_:X:_` with `":"`).
+-- | `Nothing` if `readBeat` does not know one of the beats.
+fromString :: forall beat. String -> (String -> Maybe beat) -> String -> Maybe (Rythm beat)
+fromString separator readBeat = map Rythm <<< (NonEmptyArray.fromArray <=< traverse readBeat <<< String.split (Pattern separator))
 
 pulse :: Pulse
 pulse = Rythm (NonEmptyArray.singleton unit)

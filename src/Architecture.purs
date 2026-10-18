@@ -8,6 +8,8 @@ module Architecture
   , SizedOrder
   , Column(..)
   , Entablature(..)
+  , ColumnBeat(..)
+  , minGroupSpacing
   )
   where
 
@@ -15,10 +17,10 @@ import Prelude
 
 import Anchor (class Sized, HorizontalAnchor(..), PointAnchor(..), RectangularAnchor(..), VerticalAnchor(..), drawAnchored, size)
 import Architecture.Order (Order, Pedestal, PedestalMode(..), SizeDeterminant(..), minuteFromLowerDiameter, minuteFromSize, minuteFromUpperDiameter, pedestalHeight, sizeOf)
-import Architecture.Order.Draw (drawColumn, drawEntablature, drawPedestal, drawSpanningEntablature, drawSpanningPedestal)
+import Architecture.Order.Draw (drawColumn, drawEntablature, drawSpanningEntablature, drawSpanningPedestal)
 import Architecture.Rythm (Rythm, beatAt)
 import Data.Array as Array
-import Data.Foldable (foldl, sum)
+import Data.Foldable (foldl, for_, sum)
 import Data.Int as Int
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..), snd)
@@ -31,16 +33,30 @@ type SizedOrder = { order :: Order, size :: SizeDeterminant }
 newtype Column = Column SizedOrder
 newtype Entablature = Entablature SizedOrder
 
+-- | The number of columns standing on a beat of a row of columns (0 or less leaves the beat empty).
+-- | More than one column make a group: they stand symmetrically about the beat's centerline,
+-- | `groupSpacing` apart, and share one pedestal.
+newtype ColumnBeat = ColumnBeat Int
+
+derive instance Eq ColumnBeat
+derive newtype instance Show ColumnBeat
+
+-- | Distance between the centerlines of the outermost columns of the group on the beat.
+groupSpan :: Number -> ColumnBeat -> Number
+groupSpan spacing (ColumnBeat n) = Int.toNumber (max 0 (n - 1)) * spacing
+
 -- | Columns of the same order in a row under a common entablature, standing on pedestals or a podium
 -- | as `pedestal` says (and the order defines one). The row is a pulse of `numOfColumns` beats,
--- | `bayWidth` apart (centerline to centerline); a column stands on a beat where `rythm` is `true`,
--- | and the beat is left empty where it is `false`. The entablature (and a podium) span the whole pulse.
+-- | `bayWidth` apart (centerline to centerline), and `rythm` says what stands on each of them.
+-- | The entablature (and a podium) span the whole pulse.
 newtype Portico = Portico {
   order :: Order,
   size :: SizeDeterminant,
   numOfColumns :: Int,
   bayWidth :: Number,
-  rythm :: Rythm Boolean,
+  rythm :: Rythm ColumnBeat,
+  -- | Distance between the centerlines of neighbouring columns of a group; see `minGroupSpacing`.
+  groupSpacing :: Number,
   pedestal :: PedestalMode
 }
 
@@ -61,7 +77,7 @@ newtype StackedCollonade = StackedCollonade {
   size :: RowSizeDeterminant,
   numOfColumns :: Int,
   bayWidth :: Number,
-  rythm :: Rythm Boolean
+  rythm :: Rythm ColumnBeat
 }
 
 minuteOf :: SizedOrder -> Number
@@ -137,9 +153,25 @@ instance (Monad m, Renderer m) => RenderHorizontal m Entablature where
 
 -- Portico
 
+-- | The smallest distance between the centerlines of neighbouring columns of a group at which
+-- | neither their bases nor their capitals overlap.
+minGroupSpacing :: Order -> SizeDeterminant -> Number
+minGroupSpacing order size' =
+  let minute = minuteFromSize order size'
+  in max (sizeOf order.base.width minute) (sizeOf order.capital.width minute)
+
+-- | How far the outermost column centerlines lie beyond the first and the last beat of the pulse.
+porticoExtensions :: Portico -> { left :: Number, right :: Number }
+porticoExtensions (Portico portico) =
+  let extension i = groupSpan portico.groupSpacing (beatAt i portico.rythm) / 2.0
+  in if portico.numOfColumns < 1 then { left: 0.0, right: 0.0 }
+     else { left: extension 0, right: extension (portico.numOfColumns - 1) }
+
 -- | Distance between the centerlines of the outermost columns.
 porticoSpan :: Portico -> Number
-porticoSpan (Portico portico) = Int.toNumber (max 0 (portico.numOfColumns - 1)) * portico.bayWidth
+porticoSpan p@(Portico portico) =
+  let { left, right } = porticoExtensions p
+  in Int.toNumber (max 0 (portico.numOfColumns - 1)) * portico.bayWidth + left + right
 
 -- | The pedestal the portico's columns stand on, if any.
 porticoPedestal :: Portico -> Maybe Pedestal
@@ -176,19 +208,23 @@ drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
   let { width, height } = size p
   let ground = topLeft.y + height
   let bottom = ground - sizeOf (pedestalHeight portico.pedestal order) minute
-  let firstCenterline = topLeft.x + porticoOverhang p
+  let firstCenterline = topLeft.x + porticoOverhang p + (porticoExtensions p).left
   let centerline i = firstCenterline + Int.toNumber i * portico.bayWidth
-  let forColumns draw =
+  let forBeats draw =
         let go i = when (i < portico.numOfColumns) do
-              when (beatAt i portico.rythm) $ draw (centerline i)
+              draw (centerline i) (beatAt i portico.rythm)
               go (i + 1)
         in go 0
   case porticoPedestal p of
     Nothing -> pure unit
     Just pedestal -> case portico.pedestal of
       Podium -> drawSpanningPedestal (point (topLeft.x + width / 2.0) ground) (porticoSpan p) minute pedestal
-      _ -> forColumns \x -> drawPedestal (point x ground) minute pedestal
-  forColumns \x -> drawColumn (point x bottom) minute order
+      _ -> forBeats \x beat@(ColumnBeat n) ->
+        when (n > 0) $ drawSpanningPedestal (point x ground) (groupSpan portico.groupSpacing beat) minute pedestal
+  forBeats \x beat@(ColumnBeat n) -> do
+    let leftmost = x - groupSpan portico.groupSpacing beat / 2.0
+    when (n > 0) $ for_ (Array.range 0 (n - 1)) \j ->
+      drawColumn (point (leftmost + Int.toNumber j * portico.groupSpacing) bottom) minute order
   drawSpanningEntablature (point (topLeft.x + width / 2.0) (bottom - sizeOf order.column.height minute)) (porticoSpan p) minute order
 
 instance (Monad m, Renderer m) => RenderPoint m Portico where
@@ -229,13 +265,14 @@ rowMinutes (StackedCollonade { orders: storeys, size: { row, size } }) = case Ar
   where
   orders = map _.order storeys
 
--- | Rows of the stack, bottom to top.
+-- | Rows of the stack, bottom to top. Grouped columns of all rows are as far apart as the row
+-- | that needs the most room requires, so the columns of each row stand on those below.
 collonades :: StackedCollonade -> Array Collonade
 collonades stack@(StackedCollonade { orders, numOfColumns, bayWidth, rythm }) =
-  Array.zipWith
-    (\{ order, pedestal } minute -> Collonade (Portico { order, size: Minute minute, numOfColumns, bayWidth, rythm, pedestal }))
-    orders
-    (rowMinutes stack)
+  let rows = Array.zip orders (rowMinutes stack)
+      groupSpacing = foldl max 0.0 (map (\(Tuple { order } minute) -> minGroupSpacing order (Minute minute)) rows)
+  in rows <#> \(Tuple { order, pedestal } minute) ->
+       Collonade (Portico { order, size: Minute minute, numOfColumns, bayWidth, rythm, groupSpacing, pedestal })
 
 -- | All rows share the span, so the widest row is the one with the largest overhang.
 instance Sized StackedCollonade where
