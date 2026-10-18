@@ -243,12 +243,7 @@ body {
   fill: currentColor;
 }
 
-.beat-controls {
-  display: flex;
-  gap: 2px;
-}
-
-.action-bar .beat-controls button {
+.action-bar .beat-remove {
   padding: 2px 0;
   border-radius: 6px;
   font-size: 0.9rem;

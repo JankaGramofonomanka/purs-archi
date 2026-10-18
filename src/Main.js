@@ -171,7 +171,7 @@ const beatIcon = columns => {
   return svg;
 };
 
-const columnCount = n => n === 1 ? "1 column" : `${n} columns`;
+const columnCount = n => n === 0 ? "no column" : n === 1 ? "1 column" : `${n} columns`;
 
 // Renders the collonade form from `initial` and reports every edit to `onChange`. Each of
 // `treatises` lists the keys of the orders it defines and of those it gives a pedestal; the
@@ -335,8 +335,8 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     report();
   });
 
-  // Each beat is a cell showing its columns: clicking it adds a column, `−` takes one away and
-  // `×` removes the beat.
+  // Each beat is a cell showing its columns: clicking it steps to the next number of columns
+  // (after the most a beat can hold, back to none) and `×` removes the beat.
   const renderRythm = () => {
     beatList.replaceChildren(...form.rythm.map((columns, index) => {
       const item = document.createElement("li");
@@ -348,22 +348,14 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
         beatList.querySelectorAll(focusSelector)[Math.min(index, form.rythm.length - 1)]?.focus();
       };
 
-      const add = document.createElement("button");
-      add.type = "button";
-      add.className = "beat-columns";
-      add.append(beatIcon(columns));
-      add.disabled = columns >= maxColumnsPerBeat;
-      add.title = add.disabled ? `${columnCount(columns)}, the most a beat can hold` : `${columnCount(columns)} (click to add one)`;
-      add.setAttribute("aria-label", `Beat ${index + 1}: ${columnCount(columns)}, add a column`);
-      add.addEventListener("click", () => edit(".beat-columns", () => { form.rythm[index] += 1; }));
-
-      const subtract = document.createElement("button");
-      subtract.type = "button";
-      subtract.className = "beat-subtract";
-      subtract.textContent = "−";
-      subtract.disabled = columns === 0;
-      subtract.setAttribute("aria-label", `Beat ${index + 1}: take a column away`);
-      subtract.addEventListener("click", () => edit(".beat-subtract", () => { form.rythm[index] -= 1; }));
+      const next = (columns + 1) % (maxColumnsPerBeat + 1);
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "beat-columns";
+      toggle.append(beatIcon(columns));
+      toggle.title = `${columnCount(columns)} (click for ${columnCount(next)})`;
+      toggle.setAttribute("aria-label", `Beat ${index + 1}: ${columnCount(columns)}, click for ${columnCount(next)}`);
+      toggle.addEventListener("click", () => edit(".beat-columns", () => { form.rythm[index] = next; }));
 
       const remove = document.createElement("button");
       remove.type = "button";
@@ -373,16 +365,13 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
       remove.setAttribute("aria-label", `Remove beat ${index + 1}`);
       remove.addEventListener("click", () => edit(".beat-remove", () => { form.rythm.splice(index, 1); }));
 
-      const controls = document.createElement("div");
-      controls.className = "beat-controls";
-      controls.append(subtract, remove);
-      item.append(add, controls);
+      item.append(toggle, remove);
       return item;
     }));
   };
 
   addBeatButton.addEventListener("click", () => {
-    form.rythm.push(1);
+    form.rythm.push(0);
     render();
     report();
   });
