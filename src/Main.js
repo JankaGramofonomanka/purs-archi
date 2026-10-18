@@ -138,7 +138,7 @@ const pedestalIcon = mode => {
   return svg;
 };
 
-const maxColumns = 20;
+const maxColumns = 40;
 const minBayWidth = 1;
 const maxBayWidth = 12;
 // What the bay width measures: the distance between the centerlines of neighbouring beats, or
