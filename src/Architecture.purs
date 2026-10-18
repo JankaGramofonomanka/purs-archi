@@ -2,6 +2,7 @@ module Architecture
   ( Portico(..)
   , Collonade(..)
   , StackedCollonade(..)
+  , Storey
   , RowSizeDeterminant
   , collonades
   , SizedOrder
@@ -13,8 +14,8 @@ module Architecture
 import Prelude
 
 import Anchor (class Sized, HorizontalAnchor(..), PointAnchor(..), RectangularAnchor(..), VerticalAnchor(..), drawAnchored, size)
-import Architecture.Order (Order, SizeDeterminant(..), minuteFromLowerDiameter, minuteFromSize, minuteFromUpperDiameter, sizeOf)
-import Architecture.Order.Draw (drawColumn, drawEntablature, drawSpanningEntablature)
+import Architecture.Order (Order, Pedestal, PedestalMode(..), SizeDeterminant(..), minuteFromLowerDiameter, minuteFromSize, minuteFromUpperDiameter, pedestalHeight, sizeOf)
+import Architecture.Order.Draw (drawColumn, drawEntablature, drawPedestal, drawSpanningEntablature, drawSpanningPedestal)
 import Data.Array as Array
 import Data.Foldable (foldl, sum)
 import Data.Int as Int
@@ -29,12 +30,14 @@ type SizedOrder = { order :: Order, size :: SizeDeterminant }
 newtype Column = Column SizedOrder
 newtype Entablature = Entablature SizedOrder
 
--- | Columns of the same order in a row, `bayWidth` apart (centerline to centerline), under a common entablature.
+-- | Columns of the same order in a row, `bayWidth` apart (centerline to centerline), under a common entablature,
+-- | standing on pedestals or a podium as `pedestal` says (and the order defines one).
 newtype Portico = Portico {
   order :: Order,
   size :: SizeDeterminant,
   numOfColumns :: Int,
-  bayWidth :: Number
+  bayWidth :: Number,
+  pedestal :: PedestalMode
 }
 
 -- | One row of columns of a `StackedCollonade`; drawn exactly like a `Portico`.
@@ -43,11 +46,14 @@ newtype Collonade = Collonade Portico
 -- | A size determinant of the given row of a `StackedCollonade` (0 is the bottom row).
 type RowSizeDeterminant = { row :: Int, size :: SizeDeterminant }
 
+-- | An order of a `StackedCollonade` row and how its columns stand.
+type Storey = { order :: Order, pedestal :: PedestalMode }
+
 -- | Rows of columns stacked on each other, `orders` listed from bottom to top.
 -- | All rows share the column centerlines; the lower diameter of each row's columns
 -- | equals the upper diameter of the columns below, so every row has its own minute.
 newtype StackedCollonade = StackedCollonade {
-  orders :: Array Order,
+  orders :: Array Storey,
   size :: RowSizeDeterminant,
   numOfColumns :: Int,
   bayWidth :: Number
@@ -130,21 +136,32 @@ instance (Monad m, Renderer m) => RenderHorizontal m Entablature where
 porticoSpan :: Portico -> Number
 porticoSpan (Portico portico) = Int.toNumber (max 0 (portico.numOfColumns - 1)) * portico.bayWidth
 
+-- | The pedestal the portico's columns stand on, if any.
+porticoPedestal :: Portico -> Maybe Pedestal
+porticoPedestal (Portico portico) = case portico.pedestal of
+  NoPedestal -> Nothing
+  _ -> portico.order.pedestal
+
 -- | How far the portico reaches beyond the centerlines of the outermost columns.
 porticoOverhang :: Portico -> Number
-porticoOverhang (Portico portico@{ order }) =
+porticoOverhang p@(Portico portico@{ order }) =
   let minute = minuteFromSize order portico.size
       size' proportion = sizeOf proportion minute
-  in max (size' order.base.width / 2.0)
+      pedestalOverhang = case porticoPedestal p of
+        Nothing -> 0.0
+        Just pedestal -> max (size' pedestal.base.width) (max (size' pedestal.die.width) (size' pedestal.cornice.width)) / 2.0
+  in max pedestalOverhang
+    $ max (size' order.base.width / 2.0)
     $ max (size' order.capital.width / 2.0)
     $ max (size' order.entablature.architrave.depth)
     $ max (size' order.entablature.frieze.depth) (size' order.entablature.cornice.depth)
 
 instance Sized Portico where
   size p@(Portico portico) =
-    { width: porticoSpan p + 2.0 * porticoOverhang p
-    , height: sizeOf portico.order.height (minuteFromSize portico.order portico.size)
-    }
+    let minute = minuteFromSize portico.order portico.size
+    in { width: porticoSpan p + 2.0 * porticoOverhang p
+       , height: sizeOf portico.order.height minute + sizeOf (pedestalHeight portico.pedestal portico.order) minute
+       }
 
 instance RectangularFigure Portico
 
@@ -152,12 +169,21 @@ drawPorticoFromTopLeft :: forall m. Monad m => Renderer m => Point -> Portico ->
 drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
   let minute = minuteFromSize order portico.size
   let { width, height } = size p
-  let bottom = topLeft.y + height
+  let ground = topLeft.y + height
+  let bottom = ground - sizeOf (pedestalHeight portico.pedestal order) minute
   let firstCenterline = topLeft.x + porticoOverhang p
-  let drawColumns i = when (i < portico.numOfColumns) do
-        drawColumn (point (firstCenterline + Int.toNumber i * portico.bayWidth) bottom) minute order
-        drawColumns (i + 1)
-  drawColumns 0
+  let centerline i = firstCenterline + Int.toNumber i * portico.bayWidth
+  let forColumns draw =
+        let go i = when (i < portico.numOfColumns) do
+              draw (centerline i)
+              go (i + 1)
+        in go 0
+  case porticoPedestal p of
+    Nothing -> pure unit
+    Just pedestal -> case portico.pedestal of
+      Podium -> drawSpanningPedestal (point (topLeft.x + width / 2.0) ground) (porticoSpan p) minute pedestal
+      _ -> forColumns \x -> drawPedestal (point x ground) minute pedestal
+  forColumns \x -> drawColumn (point x bottom) minute order
   drawSpanningEntablature (point (topLeft.x + width / 2.0) (bottom - sizeOf order.column.height minute)) (porticoSpan p) minute order
 
 instance (Monad m, Renderer m) => RenderPoint m Portico where
@@ -184,7 +210,7 @@ derive newtype instance (Monad m, Renderer m) => RenderOrtogonal m Collonade
 
 -- | Minutes of the rows, bottom to top. Empty if `size.row` is not a row of the stack.
 rowMinutes :: StackedCollonade -> Array Number
-rowMinutes (StackedCollonade { orders, size: { row, size } }) = case Array.index orders row of
+rowMinutes (StackedCollonade { orders: storeys, size: { row, size } }) = case Array.index orders row of
   Nothing -> []
   Just anchor ->
     let anchorMinute = minuteFromSize anchor size
@@ -195,12 +221,14 @@ rowMinutes (StackedCollonade { orders, size: { row, size } }) = case Array.index
         below = propagate (\above' minute order -> minuteFromUpperDiameter order (sizeOf above'.column.lowerDiameter minute))
           (Array.reverse (Array.take row orders))
     in Array.reverse below <> [ anchorMinute ] <> above
+  where
+  orders = map _.order storeys
 
 -- | Rows of the stack, bottom to top.
 collonades :: StackedCollonade -> Array Collonade
 collonades stack@(StackedCollonade { orders, numOfColumns, bayWidth }) =
   Array.zipWith
-    (\order minute -> Collonade (Portico { order, size: Minute minute, numOfColumns, bayWidth }))
+    (\{ order, pedestal } minute -> Collonade (Portico { order, size: Minute minute, numOfColumns, bayWidth, pedestal }))
     orders
     (rowMinutes stack)
 

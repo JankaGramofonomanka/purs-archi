@@ -4,7 +4,7 @@ import Prelude
 
 import Anchor (placeBottomRight, render, size)
 import Architecture (Column(..), Portico(..), StackedCollonade(..))
-import Architecture.Order (SizeDeterminant(..), minuteFromColumnAndEntablatureHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, orderHeight, sizeOf)
+import Architecture.Order (PedestalMode(..), SizeDeterminant(..), minuteFromColumnAndEntablatureHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, orderHeight, sizeOf)
 import Architecture.Order.Draw (drawOrder, drawOrderFromLowerDiameter, drawOrderFromOrderHeight, drawOrderFromUpperDiameter)
 import Architecture.Order.Palladio (corynthian, doric, ionic)
 import Data.Int as Int
@@ -114,7 +114,7 @@ draw width height = do
   let columnsLeft = centerX - max (columnHalfWidth doric doricMinute) (max (columnHalfWidth ionic ionicMinute) (columnHalfWidth corynthian corynthianMinute))
   let numOfColumns = 4
   let bayWidth = 3.0 * sizeOf doric.column.lowerDiameter doricMinute
-  let portico order minute = Portico { order, size: Minute minute, numOfColumns, bayWidth }
+  let portico order minute = Portico { order, size: Minute minute, numOfColumns, bayWidth, pedestal: NoPedestal }
   -- distance from the outermost column centerline to the portico's edge
   let overhang p = ((size p).width - Int.toNumber (numOfColumns - 1) * bayWidth) / 2.0
   let doricPortico = portico doric doricMinute
@@ -129,7 +129,7 @@ draw width height = do
 
   --stacked collonade, same orders and minutes as the porticos, 50px to their left
   let stackedCollonade = StackedCollonade
-        { orders: [ doric, ionic, corynthian ]
+        { orders: [ doric, ionic, corynthian ] <#> \order -> { order, pedestal: NoPedestal }
         , size: { row: 1, size: Minute ionicMinute }
         , numOfColumns: 5
         , bayWidth

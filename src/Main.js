@@ -116,12 +116,20 @@ const orderNames = {
   composite: "Composite"
 };
 
+const pedestalNames = {
+  none: "No pedestal",
+  pedestals: "Pedestals",
+  podium: "Podium"
+};
+
 const maxColumns = 20;
 const minBayWidth = 1;
 const maxBayWidth = 12;
 
 // Renders the collonade form from `initial` and reports every edit to `onChange`. Each of
-// `treatises` lists the keys of the orders it defines; the form only offers those.
+// `treatises` lists the keys of the orders it defines and of those it gives a pedestal; the
+// form only offers those. Each storey of `orders` is `{ order, pedestal }`, the pedestal being
+// a key of `pedestalNames`.
 const setupCollonadeForm = (treatises, initial, onChange) => {
   const treatiseGroup = document.querySelector("#collonade-treatises");
   const orderList = document.querySelector("#collonade-orders");
@@ -140,13 +148,13 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
 
   const form = {
     treatise: initial.treatise,
-    orders: [...initial.orders],
+    orders: initial.orders.map(storey => ({ ...storey })),
     numOfColumns: initial.numOfColumns,
     bayWidth: initial.bayWidth
   };
   const report = () => onChange({
     treatise: form.treatise,
-    orders: [...form.orders],
+    orders: form.orders.map(storey => ({ ...storey })),
     numOfColumns: form.numOfColumns,
     bayWidth: form.bayWidth
   })();
@@ -166,11 +174,23 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
       button.className = "treatise-option";
       button.textContent = treatise.name;
       button.setAttribute("aria-pressed", String(treatise.key === form.treatise));
-      const missing = form.orders.filter(order => !treatise.orders.includes(order));
-      button.disabled = missing.length > 0;
+      const missingOrders = form.orders
+        .filter(({ order }) => !treatise.orders.includes(order))
+        .map(({ order }) => order);
+      const missingPedestals = form.orders
+        .filter(({ order, pedestal }) => pedestal !== "none" && !treatise.pedestals.includes(order))
+        .map(({ order }) => order);
+      const names = keys => [...new Set(keys)].map(order => orderNames[order]).join(", ");
+      const reasons = [];
+      if (missingOrders.length > 0) {
+        reasons.push(`does not define the ${names(missingOrders)} order`);
+      }
+      if (missingPedestals.length > 0) {
+        reasons.push(`gives no pedestal for the ${names(missingPedestals)} order`);
+      }
+      button.disabled = reasons.length > 0;
       if (button.disabled) {
-        const names = [...new Set(missing)].map(order => orderNames[order]).join(", ");
-        button.title = `${treatise.name} does not define the ${names} order`;
+        button.title = `${treatise.name} ${reasons.join(" and ")}`;
       }
       button.addEventListener("click", () => {
         form.treatise = treatise.key;
@@ -182,10 +202,14 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   };
 
   const renderOrders = () => {
-    const available = currentTreatise().orders;
-    orderList.replaceChildren(...form.orders.map((order, index) => {
+    const treatise = currentTreatise();
+    const available = treatise.orders;
+    orderList.replaceChildren(...form.orders.map((storey, index) => {
+      const { order, pedestal } = storey;
       const item = document.createElement("li");
       item.className = "order-row";
+      const orderLine = document.createElement("div");
+      orderLine.className = "order-line";
 
       const select = document.createElement("select");
       select.setAttribute("aria-label", `Order ${index + 1} from the bottom`);
@@ -195,7 +219,10 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
         select.append(option);
       }
       select.addEventListener("change", () => {
-        form.orders[index] = select.value;
+        storey.order = select.value;
+        if (!treatise.pedestals.includes(storey.order)) {
+          storey.pedestal = "none";
+        }
         render();
         report();
       });
@@ -212,7 +239,24 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
         report();
       });
 
-      item.append(select, remove);
+      const pedestalSelect = document.createElement("select");
+      pedestalSelect.className = "pedestal-select";
+      pedestalSelect.setAttribute("aria-label", `Pedestal of order ${index + 1} from the bottom`);
+      for (const [key, name] of Object.entries(pedestalNames)) {
+        pedestalSelect.append(new Option(name, key, false, key === pedestal));
+      }
+      pedestalSelect.disabled = !treatise.pedestals.includes(order);
+      if (pedestalSelect.disabled) {
+        pedestalSelect.title = `${treatise.name} gives no pedestal for the ${orderNames[order]} order`;
+      }
+      pedestalSelect.addEventListener("change", () => {
+        storey.pedestal = pedestalSelect.value;
+        render();
+        report();
+      });
+
+      orderLine.append(select, remove);
+      item.append(orderLine, pedestalSelect);
       return item;
     }));
   };
@@ -224,8 +268,9 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
 
   addButton.addEventListener("click", () => {
     const available = currentTreatise().orders;
-    const last = form.orders[form.orders.length - 1];
-    form.orders.push(available.find(key => available.indexOf(key) > available.indexOf(last)) ?? last);
+    const last = form.orders[form.orders.length - 1].order;
+    const order = available.find(key => available.indexOf(key) > available.indexOf(last)) ?? last;
+    form.orders.push({ order, pedestal: "none" });
     render();
     report();
   });

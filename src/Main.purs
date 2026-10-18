@@ -5,13 +5,14 @@ import Prelude
 import Control.Monad (when)
 import Control.Monad.State (runStateT)
 import Data.Array as Array
-import Data.Maybe (Maybe(..), isJust)
+import Data.Maybe (Maybe(..), isJust, isNothing)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import Architecture.Order (Order, OrderKind(..), Treatise, treatiseOrder)
+import Architecture (Storey)
+import Architecture.Order (OrderKind(..), PedestalMode(..), Treatise, treatiseOrder)
 import Architecture.Order.Alberti as Alberti
 import Architecture.Order.Chambers as Chambers
 import Architecture.Order.Gibbs as Gibbs
@@ -42,11 +43,18 @@ type State =
   }
 
 -- | The collonade settings as exchanged with the page's form: the key of a treatise from
--- | `treatises`, orders as keys from `orderKinds`, and the bay width in lower diameters.
-type CollonadeForm = { treatise :: String, orders :: Array String, numOfColumns :: Int, bayWidth :: Number }
+-- | `treatises`, orders as keys from `orderKinds` with a key from `pedestalModes` each, and
+-- | the bay width in lower diameters.
+type CollonadeForm =
+  { treatise :: String
+  , orders :: Array { order :: String, pedestal :: String }
+  , numOfColumns :: Int
+  , bayWidth :: Number
+  }
 
--- | A treatise as offered by the page's form, with the keys of the orders it defines.
-type TreatiseOption = { key :: String, name :: String, orders :: Array String }
+-- | A treatise as offered by the page's form, with the keys of the orders it defines and of
+-- | those it gives a pedestal.
+type TreatiseOption = { key :: String, name :: String, orders :: Array String, pedestals :: Array String }
 
 treatises :: Array { key :: String, name :: String, treatise :: Treatise }
 treatises =
@@ -69,15 +77,23 @@ orderKinds =
   , { key: "composite", kind: Composite }
   ]
 
+pedestalModes :: Array { key :: String, mode :: PedestalMode }
+pedestalModes =
+  [ { key: "none", mode: NoPedestal }
+  , { key: "pedestals", mode: Pedestals }
+  , { key: "podium", mode: Podium }
+  ]
+
 treatiseOptions :: Array TreatiseOption
 treatiseOptions = treatises <#> \{ key, name, treatise } ->
   { key
   , name
   , orders: _.key <$> Array.filter (\{ kind } -> isJust (treatiseOrder treatise kind)) orderKinds
+  , pedestals: _.key <$> Array.filter (\{ kind } -> isJust (treatiseOrder treatise kind >>= _.pedestal)) orderKinds
   }
 
 initialForm :: CollonadeForm
-initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ], numOfColumns: 5, bayWidth: 3.0 }
+initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none" }, numOfColumns: 5, bayWidth: 3.0 }
 
 main :: Effect Unit
 main = do
@@ -162,13 +178,20 @@ fromForm form = do
     Nothing -> throw ("Unknown treatise: " <> form.treatise)
     Just found -> pure found
   let
-    orderFromKey :: String -> Effect Order
-    orderFromKey key = case Array.find (\o -> o.key == key) orderKinds of
-      Nothing -> throw ("Unknown order: " <> key)
-      Just { kind } -> case treatiseOrder treatise kind of
-        Nothing -> throw (name <> " does not define the " <> key <> " order")
-        Just order -> pure order
-  orders <- traverse orderFromKey form.orders
+    storeyFromForm :: { order :: String, pedestal :: String } -> Effect Storey
+    storeyFromForm { order: key, pedestal: pedestalKey } = do
+      order <- case Array.find (\o -> o.key == key) orderKinds of
+        Nothing -> throw ("Unknown order: " <> key)
+        Just { kind } -> case treatiseOrder treatise kind of
+          Nothing -> throw (name <> " does not define the " <> key <> " order")
+          Just order -> pure order
+      pedestal <- case Array.find (\p -> p.key == pedestalKey) pedestalModes of
+        Nothing -> throw ("Unknown pedestal mode: " <> pedestalKey)
+        Just { mode } -> pure mode
+      when (pedestal /= NoPedestal && isNothing order.pedestal) do
+        throw (name <> " gives no pedestal for the " <> key <> " order")
+      pure { order, pedestal }
+  orders <- traverse storeyFromForm form.orders
   pure { orders, numOfColumns: form.numOfColumns, bayWidth: form.bayWidth }
 
 foreign import setupRoutes

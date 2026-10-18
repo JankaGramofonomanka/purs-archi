@@ -107,6 +107,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
   margin: 0 0 20px;
   padding: 0;
   border: 0;
@@ -157,6 +158,12 @@ body {
 }
 
 .order-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.order-line {
   display: flex;
   gap: 6px;
 }

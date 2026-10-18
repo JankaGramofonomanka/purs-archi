@@ -8,7 +8,9 @@ module Architecture.Order.Vignola
   )
   where
 
-import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder)
+import Prelude
+
+import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder, withPedestal)
 import Data.Maybe (Maybe(..))
 
 -- After Vignola, Regola delli cinque ordini (Moxon's translation, "Vignola, or the Compleat
@@ -19,6 +21,9 @@ import Data.Maybe (Maybe(..))
 -- Tuscan and Doric), the bases project a sixth of a diameter, the architrave a sixth of its
 -- height beyond the top of the shaft, the frieze is plumb with it, and the cornice projects
 -- as far as it is high.
+-- Pedestals are a third of the column "in all the five orders", but the Corinthian (and so
+-- the Composite) "may be made of 7 Models" for strength. Moxon's text does not divide them;
+-- Ware's American Vignola gives the cap a ninth and the base two ninths of the pedestal.
 treatise :: Treatise
 treatise =
   { tuscan: Just tuscan
@@ -30,7 +35,7 @@ treatise =
 
 -- Architrave 1 module, frieze 1 1/6, cornice 1 1/3; capital 1.
 tuscan :: Order
-tuscan = mkOrder Tuscan
+tuscan = withPedestal { base: 31, die: 93, cornice: 16 } $ mkOrder Tuscan
   { columnHeight: 420
   , upperDiameter: 50
   , base: { width: 80, height: 30 }
@@ -42,7 +47,7 @@ tuscan = mkOrder Tuscan
 
 -- Architrave 1 module, frieze 1 1/2, cornice 1 1/2; capital 1.
 doric :: Order
-doric = mkOrder Doric
+doric = withPedestal { base: 36, die: 106, cornice: 18 } $ mkOrder Doric
   { columnHeight: 480
   , upperDiameter: 50
   , base: { width: 80, height: 30 }
@@ -55,7 +60,7 @@ doric = mkOrder Doric
 -- Architrave 1 1/4 modules, frieze 1 1/2, cornice 1 3/4 (37.5 and 52.5 minutes, rounded so
 -- the entablature keeps its 135); the capital, without its volutes, 2/3 of a module.
 ionic :: Order
-ionic = mkOrder Ionic
+ionic = withPedestal { base: 40, die: 120, cornice: 20 } $ mkOrder Ionic
   { columnHeight: 540
   , upperDiameter: 50
   , base: { width: 80, height: 30 }
@@ -67,7 +72,7 @@ ionic = mkOrder Ionic
 
 -- Architrave 1 1/2 modules, frieze 1 1/2, cornice 2; capital 2 1/3.
 corynthian :: Order
-corynthian = mkOrder Corynthian
+corynthian = withPedestal { base: 47, die: 140, cornice: 23 } $ mkOrder Corynthian
   { columnHeight: 600
   , upperDiameter: 50
   , base: { width: 80, height: 30 }

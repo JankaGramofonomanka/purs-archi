@@ -3,14 +3,14 @@ module Renderer.Collonade (Config, draw, lowestLowerDiameter) where
 import Prelude
 
 import Anchor (placeCentered, render)
-import Architecture (StackedCollonade(..))
-import Architecture.Order (Order, SizeDeterminant(..))
+import Architecture (StackedCollonade(..), Storey)
+import Architecture.Order (SizeDeterminant(..))
 import Renderer (point)
 import Renderer as Renderer
 
--- | Orders listed from bottom to top; `bayWidth` is the distance between column centerlines,
+-- | Storeys (orders and how their columns stand) listed from bottom to top; `bayWidth` is the distance between column centerlines,
 -- | in lower diameters of the bottom row's columns.
-type Config = { orders :: Array Order, numOfColumns :: Int, bayWidth :: Number }
+type Config = { orders :: Array Storey, numOfColumns :: Int, bayWidth :: Number }
 
 -- | Lower diameter of the columns of the bottom row, in pixels.
 lowestLowerDiameter :: Number

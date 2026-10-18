@@ -2,6 +2,8 @@ module Architecture.Order.Draw
   ( drawColumn
   , drawEntablature
   , drawSpanningEntablature
+  , drawPedestal
+  , drawSpanningPedestal
   , drawOrder
   , drawColumnFromOrderHeight
   , drawColumnFromColumnHeight
@@ -15,7 +17,7 @@ module Architecture.Order.Draw
 
 import Prelude
 
-import Architecture.Order (Order, OrderKind(..), minuteFromColumnAndEntablatureHeight, minuteFromColumnHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, sizeOf)
+import Architecture.Order (Order, OrderKind(..), Pedestal, minuteFromColumnAndEntablatureHeight, minuteFromColumnHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, sizeOf)
 import Data.Default (def)
 import Data.Maybe (Maybe(..))
 import Renderer (Point(..), point)
@@ -65,6 +67,26 @@ drawSpanningEntablature (Point bottom) span minute order = do
   drawBox x bottom.y (width order.entablature.architrave) architraveTop
   drawBox x architraveTop (width order.entablature.frieze) friezeTop
   drawBox x friezeTop (width order.entablature.cornice) corniceTop
+
+-- | Draw a pedestal (base, die and cornice) with the given size of a minute.
+-- | The point is the center of the bottom edge of the pedestal's base.
+drawPedestal :: forall m. Monad m => Renderer.Renderer m => Point -> Number -> Pedestal -> m Unit
+drawPedestal bottom = drawSpanningPedestal bottom 0.0
+
+-- | Draw a continuous pedestal (a podium) under columns whose centerlines span the given
+-- | width, with each element reaching half its width beyond the outermost centerlines.
+-- | The point is the center of the bottom edge of the pedestal's base.
+drawSpanningPedestal :: forall m. Monad m => Renderer.Renderer m => Point -> Number -> Number -> Pedestal -> m Unit
+drawSpanningPedestal (Point bottom) span minute pedestal = do
+  let size proportion = sizeOf proportion minute
+  let x = bottom.x
+  let width element = span + size element.width
+  let baseTop = bottom.y - size pedestal.base.height
+  let dieTop = baseTop - size pedestal.die.height
+  let corniceTop = dieTop - size pedestal.cornice.height
+  drawBox x bottom.y (width pedestal.base) baseTop
+  drawBox x baseTop (width pedestal.die) dieTop
+  drawBox x dieTop (width pedestal.cornice) corniceTop
 
 -- | Draw the entire order, from the column base up to the cornice, with the given size of a minute.
 -- | The point is the center of the bottom edge of the column base.
