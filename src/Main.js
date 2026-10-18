@@ -141,6 +141,8 @@ const pedestalIcon = mode => {
 const maxColumns = 20;
 const minBayWidth = 1;
 const maxBayWidth = 12;
+// The motif of the columns' rythm: `|` for a column, `.` for none.
+const rythmPattern = /^[.|]+$/;
 
 // Renders the collonade form from `initial` and reports every edit to `onChange`. Each of
 // `treatises` lists the keys of the orders it defines and of those it gives a pedestal; the
@@ -152,12 +154,14 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   const addButton = document.querySelector("#collonade-add-order");
   const columnsInput = document.querySelector("#collonade-columns");
   const bayWidthInput = document.querySelector("#collonade-bay-width");
+  const rythmInput = document.querySelector("#collonade-rythm");
   if (
     !(treatiseGroup instanceof HTMLElement) ||
     !(orderList instanceof HTMLOListElement) ||
     !(addButton instanceof HTMLButtonElement) ||
     !(columnsInput instanceof HTMLInputElement) ||
-    !(bayWidthInput instanceof HTMLInputElement)
+    !(bayWidthInput instanceof HTMLInputElement) ||
+    !(rythmInput instanceof HTMLInputElement)
   ) {
     throw new Error("Missing collonade form controls");
   }
@@ -166,13 +170,15 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     treatise: initial.treatise,
     orders: initial.orders.map(storey => ({ ...storey })),
     numOfColumns: initial.numOfColumns,
-    bayWidth: initial.bayWidth
+    bayWidth: initial.bayWidth,
+    rythm: initial.rythm
   };
   const report = () => onChange({
     treatise: form.treatise,
     orders: form.orders.map(storey => ({ ...storey })),
     numOfColumns: form.numOfColumns,
-    bayWidth: form.bayWidth
+    bayWidth: form.bayWidth,
+    rythm: form.rythm
   })();
 
   const currentTreatise = () => {
@@ -327,6 +333,18 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   });
   bayWidthInput.addEventListener("change", () => {
     bayWidthInput.value = String(form.bayWidth);
+  });
+
+  rythmInput.value = form.rythm;
+  rythmInput.addEventListener("input", () => {
+    const value = rythmInput.value;
+    if (rythmPattern.test(value) && value !== form.rythm) {
+      form.rythm = value;
+      report();
+    }
+  });
+  rythmInput.addEventListener("change", () => {
+    rythmInput.value = form.rythm;
   });
 
   render();

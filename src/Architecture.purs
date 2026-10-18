@@ -16,6 +16,7 @@ import Prelude
 import Anchor (class Sized, HorizontalAnchor(..), PointAnchor(..), RectangularAnchor(..), VerticalAnchor(..), drawAnchored, size)
 import Architecture.Order (Order, Pedestal, PedestalMode(..), SizeDeterminant(..), minuteFromLowerDiameter, minuteFromSize, minuteFromUpperDiameter, pedestalHeight, sizeOf)
 import Architecture.Order.Draw (drawColumn, drawEntablature, drawPedestal, drawSpanningEntablature, drawSpanningPedestal)
+import Architecture.Rythm (Rythm, beatAt)
 import Data.Array as Array
 import Data.Foldable (foldl, sum)
 import Data.Int as Int
@@ -30,13 +31,16 @@ type SizedOrder = { order :: Order, size :: SizeDeterminant }
 newtype Column = Column SizedOrder
 newtype Entablature = Entablature SizedOrder
 
--- | Columns of the same order in a row, `bayWidth` apart (centerline to centerline), under a common entablature,
--- | standing on pedestals or a podium as `pedestal` says (and the order defines one).
+-- | Columns of the same order in a row under a common entablature, standing on pedestals or a podium
+-- | as `pedestal` says (and the order defines one). The row is a pulse of `numOfColumns` beats,
+-- | `bayWidth` apart (centerline to centerline); a column stands on a beat where `rythm` is `true`,
+-- | and the beat is left empty where it is `false`. The entablature (and a podium) span the whole pulse.
 newtype Portico = Portico {
   order :: Order,
   size :: SizeDeterminant,
   numOfColumns :: Int,
   bayWidth :: Number,
+  rythm :: Rythm Boolean,
   pedestal :: PedestalMode
 }
 
@@ -50,13 +54,14 @@ type RowSizeDeterminant = { row :: Int, size :: SizeDeterminant }
 type Storey = { order :: Order, pedestal :: PedestalMode }
 
 -- | Rows of columns stacked on each other, `orders` listed from bottom to top.
--- | All rows share the column centerlines; the lower diameter of each row's columns
--- | equals the upper diameter of the columns below, so every row has its own minute.
+-- | All rows share the pulse and the `rythm` of the columns (see `Portico`); the lower diameter
+-- | of each row's columns equals the upper diameter of the columns below, so every row has its own minute.
 newtype StackedCollonade = StackedCollonade {
   orders :: Array Storey,
   size :: RowSizeDeterminant,
   numOfColumns :: Int,
-  bayWidth :: Number
+  bayWidth :: Number,
+  rythm :: Rythm Boolean
 }
 
 minuteOf :: SizedOrder -> Number
@@ -175,7 +180,7 @@ drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
   let centerline i = firstCenterline + Int.toNumber i * portico.bayWidth
   let forColumns draw =
         let go i = when (i < portico.numOfColumns) do
-              draw (centerline i)
+              when (beatAt i portico.rythm) $ draw (centerline i)
               go (i + 1)
         in go 0
   case porticoPedestal p of
@@ -226,9 +231,9 @@ rowMinutes (StackedCollonade { orders: storeys, size: { row, size } }) = case Ar
 
 -- | Rows of the stack, bottom to top.
 collonades :: StackedCollonade -> Array Collonade
-collonades stack@(StackedCollonade { orders, numOfColumns, bayWidth }) =
+collonades stack@(StackedCollonade { orders, numOfColumns, bayWidth, rythm }) =
   Array.zipWith
-    (\{ order, pedestal } minute -> Collonade (Portico { order, size: Minute minute, numOfColumns, bayWidth, pedestal }))
+    (\{ order, pedestal } minute -> Collonade (Portico { order, size: Minute minute, numOfColumns, bayWidth, rythm, pedestal }))
     orders
     (rowMinutes stack)
 

@@ -7,6 +7,8 @@ import Architecture (Column(..), Portico(..), StackedCollonade(..))
 import Architecture.Order (PedestalMode(..), SizeDeterminant(..), minuteFromColumnAndEntablatureHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, orderHeight, sizeOf)
 import Architecture.Order.Draw (drawOrder, drawOrderFromLowerDiameter, drawOrderFromOrderHeight, drawOrderFromUpperDiameter)
 import Architecture.Order.Palladio (corynthian, doric, ionic)
+import Architecture.Rythm (pulse, rythm)
+import Data.Array.NonEmpty as NonEmptyArray
 import Data.Int as Int
 import Data.Default (class Default, def)
 import Data.Maybe (Maybe(..))
@@ -114,7 +116,7 @@ draw width height = do
   let columnsLeft = centerX - max (columnHalfWidth doric doricMinute) (max (columnHalfWidth ionic ionicMinute) (columnHalfWidth corynthian corynthianMinute))
   let numOfColumns = 4
   let bayWidth = 3.0 * sizeOf doric.column.lowerDiameter doricMinute
-  let portico order minute = Portico { order, size: Minute minute, numOfColumns, bayWidth, pedestal: NoPedestal }
+  let portico order minute = Portico { order, size: Minute minute, numOfColumns, bayWidth, rythm: true <$ pulse, pedestal: NoPedestal }
   -- distance from the outermost column centerline to the portico's edge
   let overhang p = ((size p).width - Int.toNumber (numOfColumns - 1) * bayWidth) / 2.0
   let doricPortico = portico doric doricMinute
@@ -133,6 +135,8 @@ draw width height = do
         , size: { row: 1, size: Minute ionicMinute }
         , numOfColumns: 5
         , bayWidth
+        -- columns in pairs: X X _ X X
+        , rythm: rythm (NonEmptyArray.cons' true [ true, false ])
         }
   let porticosLeft = porticoCenterline - Int.toNumber (numOfColumns - 1) * bayWidth
         - max (overhang doricPortico) (max (overhang ionicPortico) (overhang corynthianPortico))

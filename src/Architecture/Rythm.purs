@@ -2,6 +2,7 @@ module Architecture.Rythm
   ( Rythm
   , Pulse
   , rythm
+  , fromString
   , pulse
   , motif
   , period
@@ -16,8 +17,10 @@ import Prelude
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NonEmptyArray
+import Data.Maybe (Maybe)
+import Data.String.CodeUnits as CodeUnits
 import Data.Foldable (class Foldable)
-import Data.Traversable (class Traversable)
+import Data.Traversable (class Traversable, traverse)
 import Partial.Unsafe (unsafePartial)
 
 -- | An endless repetition of a basic sequence of beats (the motif), e.g. the motif `*_X_**X_`
@@ -36,6 +39,11 @@ type Pulse = Rythm Unit
 
 rythm :: forall beat. NonEmptyArray beat -> Rythm beat
 rythm = Rythm
+
+-- | Reads a rythm written as its motif, one character per beat (e.g. `*_X_**X_`).
+-- | `Nothing` if the text is empty or `readBeat` does not know one of its characters.
+fromString :: forall beat. (Char -> Maybe beat) -> String -> Maybe (Rythm beat)
+fromString readBeat = map Rythm <<< (NonEmptyArray.fromArray <=< traverse readBeat <<< CodeUnits.toCharArray)
 
 pulse :: Pulse
 pulse = Rythm (NonEmptyArray.singleton unit)

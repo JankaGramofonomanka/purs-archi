@@ -175,6 +175,11 @@ body {
   font-weight: 500;
 }
 
+#collonade-rythm {
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.15em;
+}
+
 .action-bar select:focus-visible,
 .action-bar input:focus-visible {
   outline: 3px solid #aab5ff;

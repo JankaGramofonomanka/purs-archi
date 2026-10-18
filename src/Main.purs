@@ -21,6 +21,7 @@ import Architecture.Order.Scamozzi as Scamozzi
 import Architecture.Order.Serlio as Serlio
 import Architecture.Order.Vignola as Vignola
 import Architecture.Order.Vitruvius as Vitruvius
+import Architecture.Rythm as Rythm
 import Canvas.Collonade as CanvasCollonade
 import Canvas.Demo as CanvasDemo
 import Canvas.Page as CanvasPage
@@ -44,12 +45,13 @@ type State =
 
 -- | The collonade settings as exchanged with the page's form: the key of a treatise from
 -- | `treatises`, orders as keys from `orderKinds` with a key from `pedestalModes` each, and
--- | the bay width in lower diameters.
+-- | the bay width in lower diameters, and the motif of the columns' rythm, `|` for a column and `.` for none.
 type CollonadeForm =
   { treatise :: String
   , orders :: Array { order :: String, pedestal :: String }
   , numOfColumns :: Int
   , bayWidth :: Number
+  , rythm :: String
   }
 
 -- | A treatise as offered by the page's form, with the keys of the orders it defines and of
@@ -93,7 +95,7 @@ treatiseOptions = treatises <#> \{ key, name, treatise } ->
   }
 
 initialForm :: CollonadeForm
-initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none" }, numOfColumns: 5, bayWidth: 3.0 }
+initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none" }, numOfColumns: 5, bayWidth: 3.0, rythm: "|" }
 
 main :: Effect Unit
 main = do
@@ -192,7 +194,15 @@ fromForm form = do
         throw (name <> " gives no pedestal for the " <> key <> " order")
       pure { order, pedestal }
   orders <- traverse storeyFromForm form.orders
-  pure { orders, numOfColumns: form.numOfColumns, bayWidth: form.bayWidth }
+  rythm <- case Rythm.fromString columnBeat form.rythm of
+    Nothing -> throw ("A rythm of columns is a non-empty sequence of '|' (column) and '.' (no column): " <> form.rythm)
+    Just rythm -> pure rythm
+  pure { orders, numOfColumns: form.numOfColumns, bayWidth: form.bayWidth, rythm }
+  where
+  columnBeat = case _ of
+    '|' -> Just true
+    '.' -> Just false
+    _ -> Nothing
 
 foreign import setupRoutes
   :: (String -> Number -> Number -> Effect Unit)
