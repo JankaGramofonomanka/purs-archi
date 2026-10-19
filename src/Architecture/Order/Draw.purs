@@ -138,20 +138,21 @@ drawOrderFromUpperDiameter bottom diameter order =
 -- Rectangle centered on x, spanning from bottom up to top.
 drawBox :: forall m. Renderer.Renderer m => Number -> Number -> Number -> Number -> m Unit
 drawBox x bottom width top =
-  Renderer.drawRectangle (point (x - width / 2.0) top) width (bottom - top) (Just def) Nothing
+  Renderer.drawRectangle (point (x - width / 2.0) top) width (bottom - top) (Just def) (Just def)
 
 -- Ionic capital centered on x, the shaft ending at bottom and the capital at top, with an abacus
--- of the given width: the two volutes as circles (see `ionicVolutes`) joined by a line through
--- their centers, and the abacus as a rectangle from top down to the tops of the volutes.
+-- of the given width: the two volutes as circles (see `ionicVolutes`) over a rectangle joining
+-- them from their tops down to their centers, and the abacus as a rectangle from top down to the
+-- tops of the volutes.
 drawVolutes :: forall m. Monad m => Renderer.Renderer m => Number -> Number -> Number -> Number -> m Unit
 drawVolutes x bottom abacus top = do
   let { inset, radius } = ionicVolutes abacus
   let leftX = x - abacus / 2.0 + inset
   let rightX = x + abacus / 2.0 - inset
   let voluteTop = bottom - radius
-  Renderer.drawCircle (point leftX bottom) radius (Just def) Nothing
-  Renderer.drawCircle (point rightX bottom) radius (Just def) Nothing
-  Renderer.drawLineSegment (point (leftX + radius) bottom) (point (rightX - radius) bottom) def
+  drawBox x bottom (rightX - leftX) voluteTop
+  Renderer.drawCircle (point leftX bottom) radius (Just def) (Just def)
+  Renderer.drawCircle (point rightX bottom) radius (Just def) (Just def)
   when (top < voluteTop) $ drawBox x voluteTop abacus top
 
 -- Trapezoid centered on x, with horizontal bottom and top edges of the given widths.
@@ -164,4 +165,4 @@ drawTrapezoid x bottom bottomWidth top topWidth =
     , point (x - topWidth / 2.0) top
     ]
     (Just def)
-    Nothing
+    (Just def)
