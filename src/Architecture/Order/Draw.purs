@@ -17,7 +17,7 @@ module Architecture.Order.Draw
 
 import Prelude
 
-import Architecture.Order (Order, OrderKind(..), Pedestal, minuteFromColumnAndEntablatureHeight, minuteFromColumnHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, sizeOf)
+import Architecture.Order (Order, OrderKind(..), ionicVolutes, Pedestal, minuteFromColumnAndEntablatureHeight, minuteFromColumnHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, sizeOf)
 import Data.Default (def)
 import Data.Maybe (Maybe(..))
 import Renderer (Point(..), point)
@@ -140,18 +140,19 @@ drawBox :: forall m. Renderer.Renderer m => Number -> Number -> Number -> Number
 drawBox x bottom width top =
   Renderer.drawRectangle (point (x - width / 2.0) top) width (bottom - top) (Just def) Nothing
 
--- Ionic capital centered on x, spanning from bottom up to top: two volutes as circles as high as
--- the capital at either end of its width, joined by a line along their tops and one through their centers.
+-- Ionic capital centered on x, the shaft ending at bottom and the capital at top, with an abacus
+-- of the given width: the two volutes as circles (see `ionicVolutes`) joined by a line through
+-- their centers, and the abacus as a rectangle from top down to the tops of the volutes.
 drawVolutes :: forall m. Monad m => Renderer.Renderer m => Number -> Number -> Number -> Number -> m Unit
-drawVolutes x bottom width top = do
-  let radius = (bottom - top) / 2.0
-  let centerY = top + radius
-  let leftX = x - width / 2.0 + radius
-  let rightX = x + width / 2.0 - radius
-  Renderer.drawCircle (point leftX centerY) radius (Just def) Nothing
-  Renderer.drawCircle (point rightX centerY) radius (Just def) Nothing
-  Renderer.drawLineSegment (point leftX top) (point rightX top) def
-  Renderer.drawLineSegment (point (leftX + radius) centerY) (point (rightX - radius) centerY) def
+drawVolutes x bottom abacus top = do
+  let { inset, radius } = ionicVolutes abacus
+  let leftX = x - abacus / 2.0 + inset
+  let rightX = x + abacus / 2.0 - inset
+  let voluteTop = bottom - radius
+  Renderer.drawCircle (point leftX bottom) radius (Just def) Nothing
+  Renderer.drawCircle (point rightX bottom) radius (Just def) Nothing
+  Renderer.drawLineSegment (point (leftX + radius) bottom) (point (rightX - radius) bottom) def
+  when (top < voluteTop) $ drawBox x voluteTop abacus top
 
 -- Trapezoid centered on x, with horizontal bottom and top edges of the given widths.
 drawTrapezoid :: forall m. Renderer.Renderer m => Number -> Number -> Number -> Number -> Number -> m Unit

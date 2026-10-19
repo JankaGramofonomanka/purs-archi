@@ -18,7 +18,7 @@ import Prelude
 
 import Anchor (class Sized, HorizontalAnchor(..), PointAnchor(..), RectangularAnchor(..), VerticalAnchor(..), drawAnchored, size)
 import Architecture.Measure (Measure(..), SizeDeterminant)
-import Architecture.Order (Order, Pedestal, PedestalMode(..), lowerMinute, minuteFromSize, pedestalHeight, sizeOf, upperMinute)
+import Architecture.Order (Order, capitalWidth, Pedestal, PedestalMode(..), lowerMinute, minuteFromSize, pedestalHeight, sizeOf, upperMinute)
 import Architecture.Superposition (SuperpositionRule)
 import Architecture.Order.Draw (drawColumn, drawEntablature, drawSpanningEntablature, drawSpanningPedestal)
 import Architecture.Rythm (Rythm, beatAt)
@@ -103,7 +103,7 @@ minuteOf sized = minuteFromSize NoPedestal sized.order sized.size
 instance Sized Column where
   size (Column sized) =
     let minute = minuteOf sized
-    in { width: max (sizeOf sized.order.base.width minute) (sizeOf sized.order.capital.width minute)
+    in { width: max (sizeOf sized.order.base.width minute) (capitalWidth sized.order minute)
        , height: sizeOf sized.order.column.height minute
        }
 
@@ -172,7 +172,7 @@ instance (Monad m, Renderer m) => RenderHorizontal m Entablature where
 -- | neither their bases nor their capitals overlap.
 minGroupSpacing :: Order -> Number -> Number
 minGroupSpacing order minute =
-  max (sizeOf order.base.width minute) (sizeOf order.capital.width minute)
+  max (sizeOf order.base.width minute) (capitalWidth order minute)
 
 -- | The beats of the row, each with its centerline measured from the centerline of the leftmost column.
 porticoBeats :: Portico -> Array { centerline :: Number, beat :: ColumnBeat }
@@ -209,7 +209,7 @@ porticoOverhang p@(Portico portico@{ order }) =
         Just pedestal -> max (size' pedestal.base.width) (max (size' pedestal.die.width) (size' pedestal.cornice.width)) / 2.0
   in max pedestalOverhang
     $ max (size' order.base.width / 2.0)
-    $ max (size' order.capital.width / 2.0)
+    $ max (capitalWidth order minute / 2.0)
     $ max (size' order.entablature.architrave.depth)
     $ max (size' order.entablature.frieze.depth) (size' order.entablature.cornice.depth)
 

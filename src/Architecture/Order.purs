@@ -26,6 +26,9 @@ module Architecture.Order
   , sizeOf
   , treatiseOrder
   , withPedestal
+  , Volutes
+  , ionicVolutes
+  , capitalWidth
   )
   where
 
@@ -127,6 +130,28 @@ minuteFromLowerDiameter order diameter =
 minuteFromUpperDiameter :: Order -> Number -> Number
 minuteFromUpperDiameter order diameter =
   minuteFromProportion order.column.upperDiameter diameter
+
+-- | The volutes of an Ionic capital after Palladio, Book I ch. 16: the abacus is 19 parts wide,
+-- | the eye of each volute lies one part inside the end of the abacus, level with the top of the
+-- | shaft, and the volute is eight parts high (drawn here as a circle of radius four parts).
+-- | `inset` is the distance from the end of the abacus to the eye.
+type Volutes = { inset :: Number, radius :: Number }
+
+ionicVolutes :: Number -> Volutes
+ionicVolutes abacus =
+  let part = abacus / 19.0
+  in { inset: part, radius: 4.0 * part }
+
+-- | The full width of the capital: the abacus, widened for an Ionic capital by the volutes
+-- | that reach beyond its ends.
+capitalWidth :: Order -> Number -> Number
+capitalWidth order minute =
+  let abacus = sizeOf order.capital.width minute
+  in case order.kind of
+    Ionic ->
+      let { inset, radius } = ionicVolutes abacus
+      in abacus + 2.0 * max 0.0 (radius - inset)
+    _ -> abacus
 
 sizeOf :: Minutes -> Number -> Number
 sizeOf (Minutes proportion) minute =

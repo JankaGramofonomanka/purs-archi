@@ -86,6 +86,9 @@ doric =
   , pedestal: Nothing
   }
 
+-- Book I ch. 16: the abacus is 19 eighteenths of a diameter wide; the capital with the volute
+-- is 9 1/2 of those parts high, of which the 6 above the eye of the volute, level with the
+-- astragal, rise above the shaft.
 ionic :: Order
 ionic =
   withPedestal { base: 43, die: 98, cornice: 22 }
@@ -94,11 +97,11 @@ ionic =
   , column:
       { lowerDiameter: Minutes 60
       , upperDiameter: Minutes 50
-      , shaftHeight: Minutes 450
+      , shaftHeight: Minutes 490
       , height: Minutes 540
       }
   , base: { width: Minutes 82, height: Minutes 30 }
-  , capital: { width: Minutes 90, height: Minutes 60 }
+  , capital: { width: Minutes 63, height: Minutes 20 }
   , entablature:
       { height: Minutes 135
       , architrave: { depth: Minutes 34, height: Minutes 45 }
