@@ -50,7 +50,8 @@ type State =
 -- | the bay width in lower diameters with a key from `bayMeasures` saying what it measures, and the motif
 -- | of the columns' rythm as the number of columns standing on each of its beats. The number of columns
 -- | (beats, in fact) is rounded down to whole periods of the rythm and its first beat if `endOnFirstBeat` is set, and then
--- | stripped of the empty beats at both ends if `stripBlanks` is set.
+-- | stripped of the empty beats at both ends if `stripBlanks` is set. `scale` is the lower diameter of the
+-- | bottom row's columns in pixels.
 type CollonadeForm =
   { treatise :: String
   , orders :: Array { order :: String, pedestal :: String }
@@ -60,6 +61,7 @@ type CollonadeForm =
   , rythm :: Array Int
   , endOnFirstBeat :: Boolean
   , stripBlanks :: Boolean
+  , scale :: Number
   }
 
 -- | A treatise as offered by the page's form, with the keys of the orders it defines and of
@@ -110,7 +112,7 @@ treatiseOptions = treatises <#> \{ key, name, treatise } ->
   }
 
 initialForm :: CollonadeForm
-initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none" }, numOfColumns: 5, bayWidth: 3.0, bayMeasure: "beats", rythm: [ 1 ], endOnFirstBeat: false, stripBlanks: false }
+initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none" }, numOfColumns: 5, bayWidth: 3.0, bayMeasure: "beats", rythm: [ 1 ], endOnFirstBeat: false, stripBlanks: false, scale: 10.0 }
 
 main :: Effect Unit
 main = do
@@ -191,6 +193,8 @@ fromForm form = do
     throw "A collonade needs at least one column"
   when (form.bayWidth <= 0.0) do
     throw "The bay width must be positive"
+  when (form.scale <= 0.0) do
+    throw "The scale of the drawing must be positive"
   { name, treatise } <- case Array.find (\t -> t.key == form.treatise) treatises of
     Nothing -> throw ("Unknown treatise: " <> form.treatise)
     Just found -> pure found
@@ -228,7 +232,7 @@ fromForm form = do
     { length: numOfColumns, rythm } =
       if form.stripBlanks then Rythm.trim (\(ColumnBeat columns) -> columns <= 0) rounded motif
       else { length: rounded, rythm: motif }
-  pure { orders, superposition, numOfColumns, bayWidth: form.bayWidth, bayMeasure, rythm }
+  pure { orders, superposition, numOfColumns, bayWidth: form.bayWidth, bayMeasure, rythm, lowestLowerDiameter: form.scale }
 
 foreign import setupRoutes
   :: (String -> Number -> Number -> Effect Unit)

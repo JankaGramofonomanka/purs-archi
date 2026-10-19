@@ -155,6 +155,12 @@ const bayMeasureNames = {
   groups: "Between groups"
 };
 
+// Bounds of the drawing's scale (lower diameter of the bottom columns, in pixels) and the factor
+// each click of the zoom buttons multiplies or divides it by.
+const minScale = 2;
+const maxScale = 80;
+const zoomStep = 1.25;
+
 // Most columns a beat of the rythm can hold.
 const maxColumnsPerBeat = 6;
 
@@ -188,6 +194,8 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   const beatList = document.querySelector("#collonade-rythm");
   const addBeatButton = document.querySelector("#collonade-add-beat");
   const bayMeasureButton = document.querySelector("#collonade-bay-measure");
+  const zoomInButton = document.querySelector("#collonade-zoom-in");
+  const zoomOutButton = document.querySelector("#collonade-zoom-out");
   if (
     !(treatiseGroup instanceof HTMLElement) ||
     !(orderList instanceof HTMLOListElement) ||
@@ -198,7 +206,9 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     !(stripBlanksInput instanceof HTMLInputElement) ||
     !(beatList instanceof HTMLOListElement) ||
     !(addBeatButton instanceof HTMLButtonElement) ||
-    !(bayMeasureButton instanceof HTMLButtonElement)
+    !(bayMeasureButton instanceof HTMLButtonElement) ||
+    !(zoomInButton instanceof HTMLButtonElement) ||
+    !(zoomOutButton instanceof HTMLButtonElement)
   ) {
     throw new Error("Missing collonade form controls");
   }
@@ -211,7 +221,8 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     bayMeasure: initial.bayMeasure,
     rythm: [...initial.rythm],
     endOnFirstBeat: initial.endOnFirstBeat,
-    stripBlanks: initial.stripBlanks
+    stripBlanks: initial.stripBlanks,
+    scale: initial.scale
   };
   const report = () => onChange({
     treatise: form.treatise,
@@ -221,7 +232,8 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     bayMeasure: form.bayMeasure,
     rythm: [...form.rythm],
     endOnFirstBeat: form.endOnFirstBeat,
-    stripBlanks: form.stripBlanks
+    stripBlanks: form.stripBlanks,
+    scale: form.scale
   })();
 
   const currentTreatise = () => {
@@ -397,7 +409,20 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     }
   };
 
+  const renderZoom = () => {
+    zoomInButton.disabled = form.scale * zoomStep > maxScale;
+    zoomOutButton.disabled = form.scale / zoomStep < minScale;
+  };
+  const zoom = factor => {
+    form.scale *= factor;
+    renderZoom();
+    report();
+  };
+  zoomInButton.addEventListener("click", () => zoom(zoomStep));
+  zoomOutButton.addEventListener("click", () => zoom(1 / zoomStep));
+
   const render = () => {
+    renderZoom();
     renderTreatises();
     renderOrders();
     renderAddButton();

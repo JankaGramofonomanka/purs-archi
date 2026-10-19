@@ -302,6 +302,51 @@ body {
   font-size: 1.1rem;
 }
 
+/* Floats over the top right corner of the drawing, above whichever stage is shown. */
+.zoom-controls {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.zoom-controls[hidden] {
+  display: none;
+}
+
+.zoom-controls button {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid #d5dcea;
+  border-radius: 10px;
+  background: #fff;
+  color: #4056c4;
+  font: inherit;
+  font-size: 1.2rem;
+  font-weight: 650;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.zoom-controls button:hover {
+  background: #eef0ff;
+}
+
+.zoom-controls button:focus-visible {
+  outline: 3px solid #aab5ff;
+  outline-offset: 2px;
+}
+
+.zoom-controls button:disabled {
+  background: #f5f7fb;
+  color: #aebbd4;
+  cursor: default;
+}
+
 .demo-stage[hidden] {
   display: none;
 }
