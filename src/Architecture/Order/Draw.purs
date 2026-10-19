@@ -18,8 +18,12 @@ module Architecture.Order.Draw
 import Prelude
 
 import Architecture.Order (Order, OrderKind(..), ionicVolutes, Pedestal, minuteFromColumnAndEntablatureHeight, minuteFromColumnHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, sizeOf)
+import Data.Array as Array
 import Data.Default (def)
+import Data.Foldable (for_)
+import Data.Int as Int
 import Data.Maybe (Maybe(..))
+import Data.Number as Number
 import Renderer (Point(..), point)
 import Renderer as Renderer
 
@@ -35,9 +39,13 @@ drawColumn (Point bottom) minute order = do
   let upperDiameter = size order.column.upperDiameter
   drawBox x bottom.y (size order.base.width) baseTop
   drawTrapezoid x baseTop (size order.column.lowerDiameter) shaftTop upperDiameter
+  let abacus = size order.capital.width
   case order.kind of
-    Ionic -> drawVolutes x shaftTop (size order.capital.width) capitalTop
-    _ -> drawTrapezoid x shaftTop upperDiameter capitalTop (size order.capital.width)
+    Tuscan -> drawDoricCapital x shaftTop upperDiameter abacus capitalTop
+    Doric -> drawDoricCapital x shaftTop upperDiameter abacus capitalTop
+    Ionic -> drawIonicCapital x shaftTop abacus capitalTop
+    Corynthian -> drawCorinthianCapital x shaftTop upperDiameter abacus capitalTop
+    Composite -> drawCompositeCapital x shaftTop upperDiameter abacus capitalTop
 
 -- | Draw the entablature of an order (architrave, frieze and cornice) with the given size of a minute.
 -- | The point is the center of the bottom edge of the architrave.
@@ -140,20 +148,94 @@ drawBox :: forall m. Renderer.Renderer m => Number -> Number -> Number -> Number
 drawBox x bottom width top =
   Renderer.drawRectangle (point (x - width / 2.0) top) width (bottom - top) (Just def) (Just def)
 
--- Ionic capital centered on x, the shaft ending at bottom and the capital at top, with an abacus
--- of the given width: the two volutes as circles (see `ionicVolutes`) over a rectangle joining
--- them from their tops down to their centers, and the abacus as a rectangle from top down to the
--- tops of the volutes.
-drawVolutes :: forall m. Monad m => Renderer.Renderer m => Number -> Number -> Number -> Number -> m Unit
-drawVolutes x bottom abacus top = do
+-- The capitals below are centered on x and span from bottom, the top of the shaft, up to top,
+-- for a shaft of the given upper diameter and an abacus of the given width. Each part is drawn
+-- over the parts behind it.
+
+-- Tuscan or Doric capital, in thirds after Vitruvius (Book IV, ch. 3) and Palladio: the necking,
+-- as wide as the top of the shaft; the echinus, a quarter round swelling out to nearly the width
+-- of the abacus; and the abacus.
+drawDoricCapital :: forall m. Monad m => Renderer.Renderer m => Number -> Number -> Number -> Number -> Number -> m Unit
+drawDoricCapital x bottom upperDiameter abacus top = do
+  let third = (bottom - top) / 3.0
+  let neckingTop = bottom - third
+  let echinusTop = neckingTop - third
+  drawBox x bottom upperDiameter neckingTop
+  drawOvolo x neckingTop upperDiameter echinusTop (abacus - (abacus - upperDiameter) / 5.0)
+  drawBox x echinusTop abacus top
+
+-- Ionic capital: the two volutes (see `ionicVolutes`), their eyes level with the top of the
+-- shaft, and the abacus from top down to the tops of the volutes.
+drawIonicCapital :: forall m. Monad m => Renderer.Renderer m => Number -> Number -> Number -> Number -> m Unit
+drawIonicCapital x bottom abacus top = do
   let { inset, radius } = ionicVolutes abacus
-  let leftX = x - abacus / 2.0 + inset
-  let rightX = x + abacus / 2.0 - inset
   let voluteTop = bottom - radius
-  drawBox x bottom (rightX - leftX) voluteTop
-  Renderer.drawCircle (point leftX bottom) radius (Just def) (Just def)
-  Renderer.drawCircle (point rightX bottom) radius (Just def) (Just def)
+  drawVolutePair x bottom (abacus / 2.0 - inset) radius
   when (top < voluteTop) $ drawBox x voluteTop abacus top
+
+-- Corinthian capital after Vitruvius (Book IV, ch. 1): the abacus a seventh of the capital and
+-- the rest in thirds, two rows of acanthus leaves and the small volutes under the corners of
+-- the abacus (see `drawLeaves`).
+drawCorinthianCapital :: forall m. Monad m => Renderer.Renderer m => Number -> Number -> Number -> Number -> Number -> m Unit
+drawCorinthianCapital x bottom upperDiameter abacus top = do
+  let abacusBottom = top + (bottom - top) / 7.0
+  let third = (bottom - abacusBottom) / 3.0
+  let radius = third / 2.0
+  drawLeaves x bottom upperDiameter abacus abacusBottom third
+  drawVolutePair x (abacusBottom + radius) (abacus / 2.0 - radius) radius
+  drawBox x abacusBottom abacus top
+
+-- Composite capital: the Corinthian leaves under Ionic volutes, which reach from the abacus down
+-- over the upper row of leaves.
+drawCompositeCapital :: forall m. Monad m => Renderer.Renderer m => Number -> Number -> Number -> Number -> Number -> m Unit
+drawCompositeCapital x bottom upperDiameter abacus top = do
+  let abacusBottom = top + (bottom - top) / 7.0
+  let third = (bottom - abacusBottom) / 3.0
+  drawLeaves x bottom upperDiameter abacus abacusBottom third
+  drawVolutePair x (abacusBottom + third) (abacus / 2.0 - third) third
+  drawBox x abacusBottom abacus top
+
+-- The bell, a trapezoid widening from the top of the shaft to the abacus, and two rows of
+-- acanthus leaves as triangles fanning out with it. The lower row has three leaves; the upper
+-- row, behind it, has a leaf between each two of them and a half leaf along each side of the bell.
+drawLeaves :: forall m. Monad m => Renderer.Renderer m => Number -> Number -> Number -> Number -> Number -> Number -> m Unit
+drawLeaves x bottom upperDiameter abacus abacusBottom row = do
+  let widthAt y = upperDiameter + (abacus - upperDiameter) * (bottom - y) / (bottom - abacusBottom)
+  let across width fraction = x - width / 2.0 + width * fraction
+  let leaf tipY tip from to =
+        Renderer.drawPolygon
+          [ point (across upperDiameter (max 0.0 from)) bottom
+          , point (across upperDiameter (min 1.0 to)) bottom
+          , point (across (widthAt tipY) tip) tipY
+          ]
+          (Just def)
+          (Just def)
+  let upperTip = bottom - 2.0 * row
+  let lowerTip = bottom - row
+  drawTrapezoid x bottom upperDiameter abacusBottom abacus
+  for_ [ 0.0, 1.0, 2.0, 3.0 ] \i -> leaf upperTip (i / 3.0) (i / 3.0 - 1.0 / 6.0) (i / 3.0 + 1.0 / 6.0)
+  for_ [ 0.0, 1.0, 2.0 ] \i -> leaf lowerTip ((2.0 * i + 1.0) / 6.0) (i / 3.0) ((i + 1.0) / 3.0)
+
+-- Two volutes as circles of the given radius, their centers at centerY and halfSpan either side
+-- of x, over a rectangle joining them from their tops down to their centers.
+drawVolutePair :: forall m. Monad m => Renderer.Renderer m => Number -> Number -> Number -> Number -> m Unit
+drawVolutePair x centerY halfSpan radius = do
+  drawBox x centerY (2.0 * halfSpan) (centerY - radius)
+  Renderer.drawCircle (point (x - halfSpan) centerY) radius (Just def) (Just def)
+  Renderer.drawCircle (point (x + halfSpan) centerY) radius (Just def) (Just def)
+
+-- Quarter round centered on x, swelling from the bottom width up to the top width.
+drawOvolo :: forall m. Renderer.Renderer m => Number -> Number -> Number -> Number -> Number -> m Unit
+drawOvolo x bottom bottomWidth top topWidth =
+  let projection = (topWidth - bottomWidth) / 2.0
+      rise = bottom - top
+      steps = 8
+      profile side = map
+        (\i ->
+          let angle = Number.pi / 2.0 * Int.toNumber i / Int.toNumber steps
+          in point (x + side * (bottomWidth / 2.0 + projection * Number.sin angle)) (top + rise * Number.cos angle))
+        (Array.range 0 steps)
+  in Renderer.drawPolygon (profile 1.0 <> Array.reverse (profile (-1.0))) (Just def) (Just def)
 
 -- Trapezoid centered on x, with horizontal bottom and top edges of the given widths.
 drawTrapezoid :: forall m. Renderer.Renderer m => Number -> Number -> Number -> Number -> Number -> m Unit
