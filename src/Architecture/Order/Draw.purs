@@ -36,7 +36,7 @@ drawColumn (Point bottom) minute order = do
   drawBox x bottom.y (size order.base.width) baseTop
   drawTrapezoid x baseTop (size order.column.lowerDiameter) shaftTop upperDiameter
   case order.kind of
-    Ionic -> drawBox x shaftTop (size order.capital.width) capitalTop
+    Ionic -> drawVolutes x shaftTop (size order.capital.width) capitalTop
     _ -> drawTrapezoid x shaftTop upperDiameter capitalTop (size order.capital.width)
 
 -- | Draw the entablature of an order (architrave, frieze and cornice) with the given size of a minute.
@@ -139,6 +139,19 @@ drawOrderFromUpperDiameter bottom diameter order =
 drawBox :: forall m. Renderer.Renderer m => Number -> Number -> Number -> Number -> m Unit
 drawBox x bottom width top =
   Renderer.drawRectangle (point (x - width / 2.0) top) width (bottom - top) (Just def) Nothing
+
+-- Ionic capital centered on x, spanning from bottom up to top: two volutes as circles as high as
+-- the capital at either end of its width, joined by a line along their tops and one through their centers.
+drawVolutes :: forall m. Monad m => Renderer.Renderer m => Number -> Number -> Number -> Number -> m Unit
+drawVolutes x bottom width top = do
+  let radius = (bottom - top) / 2.0
+  let centerY = top + radius
+  let leftX = x - width / 2.0 + radius
+  let rightX = x + width / 2.0 - radius
+  Renderer.drawCircle (point leftX centerY) radius (Just def) Nothing
+  Renderer.drawCircle (point rightX centerY) radius (Just def) Nothing
+  Renderer.drawLineSegment (point leftX top) (point rightX top) def
+  Renderer.drawLineSegment (point (leftX + radius) centerY) (point (rightX - radius) centerY) def
 
 -- Trapezoid centered on x, with horizontal bottom and top edges of the given widths.
 drawTrapezoid :: forall m. Renderer.Renderer m => Number -> Number -> Number -> Number -> Number -> m Unit
