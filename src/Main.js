@@ -222,7 +222,8 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     rythm: [...initial.rythm],
     endOnFirstBeat: initial.endOnFirstBeat,
     stripBlanks: initial.stripBlanks,
-    scale: initial.scale
+    scale: initial.scale,
+    offset: { ...initial.offset }
   };
   const report = () => onChange({
     treatise: form.treatise,
@@ -233,7 +234,8 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     rythm: [...form.rythm],
     endOnFirstBeat: form.endOnFirstBeat,
     stripBlanks: form.stripBlanks,
-    scale: form.scale
+    scale: form.scale,
+    offset: { ...form.offset }
   })();
 
   const currentTreatise = () => {
@@ -413,8 +415,10 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     zoomInButton.disabled = form.scale * zoomStep > maxScale;
     zoomOutButton.disabled = form.scale / zoomStep < minScale;
   };
+  // Zooming scales the offset too, so the point at the center of the surface stays there.
   const zoom = factor => {
     form.scale *= factor;
+    form.offset = { x: form.offset.x * factor, y: form.offset.y * factor };
     renderZoom();
     report();
   };
@@ -423,9 +427,10 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
 
   // Scrolling over the drawing zooms it while the zoom buttons are shown, one step per notch:
   // up enlarges, down shrinks, stopping at the same bounds as the buttons.
+  const drawingShown = () => zoomInButton.closest("[hidden]") === null;
   for (const stage of document.querySelectorAll(".demo-stage")) {
     stage.addEventListener("wheel", event => {
-      if (zoomInButton.closest("[hidden]") !== null || event.deltaY === 0) {
+      if (!drawingShown() || event.deltaY === 0) {
         return;
       }
       event.preventDefault();
@@ -434,6 +439,40 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
         zoom(event.deltaY < 0 ? zoomStep : 1 / zoomStep);
       }
     }, { passive: false });
+
+    // Dragging with the main button moves the drawing along with the pointer.
+    let drag = null;
+    stage.addEventListener("pointerdown", event => {
+      if (!drawingShown() || event.button !== 0) {
+        return;
+      }
+      event.preventDefault();
+      stage.setPointerCapture(event.pointerId);
+      drag = { pointerId: event.pointerId, x: event.clientX, y: event.clientY };
+      stage.classList.add("dragging");
+    });
+    stage.addEventListener("pointermove", event => {
+      if (drag === null || event.pointerId !== drag.pointerId) {
+        return;
+      }
+      const dx = event.clientX - drag.x;
+      const dy = event.clientY - drag.y;
+      if (dx === 0 && dy === 0) {
+        return;
+      }
+      drag.x = event.clientX;
+      drag.y = event.clientY;
+      form.offset = { x: form.offset.x + dx, y: form.offset.y + dy };
+      report();
+    });
+    const endDrag = event => {
+      if (drag !== null && event.pointerId === drag.pointerId) {
+        drag = null;
+        stage.classList.remove("dragging");
+      }
+    };
+    stage.addEventListener("pointerup", endDrag);
+    stage.addEventListener("pointercancel", endDrag);
   }
 
   const render = () => {

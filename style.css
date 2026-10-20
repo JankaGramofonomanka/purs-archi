@@ -359,6 +359,16 @@ body {
   justify-content: center;
 }
 
+/* The collonade's drawing can be dragged around. */
+.demo-page.has-bottom-bar .demo-stage {
+  cursor: grab;
+  touch-action: none;
+}
+
+.demo-page.has-bottom-bar .demo-stage.dragging {
+  cursor: grabbing;
+}
+
 .demo-page.has-page-actions .demo-stage {
   left: 256px;
 }

@@ -13,13 +13,14 @@ import Renderer as Renderer
 -- | Storeys (orders and how their columns stand) listed from bottom to top; `bayWidth` is the distance between column centerlines,
 -- | in lower diameters of the bottom row's columns, measured as `bayMeasure` says; `rythm` tells how many columns
 -- | stand on each of the `numOfColumns` beats; `superposition` sizes each storey from the one below;
--- | `lowestLowerDiameter` is the lower diameter of the bottom row's columns in pixels, the scale of the drawing.
-type Config = { orders :: Array Storey, superposition :: SuperpositionRule, numOfColumns :: Int, bayWidth :: Number, bayMeasure :: BayMeasure, rythm :: Rythm ColumnBeat, lowestLowerDiameter :: Number }
+-- | `lowestLowerDiameter` is the lower diameter of the bottom row's columns in pixels, the scale of the drawing,
+-- | and `offset` how far, in pixels, the drawing is moved from the center of the surface.
+type Config = { orders :: Array Storey, superposition :: SuperpositionRule, numOfColumns :: Int, bayWidth :: Number, bayMeasure :: BayMeasure, rythm :: Rythm ColumnBeat, lowestLowerDiameter :: Number, offset :: { x :: Number, y :: Number } }
 
--- | Draw the stacked collonade centered on the surface.
+-- | Draw the stacked collonade centered on the surface, moved by `offset`.
 draw :: forall m. Monad m => Renderer.Renderer m => Config -> Number -> Number -> m Unit
-draw { orders, superposition, numOfColumns, bayWidth, bayMeasure, rythm, lowestLowerDiameter } width height =
-  render $ placeCentered (point (width / 2.0) (height / 2.0)) $ StackedCollonade
+draw { orders, superposition, numOfColumns, bayWidth, bayMeasure, rythm, lowestLowerDiameter, offset } width height =
+  render $ placeCentered (point (width / 2.0 + offset.x) (height / 2.0 + offset.y)) $ StackedCollonade
     { orders
     , superposition
     , size: { row: 0, size: { measure: LowerDiameter, value: lowestLowerDiameter } }
