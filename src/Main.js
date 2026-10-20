@@ -216,6 +216,8 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   const windowWidthInput = document.querySelector("#collonade-window-width");
   const beatList = document.querySelector("#collonade-beats");
   const bayList = document.querySelector("#collonade-bays");
+  const repeatBeatsButton = document.querySelector("#collonade-repeat-beats");
+  const repeatBaysButton = document.querySelector("#collonade-repeat-bays");
   const bayMeasureButton = document.querySelector("#collonade-bay-measure");
   const zoomInButton = document.querySelector("#collonade-zoom-in");
   const zoomOutButton = document.querySelector("#collonade-zoom-out");
@@ -228,6 +230,8 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     !(windowWidthInput instanceof HTMLInputElement) ||
     !(beatList instanceof HTMLOListElement) ||
     !(bayList instanceof HTMLOListElement) ||
+    !(repeatBeatsButton instanceof HTMLButtonElement) ||
+    !(repeatBaysButton instanceof HTMLButtonElement) ||
     !(bayMeasureButton instanceof HTMLButtonElement) ||
     !(zoomInButton instanceof HTMLButtonElement) ||
     !(zoomOutButton instanceof HTMLButtonElement)
@@ -389,6 +393,9 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   const sequenceCell = (list, icon, title, label, change) => {
     const item = document.createElement("li");
     item.className = "sequence-cell";
+    const strip = document.createElement("div");
+    strip.className = "selection-strip";
+    strip.title = "Drag along the strip to select cells to repeat";
     const toggle = document.createElement("button");
     toggle.type = "button";
     toggle.className = "sequence-toggle";
@@ -402,7 +409,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
       report();
       list.querySelectorAll(".sequence-toggle")[index]?.focus();
     });
-    item.append(toggle);
+    item.append(strip, toggle);
     return item;
   };
   const renderSequence = () => {
@@ -435,7 +442,107 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
       Array.from({ length }, (_, i) => i < items.length ? items[i] : filler);
     form.rythm = resize(form.rythm, numOfColumns, 1);
     form.bays = resize(form.bays, numOfColumns - 1, "window");
+    for (const row of sequenceRows) {
+      const range = selectionRange(row.selection);
+      const length = row.items().length;
+      row.selection = range === null || range.start >= length
+        ? null
+        : { anchor: range.start, focus: Math.min(range.end, length - 1) };
+    }
   };
+
+  // Each sequence has its own selection: a run of cells chosen by dragging along the strip next to them,
+  // which `Repeat` lays over the whole sequence, keeping the selected cells where they are. Pressing a
+  // strip of a cell that alone is selected clears the selection.
+  const sequenceRows = [
+    {
+      list: beatList,
+      button: repeatBeatsButton,
+      items: () => form.rythm,
+      set: items => { form.rythm = items; },
+      noun: "beats",
+      selection: null
+    },
+    {
+      list: bayList,
+      button: repeatBaysButton,
+      items: () => form.bays,
+      set: items => { form.bays = items; },
+      noun: "bays",
+      selection: null
+    }
+  ];
+  const selectionRange = selection => selection === null
+    ? null
+    : { start: Math.min(selection.anchor, selection.focus), end: Math.max(selection.anchor, selection.focus) };
+  const renderSelection = row => {
+    const range = selectionRange(row.selection);
+    [...row.list.children].forEach((cell, index) => {
+      cell.classList.toggle("selected", range !== null && index >= range.start && index <= range.end);
+    });
+    const length = row.items().length;
+    row.button.disabled = range === null || range.end - range.start + 1 >= length;
+    row.button.title = range === null
+      ? `Select ${row.noun} by dragging along the strip, then repeat them over the whole row`
+      : `Repeat the ${range.end - range.start + 1} selected ${row.noun} over the whole row`;
+  };
+  const repeatSelection = row => {
+    const range = selectionRange(row.selection);
+    if (range === null) {
+      return;
+    }
+    const items = row.items();
+    const segment = items.slice(range.start, range.end + 1);
+    const at = i => ((i - range.start) % segment.length + segment.length) % segment.length;
+    row.set(items.map((_, i) => segment[at(i)]));
+    render();
+    report();
+  };
+
+  let selectionDrag = null;
+  const cellIndexAt = (row, x, y) => {
+    const cell = document.elementFromPoint(x, y)?.closest(".sequence-cell");
+    return cell instanceof HTMLElement && cell.parentElement === row.list
+      ? [...row.list.children].indexOf(cell)
+      : null;
+  };
+  for (const row of sequenceRows) {
+    row.button.addEventListener("click", () => repeatSelection(row));
+    row.list.addEventListener("pointerdown", event => {
+      const strip = event.target instanceof Element ? event.target.closest(".selection-strip") : null;
+      if (strip === null || event.button !== 0) {
+        return;
+      }
+      event.preventDefault();
+      const index = [...row.list.children].indexOf(strip.closest(".sequence-cell"));
+      const range = selectionRange(row.selection);
+      if (range !== null && range.start === index && range.end === index) {
+        row.selection = null;
+      } else {
+        row.selection = { anchor: index, focus: index };
+        selectionDrag = { row, pointerId: event.pointerId };
+      }
+      renderSelection(row);
+    });
+  }
+  window.addEventListener("pointermove", event => {
+    if (selectionDrag === null || event.pointerId !== selectionDrag.pointerId) {
+      return;
+    }
+    const { row } = selectionDrag;
+    const index = cellIndexAt(row, event.clientX, event.clientY);
+    if (index !== null && index !== row.selection.focus) {
+      row.selection.focus = index;
+      renderSelection(row);
+    }
+  });
+  const endSelectionDrag = event => {
+    if (selectionDrag !== null && event.pointerId === selectionDrag.pointerId) {
+      selectionDrag = null;
+    }
+  };
+  window.addEventListener("pointerup", endSelectionDrag);
+  window.addEventListener("pointercancel", endSelectionDrag);
 
   const renderAddButton = () => {
     const treatise = currentTreatise();
@@ -528,6 +635,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     renderAddButton();
     renderBayMeasures();
     renderSequence();
+    sequenceRows.forEach(renderSelection);
   };
 
   addButton.addEventListener("click", () => {
