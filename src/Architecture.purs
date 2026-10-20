@@ -33,7 +33,7 @@ import Data.Maybe (Maybe(..), maybe)
 import Data.Tuple (Tuple(..))
 import Geometry (class HorizontalFigure, class RectangularFigure, class VerticalFigure)
 import Ortogonal (class RenderHorizontal, class RenderOrtogonal, class RenderPoint, class RenderVertical, drawBottomCentered, drawLeftCentered, drawRightCentered, drawTopCentered)
-import Renderer (Point(..), point, class Renderer, drawRectangle)
+import Renderer (Color(..), Fill(..), Opaqueness(..), Point(..), point, class Renderer, drawRectangle)
 
 type SizedOrder = { order :: Order, size :: SizeDeterminant }
 
@@ -287,9 +287,9 @@ drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
   when (portico.window.width > 0.0 && portico.window.height > 0.0) do
     for_ (porticoBays p) \bay -> when (bay.fill == Window) do
       let x = left + (bay.left + bay.right) / 2.0
-      let rectangle w h bottom' = drawRectangle (point (x - w / 2.0) (bottom' - h)) w h (Just def) (Just def)
-      rectangle (portico.window.width + 2.0 * frame) (portico.window.height + 2.0 * frame) sill
-      rectangle portico.window.width portico.window.height (sill - frame)
+      let rectangle w h bottom' fill = drawRectangle (point (x - w / 2.0) (bottom' - h)) w h (Just def) (Just fill)
+      rectangle (portico.window.width + 2.0 * frame) (portico.window.height + 2.0 * frame) sill def
+      rectangle portico.window.width portico.window.height (sill - frame) windowOpening
   case porticoPedestal p of
     Nothing -> pure unit
     Just pedestal -> case portico.pedestal of
@@ -365,10 +365,18 @@ instance Sized StackedCollonade where
 
 instance RectangularFigure StackedCollonade
 
+-- | The fill of a window's opening.
+windowOpening :: Fill
+windowOpening = Fill { opaqueness: Opaqueness 1.0, color: RGB { r: 190.0, g: 190.0, b: 190.0 } }
+
+-- | Draws the rows on a white wall that reaches from the ground to the top of the stack, between
+-- | the centerlines of the outermost columns.
 drawStackedCollonadeFromTopLeft :: forall m. Monad m => Renderer m => Point -> StackedCollonade -> m Unit
 drawStackedCollonadeFromTopLeft (Point topLeft) stack = do
   let { width, height } = size stack
   let centerline = topLeft.x + width / 2.0
+  let span = maybe 0.0 (\(Collonade portico) -> porticoSpan portico) (Array.head (collonades stack))
+  drawRectangle (point (centerline - span / 2.0) topLeft.y) span height (Just def) (Just def)
   let drawRow bottom collonade = do
         drawTopCentered (point centerline bottom) collonade
         pure (bottom - (size collonade).height)
