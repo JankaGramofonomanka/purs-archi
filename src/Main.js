@@ -167,7 +167,7 @@ const maxScale = 80;
 const zoomStep = 1.25;
 
 // Most columns a beat of the rythm can hold.
-const maxColumnsPerBeat = 6;
+const maxColumnsPerBeat = 3;
 
 // Icon of a beat of the rythm: its columns on a ground line.
 const beatIcon = columns => {
