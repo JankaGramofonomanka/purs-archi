@@ -57,8 +57,17 @@
           </div>
           <button id="collonade-add-column" class="add-column" type="button">Add column / bay</button>
           <div class="sequencer-actions">
-            <button id="collonade-repeat-beats" class="repeat-selection" type="button">Repeat</button>
-            <button id="collonade-repeat-bays" class="repeat-selection" type="button">Repeat</button>
+            <span class="sequencer-actions-title">Repeat or mirror</span>
+            <div class="sequencer-action-row">
+              <button id="collonade-repeat-beats" class="repeat-selection" type="button">Repeat</button>
+              <button id="collonade-mirror-beats-right" class="mirror mirror-right" type="button" aria-label="Mirror the left half of the beats onto the right half"><svg viewBox="0 0 24 20" aria-hidden="true"><path d="M2 5h3v11H2zM6.5 9h3v7h-3z"/><path d="M12 2v16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 1.5"/><path d="M14 9h5V6l4 4-4 4v-3h-5z"/></svg></button>
+              <button id="collonade-mirror-beats-left" class="mirror mirror-left" type="button" aria-label="Mirror the right half of the beats onto the left half"><svg viewBox="0 0 24 20" aria-hidden="true"><path d="M2 5h3v11H2zM6.5 9h3v7h-3z"/><path d="M12 2v16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 1.5"/><path d="M14 9h5V6l4 4-4 4v-3h-5z"/></svg></button>
+            </div>
+            <div class="sequencer-action-row">
+              <button id="collonade-repeat-bays" class="repeat-selection" type="button">Repeat</button>
+              <button id="collonade-mirror-bays-right" class="mirror mirror-right" type="button" aria-label="Mirror the left half of the bays onto the right half"><svg viewBox="0 0 24 20" aria-hidden="true"><path d="M2 5h3v11H2zM6.5 9h3v7h-3z"/><path d="M12 2v16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 1.5"/><path d="M14 9h5V6l4 4-4 4v-3h-5z"/></svg></button>
+              <button id="collonade-mirror-bays-left" class="mirror mirror-left" type="button" aria-label="Mirror the right half of the bays onto the left half"><svg viewBox="0 0 24 20" aria-hidden="true"><path d="M2 5h3v11H2zM6.5 9h3v7h-3z"/><path d="M12 2v16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 1.5"/><path d="M14 9h5V6l4 4-4 4v-3h-5z"/></svg></button>
+            </div>
           </div>
         </div>
       </aside>

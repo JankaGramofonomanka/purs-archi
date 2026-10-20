@@ -220,6 +220,16 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   const bayList = document.querySelector("#collonade-bays");
   const repeatBeatsButton = document.querySelector("#collonade-repeat-beats");
   const repeatBaysButton = document.querySelector("#collonade-repeat-bays");
+  const mirrorButtons = {
+    beats: {
+      right: document.querySelector("#collonade-mirror-beats-right"),
+      left: document.querySelector("#collonade-mirror-beats-left")
+    },
+    bays: {
+      right: document.querySelector("#collonade-mirror-bays-right"),
+      left: document.querySelector("#collonade-mirror-bays-left")
+    }
+  };
   const bayMeasureButton = document.querySelector("#collonade-bay-measure");
   const zoomInButton = document.querySelector("#collonade-zoom-in");
   const zoomOutButton = document.querySelector("#collonade-zoom-out");
@@ -236,6 +246,8 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     !(bayList instanceof HTMLOListElement) ||
     !(repeatBeatsButton instanceof HTMLButtonElement) ||
     !(repeatBaysButton instanceof HTMLButtonElement) ||
+    !Object.values(mirrorButtons).every(({ right, left }) =>
+      right instanceof HTMLButtonElement && left instanceof HTMLButtonElement) ||
     !(bayMeasureButton instanceof HTMLButtonElement) ||
     !(zoomInButton instanceof HTMLButtonElement) ||
     !(zoomOutButton instanceof HTMLButtonElement)
@@ -511,6 +523,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     {
       list: beatList,
       button: repeatBeatsButton,
+      mirror: mirrorButtons.beats,
       items: () => form.rythm,
       set: items => { form.rythm = items; },
       noun: "beats",
@@ -519,6 +532,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     {
       list: bayList,
       button: repeatBaysButton,
+      mirror: mirrorButtons.bays,
       items: () => form.bays,
       set: items => { form.bays = items; },
       noun: "bays",
@@ -538,6 +552,27 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     row.button.title = range === null
       ? `Select ${row.noun} by dragging along the strip, then repeat them over the whole row`
       : `Repeat the ${range.end - range.start + 1} selected ${row.noun} over the whole row`;
+  };
+  // Makes the sequence symmetrical about its middle: `"right"` copies the left half mirrored onto the right
+  // one, `"left"` the right half onto the left one; a cell in the very middle stays.
+  const mirrorSequence = (row, onto) => {
+    const items = row.items();
+    const n = items.length;
+    const kept = i => onto === "right" ? i < n / 2 : i >= (n - 1) / 2;
+    row.set(items.map((item, i) => kept(i) ? item : items[n - 1 - i]));
+    render();
+    report();
+  };
+  const renderMirror = row => {
+    const items = row.items();
+    const symmetrical = items.every((item, i) => item === items[items.length - 1 - i]);
+    for (const [onto, button] of Object.entries(row.mirror)) {
+      const from = onto === "right" ? "left" : "right";
+      button.disabled = symmetrical;
+      button.title = symmetrical
+        ? `The ${row.noun} are already symmetrical`
+        : `Make the ${row.noun} symmetrical: copy the ${from} half, mirrored, onto the ${onto} half`;
+    }
   };
   const repeatSelection = row => {
     const range = selectionRange(row.selection);
@@ -561,6 +596,8 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   };
   for (const row of sequenceRows) {
     row.button.addEventListener("click", () => repeatSelection(row));
+    row.mirror.right.addEventListener("click", () => mirrorSequence(row, "right"));
+    row.mirror.left.addEventListener("click", () => mirrorSequence(row, "left"));
     row.list.addEventListener("pointerdown", event => {
       const strip = event.target instanceof Element ? event.target.closest(".selection-strip") : null;
       if (strip === null || event.button !== 0) {
@@ -689,6 +726,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     renderBayMeasures();
     renderSequence();
     sequenceRows.forEach(renderSelection);
+    sequenceRows.forEach(renderMirror);
     renderAddColumn();
     renderColumnCount();
   };

@@ -57,7 +57,7 @@ body {
 }
 
 .demo-page {
-  --bottom-bar-height: 180px;
+  --bottom-bar-height: 196px;
   position: relative;
   flex: 1;
   min-height: 0;
@@ -295,7 +295,7 @@ body {
 /* The beats are taller than the bays by the `×` under each of them. */
 .bottom-bar-label:first-child,
 .column-count:first-child,
-.action-bar .repeat-selection:first-child {
+.sequencer-action-row:first-child {
   height: 74px;
 }
 
@@ -318,7 +318,9 @@ body {
   outline-offset: -2px;
 }
 
+/* The title hangs above the buttons, so that they stay level with the sequences. */
 .sequencer-actions {
+  position: relative;
   display: flex;
   flex: 0 0 auto;
   flex-direction: column;
@@ -326,10 +328,48 @@ body {
   padding: 4px 0;
 }
 
-.action-bar .repeat-selection {
-  width: auto;
-  height: 50px;
+.sequencer-actions-title {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  color: #52617d;
+  font-size: 0.8rem;
+  font-weight: 650;
+  text-align: center;
   white-space: nowrap;
+}
+
+.sequencer-action-row {
+  display: flex;
+  gap: 6px;
+  height: 50px;
+}
+
+.action-bar .repeat-selection,
+.action-bar .mirror {
+  width: auto;
+  height: 100%;
+  white-space: nowrap;
+}
+
+.action-bar .mirror {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  padding: 0;
+}
+
+.mirror svg {
+  width: 24px;
+  height: 20px;
+  fill: currentColor;
+}
+
+/* The same icon, carrying the right half across to the left. */
+.mirror-left svg {
+  transform: scaleX(-1);
 }
 
 .action-bar .sequence-toggle {
