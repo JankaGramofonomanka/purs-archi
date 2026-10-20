@@ -57,7 +57,7 @@ body {
 }
 
 .demo-page {
-  --bottom-bar-height: 156px;
+  --bottom-bar-height: 180px;
   position: relative;
   flex: 1;
   min-height: 0;
@@ -212,7 +212,9 @@ body {
 
 .bottom-bar-label {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
   width: 80px;
   height: 50px;
   color: #52617d;
@@ -263,6 +265,44 @@ body {
 
 .bay-list .selection-strip {
   order: 1;
+}
+
+/* Left of the button that adds to them, level with each sequence: the counts of beats and of bays. */
+.sequencer-counts {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.column-count {
+  display: flex;
+  align-items: center;
+  height: 50px;
+  color: #8592ad;
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.action-bar .beat-remove {
+  padding: 2px 0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+/* The beats are taller than the bays by the `×` under each of them. */
+.bottom-bar-label:first-child,
+.column-count:first-child,
+.action-bar .repeat-selection:first-child {
+  height: 74px;
+}
+
+.action-bar .add-column {
+  flex: 0 0 auto;
+  width: 96px;
+  margin: 4px 0;
 }
 
 .selection-strip:hover {

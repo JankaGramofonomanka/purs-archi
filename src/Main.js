@@ -211,7 +211,9 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   const treatiseGroup = document.querySelector("#collonade-treatises");
   const orderList = document.querySelector("#collonade-orders");
   const addButton = document.querySelector("#collonade-add-order");
-  const columnsInput = document.querySelector("#collonade-columns");
+  const addColumnButton = document.querySelector("#collonade-add-column");
+  const columnCountLabel = document.querySelector("#collonade-column-count");
+  const bayCountLabel = document.querySelector("#collonade-bay-count");
   const bayWidthInput = document.querySelector("#collonade-bay-width");
   const windowWidthInput = document.querySelector("#collonade-window-width");
   const beatList = document.querySelector("#collonade-beats");
@@ -225,7 +227,9 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     !(treatiseGroup instanceof HTMLElement) ||
     !(orderList instanceof HTMLOListElement) ||
     !(addButton instanceof HTMLButtonElement) ||
-    !(columnsInput instanceof HTMLInputElement) ||
+    !(addColumnButton instanceof HTMLButtonElement) ||
+    !(columnCountLabel instanceof HTMLElement) ||
+    !(bayCountLabel instanceof HTMLElement) ||
     !(bayWidthInput instanceof HTMLInputElement) ||
     !(windowWidthInput instanceof HTMLInputElement) ||
     !(beatList instanceof HTMLOListElement) ||
@@ -388,9 +392,10 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
 
   // Two sequences, left to right: a cell for each beat showing its columns, and below them, set between
   // each two beats, a cell for the bay showing what fills it. Clicking a beat steps to the next number of
-  // columns (after the most a beat can hold, back to none); clicking a bay steps to the next fill.
+  // columns (after the most a beat can hold, back to none); clicking a bay steps to the next fill. The `×`
+  // under a beat removes it together with a bay next to it.
   const bayFills = Object.keys(bayFillNames);
-  const sequenceCell = (list, icon, title, label, change) => {
+  const sequenceCell = (list, icon, title, label, change, remove = null) => {
     const item = document.createElement("li");
     item.className = "sequence-cell";
     const strip = document.createElement("div");
@@ -410,6 +415,22 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
       list.querySelectorAll(".sequence-toggle")[index]?.focus();
     });
     item.append(strip, toggle);
+    if (remove !== null) {
+      const removeButton = document.createElement("button");
+      removeButton.type = "button";
+      removeButton.className = "beat-remove";
+      removeButton.textContent = "×";
+      removeButton.disabled = remove.disabled;
+      removeButton.setAttribute("aria-label", remove.label);
+      removeButton.addEventListener("click", () => {
+        const index = [...list.children].indexOf(item);
+        remove.action();
+        render();
+        report();
+        list.querySelectorAll(".beat-remove")[Math.min(index, list.children.length - 1)]?.focus();
+      });
+      item.append(removeButton);
+    }
     return item;
   };
   const renderSequence = () => {
@@ -420,7 +441,8 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
         beatIcon(columns),
         `${columnCount(columns)} (click for ${columnCount(next)})`,
         `Beat ${index + 1}: ${columnCount(columns)}, click for ${columnCount(next)}`,
-        () => { form.rythm[index] = next; }
+        () => { form.rythm[index] = next; },
+        { disabled: form.rythm.length === 1, label: `Remove beat ${index + 1}`, action: () => removeBeat(index) }
       );
     }));
     bayList.replaceChildren(...form.bays.map((fill, index) => {
@@ -435,20 +457,51 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     }));
   };
 
-  // Keeps a beat for each column and a bay between each two beats: new beats get a single column and
-  // new bays a window, and the ones beyond the last column are dropped.
-  const resizeSequence = numOfColumns => {
-    const resize = (items, length, filler) =>
-      Array.from({ length }, (_, i) => i < items.length ? items[i] : filler);
-    form.rythm = resize(form.rythm, numOfColumns, 1);
-    form.bays = resize(form.bays, numOfColumns - 1, "window");
-    for (const row of sequenceRows) {
-      const range = selectionRange(row.selection);
-      const length = row.items().length;
-      row.selection = range === null || range.start >= length
-        ? null
-        : { anchor: range.start, focus: Math.min(range.end, length - 1) };
+  // There is always a beat for each column and a bay between each two beats. A new column comes at the
+  // right end with a single column on its beat and a window in the bay before it; removing a beat removes
+  // the bay right of it too (left of it for the last beat).
+  const addColumn = () => {
+    form.rythm.push(1);
+    form.bays.push("window");
+    form.numOfColumns = form.rythm.length;
+  };
+  const removeBeat = index => {
+    const bay = Math.min(index, form.bays.length - 1);
+    form.rythm.splice(index, 1);
+    form.bays.splice(bay, 1);
+    form.numOfColumns = form.rythm.length;
+    removeFromSelection(sequenceRows[0], index);
+    removeFromSelection(sequenceRows[1], bay);
+  };
+  // Keeps the selection of a sequence on the same cells when the cell at `index` is removed.
+  const removeFromSelection = (row, index) => {
+    const range = selectionRange(row.selection);
+    if (range === null) {
+      return;
     }
+    const shift = i => i > index ? i - 1 : i;
+    const start = shift(range.start);
+    const end = range.end >= index ? range.end - 1 : range.end;
+    row.selection = end < start ? null : { anchor: start, focus: end };
+  };
+  addColumnButton.addEventListener("click", () => {
+    addColumn();
+    render();
+    report();
+    sequenceRows[0].list.parentElement?.scrollTo({ left: Number.MAX_SAFE_INTEGER });
+  });
+  // How many columns there are, a group of columns on one beat counting as one, and how many bays.
+  const renderColumnCount = () => {
+    const columns = form.rythm.filter(n => n > 0).length;
+    columnCountLabel.textContent = columnCount(columns);
+    const bays = form.bays.length;
+    bayCountLabel.textContent = `${bays} ${bays === 1 ? "bay" : "bays"}`;
+  };
+  const renderAddColumn = () => {
+    addColumnButton.disabled = form.rythm.length >= maxColumns;
+    addColumnButton.title = addColumnButton.disabled
+      ? `A collonade can have at most ${maxColumns} columns`
+      : "Add a column at the right end, with a bay before it";
   };
 
   // Each sequence has its own selection: a run of cells chosen by dragging along the strip next to them,
@@ -636,6 +689,8 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     renderBayMeasures();
     renderSequence();
     sequenceRows.forEach(renderSelection);
+    renderAddColumn();
+    renderColumnCount();
   };
 
   addButton.addEventListener("click", () => {
@@ -645,22 +700,6 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     form.orders.push({ order, pedestal: "none" });
     render();
     report();
-  });
-
-  columnsInput.min = "1";
-  columnsInput.max = String(maxColumns);
-  columnsInput.value = String(form.numOfColumns);
-  columnsInput.addEventListener("input", () => {
-    const value = Number(columnsInput.value);
-    if (Number.isInteger(value) && value >= 1 && value <= maxColumns && value !== form.numOfColumns) {
-      form.numOfColumns = value;
-      resizeSequence(value);
-      render();
-      report();
-    }
-  });
-  columnsInput.addEventListener("change", () => {
-    columnsInput.value = String(form.numOfColumns);
   });
 
   bayWidthInput.min = String(minBayWidth);

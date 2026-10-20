@@ -29,10 +29,6 @@
           <button id="collonade-add-order" type="button">Add order</button>
         </fieldset>
         <label class="action-group">
-          <span>Columns</span>
-          <input id="collonade-columns" type="number" step="1" inputmode="numeric" />
-        </label>
-        <label class="action-group">
           <span>Bay width, in diameters</span>
           <input id="collonade-bay-width" type="number" step="0.25" inputmode="decimal" />
         </label>
@@ -55,6 +51,11 @@
             <ol id="collonade-beats" class="beat-list" aria-label="Beats, left to right"></ol>
             <ol id="collonade-bays" class="beat-list bay-list" aria-label="Bays, left to right"></ol>
           </div>
+          <div class="sequencer-counts">
+            <span id="collonade-column-count" class="column-count" aria-live="polite"></span>
+            <span id="collonade-bay-count" class="column-count" aria-live="polite"></span>
+          </div>
+          <button id="collonade-add-column" class="add-column" type="button">Add column / bay</button>
           <div class="sequencer-actions">
             <button id="collonade-repeat-beats" class="repeat-selection" type="button">Repeat</button>
             <button id="collonade-repeat-bays" class="repeat-selection" type="button">Repeat</button>
