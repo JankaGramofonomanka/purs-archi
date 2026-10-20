@@ -10,6 +10,8 @@ module Architecture
   , Entablature(..)
   , ColumnBeat(..)
   , BayMeasure(..)
+  , BayFill(..)
+  , WindowSize
   , minGroupSpacing
   )
   where
@@ -25,11 +27,13 @@ import Architecture.Rythm (Rythm, beatAt)
 import Data.Array as Array
 import Data.Foldable (foldl, for_, sum)
 import Data.Int as Int
-import Data.Maybe (Maybe(..))
+import Data.Number (pow)
+import Data.Default (def)
+import Data.Maybe (Maybe(..), maybe)
 import Data.Tuple (Tuple(..))
 import Geometry (class HorizontalFigure, class RectangularFigure, class VerticalFigure)
 import Ortogonal (class RenderHorizontal, class RenderOrtogonal, class RenderPoint, class RenderVertical, drawBottomCentered, drawLeftCentered, drawRightCentered, drawTopCentered)
-import Renderer (Point(..), point, class Renderer)
+import Renderer (Point(..), point, class Renderer, drawRectangle)
 
 type SizedOrder = { order :: Order, size :: SizeDeterminant }
 
@@ -57,10 +61,21 @@ data BayMeasure = BetweenBeats | BetweenGroups
 
 derive instance Eq BayMeasure
 
+-- | What fills a bay of a row of columns: the space between the columns of neighbouring beats.
+-- | A beat with no column does not merge the bays on its sides; each keeps its own fill.
+data BayFill = Wall | Window
+
+derive instance Eq BayFill
+
+-- | The opening of the windows of a row, without their frame.
+type WindowSize = { width :: Number, height :: Number }
+
 -- | Columns of the same order in a row under a common entablature, standing on pedestals or a podium
 -- | as `pedestal` says (and the order defines one). The row is a sequence of `numOfColumns` beats,
--- | `bayWidth` apart as `bayMeasure` says, and `rythm` says what stands on each of them.
--- | The entablature (and a podium) span the whole row.
+-- | `bayWidth` apart as `bayMeasure` says, and `rythm` says what stands on each of them. `bays` says
+-- | what fills each bay (the first bay lies between the first and the second beat); every `Window`
+-- | has an opening of the size `window`, centered between the facing columns, its frame resting on
+-- | the line of the pedestals' tops (see `sillHeight`). The entablature (and a podium) span the whole row.
 newtype Portico = Portico {
   order :: Order,
   size :: SizeDeterminant,
@@ -70,7 +85,9 @@ newtype Portico = Portico {
   rythm :: Rythm ColumnBeat,
   -- | Distance between the centerlines of neighbouring columns of a group; see `minGroupSpacing`.
   groupSpacing :: Number,
-  pedestal :: PedestalMode
+  pedestal :: PedestalMode,
+  bays :: Rythm BayFill,
+  window :: WindowSize
 }
 
 -- | One row of columns of a `StackedCollonade`; drawn exactly like a `Portico`.
@@ -83,8 +100,9 @@ type RowSizeDeterminant = { row :: Int, size :: SizeDeterminant }
 type Storey = { order :: Order, pedestal :: PedestalMode }
 
 -- | Rows of columns stacked on each other, `orders` listed from bottom to top.
--- | All rows share the beats and the `rythm` of the columns (see `Portico`); `superposition` relates
--- | the size of each row to the row below, so every row has its own minute.
+-- | All rows share the beats and the `rythm` of the columns (see `Portico`), and the `bays` too, so the
+-- | windows of the rows stand over each other; `superposition` relates the size of each row to the row
+-- | below, so every row has its own minute. All windows are `windowWidth` wide; see `windowSizes`.
 newtype StackedCollonade = StackedCollonade {
   orders :: Array Storey,
   superposition :: SuperpositionRule,
@@ -92,7 +110,9 @@ newtype StackedCollonade = StackedCollonade {
   numOfColumns :: Int,
   bayWidth :: Number,
   bayMeasure :: BayMeasure,
-  rythm :: Rythm ColumnBeat
+  rythm :: Rythm ColumnBeat,
+  bays :: Rythm BayFill,
+  windowWidth :: Number
 }
 
 minuteOf :: SizedOrder -> Number
@@ -193,6 +213,38 @@ porticoSpan p@(Portico portico) = case Array.last (porticoBeats p) of
   Nothing -> 0.0
   Just { centerline, beat } -> centerline + groupSpan portico.groupSpacing beat / 2.0
 
+-- | The bays of the row, each with the centerlines of the columns facing each other across it (the
+-- | beat's centerline if no column stands on it) measured as in `porticoBeats`, and what fills it.
+porticoBays :: Portico -> Array { left :: Number, right :: Number, fill :: BayFill }
+porticoBays p@(Portico portico) =
+  let beats = porticoBeats p
+      edge side { centerline, beat } = centerline + side * groupSpan portico.groupSpacing beat / 2.0
+  in Array.mapWithIndex
+       (\i (Tuple l r) -> { left: edge 1.0 l, right: edge (-1.0) r, fill: beatAt i portico.bays })
+       (Array.zip beats (Array.drop 1 beats))
+
+-- | Width of the frame around a window's opening: Palladio makes the jambs from a sixth to a fifth
+-- | of the opening's width; the sixth is used.
+windowFrame :: WindowSize -> Number
+windowFrame { width } = width / 6.0
+
+-- | Height of the window sills above the bottom of the row: the top of the order's pedestal, whether
+-- | the columns stand on pedestals or not (Chambers lines the sills up with the pedestals). The bottom
+-- | of the row if the order has no pedestal.
+sillHeight :: Order -> Number -> Number
+sillHeight order minute = maybe 0.0 (\pedestal -> sizeOf pedestal.height minute) order.pedestal
+
+-- | Height of the bottom of the capitals above the bottom of the row.
+capitalBottom :: Portico -> Number -> Number
+capitalBottom (Portico { order, pedestal }) minute =
+  sizeOf (pedestalHeight pedestal order) minute + sizeOf order.base.height minute + sizeOf order.column.shaftHeight minute
+
+-- | The highest opening of the given width the row allows, its frame between the sill and the capitals.
+maxWindowHeight :: Portico -> Number -> Number
+maxWindowHeight p@(Portico { order, size }) width =
+  let minute = minuteFromSize NoPedestal order size
+  in capitalBottom p minute - sillHeight order minute - 2.0 * windowFrame { width, height: 0.0 }
+
 -- | The pedestal the portico's columns stand on, if any.
 porticoPedestal :: Portico -> Maybe Pedestal
 porticoPedestal (Portico portico) = case portico.pedestal of
@@ -230,6 +282,14 @@ drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
   let bottom = ground - sizeOf (pedestalHeight portico.pedestal order) minute
   let left = topLeft.x + porticoOverhang p
   let forBeats draw = for_ (porticoBeats p) \{ centerline, beat } -> draw (left + centerline) beat
+  let frame = windowFrame portico.window
+  let sill = ground - sillHeight order minute
+  when (portico.window.width > 0.0 && portico.window.height > 0.0) do
+    for_ (porticoBays p) \bay -> when (bay.fill == Window) do
+      let x = left + (bay.left + bay.right) / 2.0
+      let rectangle w h bottom' = drawRectangle (point (x - w / 2.0) (bottom' - h)) w h (Just def) (Just def)
+      rectangle (portico.window.width + 2.0 * frame) (portico.window.height + 2.0 * frame) sill
+      rectangle portico.window.width portico.window.height (sill - frame)
   case porticoPedestal p of
     Nothing -> pure unit
     Just pedestal -> case portico.pedestal of
@@ -281,11 +341,19 @@ rowMinutes (StackedCollonade { orders: storeys, superposition, size: { row, size
 -- | Rows of the stack, bottom to top. Grouped columns of all rows are as far apart as the row
 -- | that needs the most room requires, so the columns of each row stand on those below.
 collonades :: StackedCollonade -> Array Collonade
-collonades stack@(StackedCollonade { orders, numOfColumns, bayWidth, bayMeasure, rythm }) =
+collonades stack@(StackedCollonade { orders, numOfColumns, bayWidth, bayMeasure, rythm, bays, windowWidth }) =
   let rows = Array.zip orders (rowMinutes stack)
       groupSpacing = foldl max 0.0 (map (\(Tuple { order } minute) -> minGroupSpacing order minute) rows)
-  in rows <#> \(Tuple { order, pedestal } minute) ->
-       Collonade (Portico { order, size: { measure: Minute, value: minute }, numOfColumns, bayWidth, bayMeasure, rythm, groupSpacing, pedestal })
+      porticos = rows <#> \(Tuple { order, pedestal } minute) ->
+        Portico { order, size: { measure: Minute, value: minute }, numOfColumns, bayWidth, bayMeasure, rythm, groupSpacing, pedestal, bays, window: { width: 0.0, height: 0.0 } }
+  in Array.zipWith (\(Portico portico) window -> Collonade (Portico portico { window = window })) porticos (windowSizes windowWidth porticos)
+
+-- | The windows of the rows, bottom to top, all of the given width (Palladio, Chambers: the same in
+-- | every storey). The bottom row's windows are two widths and a sixth high and those of each row
+-- | above a sixth lower than those below (Palladio), unless the row is too low for them (see `maxWindowHeight`).
+windowSizes :: Number -> Array Portico -> Array WindowSize
+windowSizes width = Array.mapWithIndex \row portico ->
+  { width, height: max 0.0 (min (13.0 / 6.0 * width * pow (5.0 / 6.0) (Int.toNumber row)) (maxWindowHeight portico width)) }
 
 -- | All rows share the span, so the widest row is the one with the largest overhang.
 instance Sized StackedCollonade where

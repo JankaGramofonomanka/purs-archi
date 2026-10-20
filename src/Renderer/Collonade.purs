@@ -3,7 +3,7 @@ module Renderer.Collonade (Config, draw) where
 import Prelude
 
 import Anchor (placeCentered, render)
-import Architecture (BayMeasure, ColumnBeat, StackedCollonade(..), Storey)
+import Architecture (BayFill, BayMeasure, ColumnBeat, StackedCollonade(..), Storey)
 import Architecture.Measure (Measure(..))
 import Architecture.Rythm (Rythm)
 import Architecture.Superposition (SuperpositionRule)
@@ -12,14 +12,15 @@ import Renderer as Renderer
 
 -- | Storeys (orders and how their columns stand) listed from bottom to top; `bayWidth` is the distance between column centerlines,
 -- | in lower diameters of the bottom row's columns, measured as `bayMeasure` says; `rythm` tells how many columns
--- | stand on each of the `numOfColumns` beats; `superposition` sizes each storey from the one below;
+-- | stand on each of the `numOfColumns` beats and `bays` what fills each bay between them; `windowWidth` is the width of
+-- | the windows' openings in lower diameters of the bottom row's columns; `superposition` sizes each storey from the one below;
 -- | `lowestLowerDiameter` is the lower diameter of the bottom row's columns in pixels, the scale of the drawing,
 -- | and `offset` how far, in pixels, the drawing is moved from the center of the surface.
-type Config = { orders :: Array Storey, superposition :: SuperpositionRule, numOfColumns :: Int, bayWidth :: Number, bayMeasure :: BayMeasure, rythm :: Rythm ColumnBeat, lowestLowerDiameter :: Number, offset :: { x :: Number, y :: Number } }
+type Config = { orders :: Array Storey, superposition :: SuperpositionRule, numOfColumns :: Int, bayWidth :: Number, bayMeasure :: BayMeasure, rythm :: Rythm ColumnBeat, bays :: Rythm BayFill, windowWidth :: Number, lowestLowerDiameter :: Number, offset :: { x :: Number, y :: Number } }
 
 -- | Draw the stacked collonade centered on the surface, moved by `offset`.
 draw :: forall m. Monad m => Renderer.Renderer m => Config -> Number -> Number -> m Unit
-draw { orders, superposition, numOfColumns, bayWidth, bayMeasure, rythm, lowestLowerDiameter, offset } width height =
+draw { orders, superposition, numOfColumns, bayWidth, bayMeasure, rythm, bays, windowWidth, lowestLowerDiameter, offset } width height =
   render $ placeCentered (point (width / 2.0 + offset.x) (height / 2.0 + offset.y)) $ StackedCollonade
     { orders
     , superposition
@@ -28,4 +29,6 @@ draw { orders, superposition, numOfColumns, bayWidth, bayMeasure, rythm, lowestL
     , bayWidth: bayWidth * lowestLowerDiameter
     , bayMeasure
     , rythm
+    , bays
+    , windowWidth: windowWidth * lowestLowerDiameter
     }

@@ -57,7 +57,7 @@ body {
 }
 
 .demo-page {
-  --bottom-bar-height: 112px;
+  --bottom-bar-height: 180px;
   position: relative;
   flex: 1;
   min-height: 0;
@@ -181,8 +181,9 @@ body {
   width: auto;
   height: var(--bottom-bar-height);
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
   padding: 12px 16px;
   overflow: hidden;
   border-right: 0;
@@ -191,6 +192,14 @@ body {
 
 .demo-page.has-page-actions .bottom-bar {
   left: 240px;
+}
+
+/* One sequencer of the bottom bar: the beats of the columns, or the bays between them. */
+.sequencer-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
 }
 
 .bottom-bar-label {

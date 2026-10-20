@@ -36,24 +36,35 @@
           <span>Bay width, in diameters</span>
           <input id="collonade-bay-width" type="number" step="0.25" inputmode="decimal" />
         </label>
+        <label class="action-group">
+          <span>Window width, in diameters</span>
+          <input id="collonade-window-width" type="number" step="0.25" inputmode="decimal" />
+        </label>
         <fieldset class="action-group">
           <legend>Bay width measured</legend>
           <button id="collonade-bay-measure" type="button"></button>
         </fieldset>
       </aside>
       <aside class="action-bar bottom-bar" data-page-actions="/collonade" aria-label="Collonade rythm" hidden>
-        <span class="bottom-bar-label">Rythm, columns per beat</span>
-        <ol id="collonade-rythm" class="beat-list"></ol>
-        <button id="collonade-add-beat" class="add-beat" type="button">Add beat</button>
-        <div class="bottom-bar-options">
-          <label class="checkbox">
-            <input id="collonade-end-on-first-beat" type="checkbox" />
-            <span>End on the first beat</span>
-          </label>
-          <label class="checkbox">
-            <input id="collonade-strip-blanks" type="checkbox" />
-            <span>Strip blanks</span>
-          </label>
+        <div class="sequencer-row">
+          <span class="bottom-bar-label">Rythm, columns per beat</span>
+          <ol id="collonade-rythm" class="beat-list"></ol>
+          <button id="collonade-add-beat" class="add-beat" type="button">Add beat</button>
+          <div class="bottom-bar-options">
+            <label class="checkbox">
+              <input id="collonade-end-on-first-beat" type="checkbox" />
+              <span>End on the first beat</span>
+            </label>
+            <label class="checkbox">
+              <input id="collonade-strip-blanks" type="checkbox" />
+              <span>Strip blanks</span>
+            </label>
+          </div>
+        </div>
+        <div class="sequencer-row">
+          <span class="bottom-bar-label">Bays, fill between beats</span>
+          <ol id="collonade-bays" class="beat-list"></ol>
+          <button id="collonade-add-bay" class="add-beat" type="button">Add bay</button>
         </div>
       </aside>
       <div class="zoom-controls" data-page-actions="/collonade" role="group" aria-label="Drawing size" hidden>

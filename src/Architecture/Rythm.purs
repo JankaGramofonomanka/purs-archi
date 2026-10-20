@@ -83,8 +83,9 @@ rotate k r = Rythm (map (\i -> beatAt (i + k) r) (NonEmptyArray.range 0 (period 
 
 -- | The first `n` beats of the rythm without the beats at both ends that `isBlank` says are blank:
 -- | the rythm started at the first beat that is not blank, and how many beats it takes up to the last
--- | one that is not blank. If all of them are blank, only the first beat is kept.
-trim :: forall beat. (beat -> Boolean) -> Int -> Rythm beat -> { length :: Int, rythm :: Rythm beat }
+-- | one that is not blank, and how many beats were stripped at the start (so that rythms laid on the same
+-- | pulse can be started there too, with `rotate`). If all of them are blank, only the first beat is kept.
+trim :: forall beat. (beat -> Boolean) -> Int -> Rythm beat -> { start :: Int, length :: Int, rythm :: Rythm beat }
 trim isBlank n r =
   let leading k
         | k < n - 1 && isBlank (beatAt k r) = leading (k + 1)
@@ -94,7 +95,7 @@ trim isBlank n r =
       trailing m
         | m > 1 && isBlank (beatAt (m - 1) trimmed) = trailing (m - 1)
         | otherwise = m
-  in { length: trailing (n - start), rythm: trimmed }
+  in { start, length: trailing (n - start), rythm: trimmed }
 
 -- | The pulse the rythm is laid on.
 toPulse :: forall beat. Rythm beat -> Pulse

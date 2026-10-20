@@ -148,6 +148,11 @@ const pedestalIcon = mode => {
 const maxColumns = 40;
 const minBayWidth = 1;
 const maxBayWidth = 12;
+// Bounds of the width of the windows' openings, in lower diameters of the bottom columns: the opening
+// and its architrave (a sixth of the opening on each side) at most as wide as the bay width less the
+// lower diameter of the bottom columns.
+const minWindowWidth = 0;
+const maxWindowWidth = bayWidth => Math.max(minWindowWidth, (bayWidth - 1) * 3 / 4);
 // What the bay width measures: the distance between the centerlines of neighbouring beats, or
 // between the facing outer columns of neighbouring groups of columns.
 const bayMeasureNames = {
@@ -177,6 +182,25 @@ const beatIcon = columns => {
   return svg;
 };
 
+// What can fill a bay between two beats, in the order clicking a bay steps through them.
+const bayFillNames = {
+  wall: "Wall",
+  window: "Window"
+};
+
+// Icon of a bay: a plain wall, or a framed window in it.
+const bayIcon = fill => {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 32 24");
+  svg.setAttribute("aria-hidden", "true");
+  const wall = "M3 1.5h26v21H3z";
+  const window = "M11 4h10v15H11zM12.5 5.5v12h7v-12z";
+  svg.innerHTML = fill === "window"
+    ? `<path d="${wall}" fill="none" stroke="currentColor" stroke-width="1"/><path d="${window}" fill-rule="evenodd"/>`
+    : `<path d="${wall}" fill="none" stroke="currentColor" stroke-width="1"/>`;
+  return svg;
+};
+
 const columnCount = n => n === 0 ? "no column" : n === 1 ? "1 column" : `${n} columns`;
 
 // Renders the collonade form from `initial` and reports every edit to `onChange`. Each of
@@ -189,10 +213,13 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   const addButton = document.querySelector("#collonade-add-order");
   const columnsInput = document.querySelector("#collonade-columns");
   const bayWidthInput = document.querySelector("#collonade-bay-width");
+  const windowWidthInput = document.querySelector("#collonade-window-width");
   const endOnFirstBeatInput = document.querySelector("#collonade-end-on-first-beat");
   const stripBlanksInput = document.querySelector("#collonade-strip-blanks");
   const beatList = document.querySelector("#collonade-rythm");
   const addBeatButton = document.querySelector("#collonade-add-beat");
+  const bayList = document.querySelector("#collonade-bays");
+  const addBayButton = document.querySelector("#collonade-add-bay");
   const bayMeasureButton = document.querySelector("#collonade-bay-measure");
   const zoomInButton = document.querySelector("#collonade-zoom-in");
   const zoomOutButton = document.querySelector("#collonade-zoom-out");
@@ -202,10 +229,13 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     !(addButton instanceof HTMLButtonElement) ||
     !(columnsInput instanceof HTMLInputElement) ||
     !(bayWidthInput instanceof HTMLInputElement) ||
+    !(windowWidthInput instanceof HTMLInputElement) ||
     !(endOnFirstBeatInput instanceof HTMLInputElement) ||
     !(stripBlanksInput instanceof HTMLInputElement) ||
     !(beatList instanceof HTMLOListElement) ||
     !(addBeatButton instanceof HTMLButtonElement) ||
+    !(bayList instanceof HTMLOListElement) ||
+    !(addBayButton instanceof HTMLButtonElement) ||
     !(bayMeasureButton instanceof HTMLButtonElement) ||
     !(zoomInButton instanceof HTMLButtonElement) ||
     !(zoomOutButton instanceof HTMLButtonElement)
@@ -220,6 +250,8 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     bayWidth: initial.bayWidth,
     bayMeasure: initial.bayMeasure,
     rythm: [...initial.rythm],
+    bays: [...initial.bays],
+    windowWidth: initial.windowWidth,
     endOnFirstBeat: initial.endOnFirstBeat,
     stripBlanks: initial.stripBlanks,
     scale: initial.scale,
@@ -232,6 +264,8 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     bayWidth: form.bayWidth,
     bayMeasure: form.bayMeasure,
     rythm: [...form.rythm],
+    bays: [...form.bays],
+    windowWidth: form.windowWidth,
     endOnFirstBeat: form.endOnFirstBeat,
     stripBlanks: form.stripBlanks,
     scale: form.scale,
@@ -395,6 +429,47 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     }));
   };
 
+  // Each bay is a cell showing what fills it: clicking it steps to the next fill and `×` removes the bay.
+  const bayFills = Object.keys(bayFillNames);
+  const renderBays = () => {
+    bayList.replaceChildren(...form.bays.map((fill, index) => {
+      const item = document.createElement("li");
+      item.className = "beat-cell";
+      const edit = (focusSelector, change) => {
+        change();
+        render();
+        report();
+        bayList.querySelectorAll(focusSelector)[Math.min(index, form.bays.length - 1)]?.focus();
+      };
+
+      const next = bayFills[(bayFills.indexOf(fill) + 1) % bayFills.length];
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "beat-columns";
+      toggle.append(bayIcon(fill));
+      toggle.title = `${bayFillNames[fill]} (click for ${bayFillNames[next].toLowerCase()})`;
+      toggle.setAttribute("aria-label", `Bay ${index + 1}: ${bayFillNames[fill].toLowerCase()}, click for ${bayFillNames[next].toLowerCase()}`);
+      toggle.addEventListener("click", () => edit(".beat-columns", () => { form.bays[index] = next; }));
+
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "beat-remove";
+      remove.textContent = "×";
+      remove.disabled = form.bays.length === 1;
+      remove.setAttribute("aria-label", `Remove bay ${index + 1}`);
+      remove.addEventListener("click", () => edit(".beat-remove", () => { form.bays.splice(index, 1); }));
+
+      item.append(toggle, remove);
+      return item;
+    }));
+  };
+
+  addBayButton.addEventListener("click", () => {
+    form.bays.push("wall");
+    render();
+    report();
+  });
+
   addBeatButton.addEventListener("click", () => {
     form.rythm.push(0);
     render();
@@ -492,6 +567,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     renderAddButton();
     renderBayMeasures();
     renderRythm();
+    renderBays();
   };
 
   addButton.addEventListener("click", () => {
@@ -541,11 +617,36 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
       value !== form.bayWidth
     ) {
       form.bayWidth = value;
+      windowWidthInput.max = String(maxWindowWidth(form.bayWidth));
+      if (form.windowWidth > maxWindowWidth(form.bayWidth)) {
+        form.windowWidth = maxWindowWidth(form.bayWidth);
+        windowWidthInput.value = String(form.windowWidth);
+      }
       report();
     }
   });
   bayWidthInput.addEventListener("change", () => {
     bayWidthInput.value = String(form.bayWidth);
+  });
+
+  windowWidthInput.min = String(minWindowWidth);
+  windowWidthInput.max = String(maxWindowWidth(form.bayWidth));
+  windowWidthInput.value = String(form.windowWidth);
+  windowWidthInput.addEventListener("input", () => {
+    const value = Number(windowWidthInput.value);
+    if (
+      windowWidthInput.value !== "" &&
+      Number.isFinite(value) &&
+      value >= minWindowWidth &&
+      value <= maxWindowWidth(form.bayWidth) &&
+      value !== form.windowWidth
+    ) {
+      form.windowWidth = value;
+      report();
+    }
+  });
+  windowWidthInput.addEventListener("change", () => {
+    windowWidthInput.value = String(form.windowWidth);
   });
 
   render();
