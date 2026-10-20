@@ -8,7 +8,9 @@ module Architecture.Order.Serlio
   )
   where
 
-import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder)
+import Prelude
+
+import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder, withPedestal)
 import Architecture.Superposition (storeyFourthLess)
 import Data.Maybe (Maybe(..))
 
@@ -17,6 +19,15 @@ import Data.Maybe (Maybe(..))
 -- entablature heights; Serlio otherwise "always strives to follow" Vitruvius, so the
 -- subdivisions, diminutions, widths and projections are Vitruvius's (see
 -- `Architecture.Order.Vitruvius`), scaled to Serlio's entablatures.
+-- Pedestals after Book IV (Italian edition of 1566): the die ("il netto", without base and
+-- cimasa) is as wide as the plinth of the column's base and its height grows with the order,
+-- "un quadro perfetto" for the Tuscan, the diagonal of the square for the Doric, a square and a
+-- half for the Ionic, a square and two thirds for the Corinthian and two squares for the
+-- Composite. The die is divided into as many parts as the column has diameters less two, and
+-- the base and the cimasa get one part each, so that the pedestal has as many parts as the
+-- column ("di sette parti, come la colonna"). They are plain, and only for columns that need
+-- raising: columns standing on the floor are "più lodabili" than on pedestals. Minutes are
+-- rounded, half minutes up; widths as in `withPedestal`.
 treatise :: Treatise
 treatise =
   { tuscan: Just tuscan
@@ -35,7 +46,7 @@ treatise =
 -- entablature is a fourth of the column. Diminished a fourth, with an abacus as wide as the
 -- lower diameter, as in Vitruvius.
 tuscan :: Order
-tuscan = mkOrder Tuscan
+tuscan = withPedestal { base: 20, die: 80, cornice: 20 } $ mkOrder Tuscan
   { columnHeight: 360
   , upperDiameter: 45
   , base: { width: 80, height: 30 }
@@ -48,7 +59,7 @@ tuscan = mkOrder Tuscan
 -- Fourteen modules with base and capital; the entablature "three modules and a little more
 -- than two thirds".
 doric :: Order
-doric = mkOrder Doric
+doric = withPedestal { base: 23, die: 113, cornice: 23 } $ mkOrder Doric
   { columnHeight: 420
   , upperDiameter: 50
   , base: { width: 80, height: 30 }
@@ -60,7 +71,7 @@ doric = mkOrder Doric
 
 -- "Seven diameters and a half, allowing only a fifth part" to the entablature.
 ionic :: Order
-ionic = mkOrder Ionic
+ionic = withPedestal { base: 21, die: 125, cornice: 21 } $ mkOrder Ionic
   { columnHeight: 450
   , upperDiameter: 50
   , base: { width: 83, height: 30 }
@@ -73,7 +84,7 @@ ionic = mkOrder Ionic
 -- Nine diameters, the capital (abacus included) as high as the diameter, and the entablature
 -- a fifth of the column.
 corynthian :: Order
-corynthian = mkOrder Corynthian
+corynthian = withPedestal { base: 20, die: 138, cornice: 20 } $ mkOrder Corynthian
   { columnHeight: 540
   , upperDiameter: 50
   , base: { width: 83, height: 30 }
@@ -86,7 +97,7 @@ corynthian = mkOrder Corynthian
 -- Ten diameters, with his Corinthian capital. Fréart only calls its entablature, copied from
 -- the top order of the Colosseum, "gigantick"; a fourth of the column is assumed here.
 composite :: Order
-composite = mkOrder Composite
+composite = withPedestal { base: 21, die: 166, cornice: 21 } $ mkOrder Composite
   { columnHeight: 600
   , upperDiameter: 50
   , base: { width: 83, height: 30 }
