@@ -415,10 +415,14 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     zoomInButton.disabled = form.scale * zoomStep > maxScale;
     zoomOutButton.disabled = form.scale / zoomStep < minScale;
   };
-  // Zooming scales the offset too, so the point at the center of the surface stays there.
-  const zoom = factor => {
+  // Zooming keeps the point under `anchor` where it is: `anchor` is measured from the center of the
+  // surface, like the offset, and is the center itself unless given.
+  const zoom = (factor, anchor = { x: 0, y: 0 }) => {
     form.scale *= factor;
-    form.offset = { x: form.offset.x * factor, y: form.offset.y * factor };
+    form.offset = {
+      x: anchor.x + (form.offset.x - anchor.x) * factor,
+      y: anchor.y + (form.offset.y - anchor.y) * factor
+    };
     renderZoom();
     report();
   };
@@ -426,7 +430,8 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   zoomOutButton.addEventListener("click", () => zoom(1 / zoomStep));
 
   // Scrolling over the drawing zooms it while the zoom buttons are shown, one step per notch:
-  // up enlarges, down shrinks, stopping at the same bounds as the buttons.
+  // up enlarges, down shrinks, stopping at the same bounds as the buttons. The point under the cursor
+  // stays put.
   const drawingShown = () => zoomInButton.closest("[hidden]") === null;
   for (const stage of document.querySelectorAll(".demo-stage")) {
     stage.addEventListener("wheel", event => {
@@ -435,8 +440,13 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
       }
       event.preventDefault();
       const button = event.deltaY < 0 ? zoomInButton : zoomOutButton;
-      if (!button.disabled) {
-        zoom(event.deltaY < 0 ? zoomStep : 1 / zoomStep);
+      const surface = stage.querySelector(".demo-square");
+      if (!button.disabled && surface instanceof Element) {
+        const bounds = surface.getBoundingClientRect();
+        zoom(event.deltaY < 0 ? zoomStep : 1 / zoomStep, {
+          x: event.clientX - (bounds.left + bounds.width / 2),
+          y: event.clientY - (bounds.top + bounds.height / 2)
+        });
       }
     }, { passive: false });
 
