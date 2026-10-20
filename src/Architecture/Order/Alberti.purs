@@ -6,7 +6,10 @@ module Architecture.Order.Alberti
   )
   where
 
+import Prelude
+
 import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder)
+import Architecture.Order.Vignola (withVignolaPedestal)
 import Architecture.Superposition (albertiDiminution)
 import Data.Maybe (Maybe(..))
 
@@ -16,6 +19,9 @@ import Data.Maybe (Maybe(..))
 -- mentions the Tuscan and his "Italic" (Composite) capital without proportioning the orders.
 -- The top of the architrave is never wider than the foot of the shaft, and every member
 -- projects as far as it is high.
+-- No pedestal has been taken from Alberti's text; the pedestals here are BORROWED from Vignola
+-- (`withVignolaPedestal`), so that the orders can be raised and the window sills have a
+-- pedestal line to rest on.
 treatise :: Treatise
 treatise =
   { tuscan: Nothing
@@ -35,7 +41,7 @@ treatise =
 -- fillet, cyma and platband (2, 2 and 3), the mutules (3), their cymaise (3/4) and the
 -- corona (4), 14 3/4 minutes in all.
 doric :: Order
-doric = mkOrder Doric
+doric = withVignolaPedestal $ mkOrder Doric
   { columnHeight: 480
   , upperDiameter: 53
   , base: { width: 90, height: 30 }
@@ -51,7 +57,7 @@ doric = mkOrder Doric
 -- the frieze as high. The cornice members add up to twenty "parts", which Alberti does not
 -- define; they are read here as twelfths of the architrave, the division of its fascias.
 ionic :: Order
-ionic = mkOrder Ionic
+ionic = withVignolaPedestal $ mkOrder Ionic
   { columnHeight: 531
   , upperDiameter: 53
   , base: { width: 83, height: 30 }
@@ -64,7 +70,7 @@ ionic = mkOrder Ionic
 -- The capital is a whole diameter high, its abacus ten sevenths wide. In the entablature
 -- the Corinthians "added nothing" to the Ionic.
 corynthian :: Order
-corynthian = mkOrder Corynthian
+corynthian = withVignolaPedestal $ mkOrder Corynthian
   { columnHeight: 690
   , upperDiameter: 53
   , base: { width: 83, height: 30 }

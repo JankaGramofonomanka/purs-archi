@@ -6,7 +6,10 @@ module Architecture.Order.Vitruvius
   )
   where
 
+import Prelude
+
 import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder)
+import Architecture.Order.Vignola (withVignolaPedestal)
 import Architecture.Superposition (fourthLess)
 import Data.Maybe (Maybe(..))
 
@@ -14,6 +17,9 @@ import Data.Maybe (Maybe(..))
 -- Vitruvius sizes some members by the absolute size of the column; these are for a column of
 -- twelve to fifteen feet. His Tuscan is a timber temple whose beams are "commensurate with the
 -- requirements of the size of the building", and he does not describe the Composite.
+-- Vitruvius gives no pedestal for a column (only the podium of a temple, Book III); the
+-- pedestals here are BORROWED from Vignola (`withVignolaPedestal`), so that the orders can be
+-- raised and the window sills have a pedestal line to rest on.
 treatise :: Treatise
 treatise =
   { tuscan: Nothing
@@ -31,7 +37,7 @@ treatise =
 -- projecting 2/3 of a module; the sima an eighth higher than the corona (Book III, ch. 5).
 -- The underside of the architrave answers to the top of the shaft.
 doric :: Order
-doric = mkOrder Doric
+doric = withVignolaPedestal $ mkOrder Doric
   { columnHeight: 420
   , upperDiameter: 50
   , base: { width: 60, height: 0 }
@@ -48,7 +54,7 @@ doric = mkOrder Doric
 -- projecting a seventh of its height; the frieze a fourth less; the dentils, corona and sima
 -- follow the fascias of the architrave, the corona and dentils projecting as far as they rise.
 ionic :: Order
-ionic = mkOrder Ionic
+ionic = withVignolaPedestal $ mkOrder Ionic
   { columnHeight: 570
   , upperDiameter: 50
   , base: { width: 83, height: 30 }
@@ -62,7 +68,7 @@ ionic = mkOrder Ionic
 -- lower diameter; the abacus' diagonal is two diameters, so a face is about 1.41 wide.
 -- The members above the columns are borrowed from the Ionic.
 corynthian :: Order
-corynthian = mkOrder Corynthian
+corynthian = withVignolaPedestal $ mkOrder Corynthian
   { columnHeight: 608
   , upperDiameter: 50
   , base: { width: 83, height: 30 }

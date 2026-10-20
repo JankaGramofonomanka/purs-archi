@@ -4,13 +4,15 @@ module Architecture.Order.Vignola
   , doric
   , ionic
   , treatise
+  , withVignolaPedestal
   , tuscan
   )
   where
 
 import Prelude
 
-import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder, withPedestal)
+import Architecture.Order (Minutes(..), Order, OrderKind(..), Treatise, mkOrder, withPedestal)
+import Data.Int as Int
 import Data.Maybe (Maybe(..))
 
 -- After Vignola, Regola delli cinque ordini (Moxon's translation, "Vignola, or the Compleat
@@ -35,6 +37,17 @@ treatise =
   -- for placing one order over another.
   , superposition: Nothing
   }
+
+-- | Give the order Vignola's general pedestal: a third of the column, a ninth of it for the cap
+-- | and two ninths for the base (Ware's division). For authors who give no pedestal; see where
+-- | it is used.
+withVignolaPedestal :: Order -> Order
+withVignolaPedestal order =
+  let Minutes column = order.column.height
+      third = Int.round (Int.toNumber column / 3.0)
+      base = Int.round (Int.toNumber third * 2.0 / 9.0)
+      cornice = Int.round (Int.toNumber third / 9.0)
+  in withPedestal { base, die: third - base - cornice, cornice } order
 
 -- Architrave 1 module, frieze 1 1/6, cornice 1 1/3; capital 1.
 tuscan :: Order
