@@ -421,6 +421,21 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   zoomInButton.addEventListener("click", () => zoom(zoomStep));
   zoomOutButton.addEventListener("click", () => zoom(1 / zoomStep));
 
+  // Scrolling over the drawing zooms it while the zoom buttons are shown, one step per notch:
+  // up enlarges, down shrinks, stopping at the same bounds as the buttons.
+  for (const stage of document.querySelectorAll(".demo-stage")) {
+    stage.addEventListener("wheel", event => {
+      if (zoomInButton.closest("[hidden]") !== null || event.deltaY === 0) {
+        return;
+      }
+      event.preventDefault();
+      const button = event.deltaY < 0 ? zoomInButton : zoomOutButton;
+      if (!button.disabled) {
+        zoom(event.deltaY < 0 ? zoomStep : 1 / zoomStep);
+      }
+    }, { passive: false });
+  }
+
   const render = () => {
     renderZoom();
     renderTreatises();
