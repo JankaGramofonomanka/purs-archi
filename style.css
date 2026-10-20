@@ -57,7 +57,7 @@ body {
 }
 
 .demo-page {
-  --bottom-bar-height: 180px;
+  --bottom-bar-height: 132px;
   position: relative;
   flex: 1;
   min-height: 0;
@@ -194,60 +194,63 @@ body {
   left: 240px;
 }
 
-/* One sequencer of the bottom bar: the beats of the columns, or the bays between them. */
-.sequencer-row {
+/* The sequencer of the bottom bar: the labels, and right of them the beats of the columns over the bays
+   between them, scrolling sideways together when they need more room than there is. */
+.sequencer {
   display: flex;
-  align-items: center;
   gap: 12px;
   min-width: 0;
 }
 
-.bottom-bar-label {
+.sequencer-labels {
+  display: flex;
   flex: 0 0 auto;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.bottom-bar-label {
+  display: flex;
+  align-items: center;
   width: 80px;
+  height: 38px;
   color: #52617d;
   font-size: 0.85rem;
   font-weight: 650;
 }
 
-/* Stays at the right of the bar, before the options, while the beats scroll beside it. */
-.action-bar .add-beat {
-  flex: 0 0 auto;
-  width: auto;
-  margin-left: auto;
-  white-space: nowrap;
-}
-
-/* Takes the room between the label and the button and scrolls sideways when the beats need more;
-   the padding keeps the focus outlines of the cells from being clipped. */
-.bottom-bar-options {
+/* The padding keeps the focus outlines of the cells from being clipped. */
+.sequencer-rows {
   display: flex;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   flex-direction: column;
-  gap: 8px;
-  font-size: 0.85rem;
-  white-space: nowrap;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px;
+  overflow-x: auto;
 }
 
 .beat-list {
   display: flex;
-  flex: 1 1 auto;
-  min-width: 0;
+  width: max-content;
   gap: 6px;
   margin: 0;
-  padding: 4px;
-  overflow-x: auto;
+  padding: 0;
   list-style: none;
 }
 
-.beat-cell {
-  display: flex;
-  flex: 0 0 52px;
-  flex-direction: column;
-  gap: 2px;
+/* Each bay sits between the two beats above it: half a cell and gap further right. */
+.bay-list {
+  padding-left: 29px;
 }
 
-.action-bar .beat-columns {
+.sequence-cell {
+  display: flex;
+  flex: 0 0 52px;
+}
+
+.action-bar .sequence-toggle {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -255,32 +258,19 @@ body {
   padding: 0;
 }
 
-.beat-columns svg {
+/* Bays are set apart from the beats above them by a lighter background. */
+.action-bar .bay-list .sequence-toggle {
+  background: #f5f7fb;
+}
+
+.action-bar .bay-list .sequence-toggle:hover {
+  background: #e2e6ff;
+}
+
+.sequence-toggle svg {
   width: 32px;
   height: 24px;
   fill: currentColor;
-}
-
-.action-bar .beat-remove {
-  padding: 2px 0;
-  border-radius: 6px;
-  font-size: 0.9rem;
-}
-
-.checkbox {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-
-.action-bar .checkbox input {
-  flex: 0 0 auto;
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  padding: 0;
-  accent-color: #4056c4;
 }
 
 .action-bar select:focus-visible,

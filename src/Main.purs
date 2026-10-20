@@ -6,7 +6,7 @@ import Control.Monad (when)
 import Control.Monad.State (runStateT)
 import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.Maybe (Maybe(..), isJust, isNothing)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
@@ -47,11 +47,9 @@ type State =
 
 -- | The collonade settings as exchanged with the page's form: the key of a treatise from
 -- | `treatises`, orders as keys from `orderKinds` with a key from `pedestalModes` each, and
--- | the bay width in lower diameters with a key from `bayMeasures` saying what it measures, and the motif
--- | of the columns' rythm as the number of columns standing on each of its beats. The number of columns
--- | (beats, in fact) is rounded down to whole periods of the rythm and its first beat if `endOnFirstBeat` is set, and then
--- | stripped of the empty beats at both ends if `stripBlanks` is set. `bays` is the motif of the rythm of what
--- | fills the bays between the beats, as keys from `bayFills`; it starts with the first beat left. `windowWidth`
+-- | the bay width in lower diameters with a key from `bayMeasures` saying what it measures. `rythm` is the number
+-- | of columns standing on each of the `numOfColumns` beats (beats, in fact), and `bays` what fills each of the
+-- | bays between them, left to right, as keys from `bayFills`, so there is one bay fewer than beats. `windowWidth`
 -- | is the width of the windows' openings in lower diameters; with their architraves (a sixth of the opening
 -- | on each side) they are at most as wide as the bay width less one diameter. `scale` is the lower diameter of the
 -- | bottom row's columns in pixels and `offset` how far the drawing is moved from the center, in pixels.
@@ -64,8 +62,6 @@ type CollonadeForm =
   , rythm :: Array Int
   , bays :: Array String
   , windowWidth :: Number
-  , endOnFirstBeat :: Boolean
-  , stripBlanks :: Boolean
   , scale :: Number
   , offset :: { x :: Number, y :: Number }
   }
@@ -124,7 +120,7 @@ treatiseOptions = treatises <#> \{ key, name, treatise } ->
   }
 
 initialForm :: CollonadeForm
-initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none" }, numOfColumns: 5, bayWidth: 3.0, bayMeasure: "beats", rythm: [ 1 ], bays: [ "window" ], windowWidth: 1.0, endOnFirstBeat: false, stripBlanks: false, scale: 10.0, offset: { x: 0.0, y: 0.0 } }
+initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none" }, numOfColumns: 5, bayWidth: 3.0, bayMeasure: "beats", rythm: Array.replicate 5 1, bays: Array.replicate 4 "window", windowWidth: 1.0, scale: 10.0, offset: { x: 0.0, y: 0.0 } }
 
 main :: Effect Unit
 main = do
@@ -235,30 +231,26 @@ fromForm form = do
       | Array.length orders > 1 -> throw (name <> " gives no rule for stacking orders")
       -- A single storey is never related to another, so any rule will do.
       | otherwise -> pure continuousTaper
+  when (Array.length form.rythm /= form.numOfColumns) do
+    throw "There must be as many beats as columns"
+  when (Array.length form.bays /= form.numOfColumns - 1) do
+    throw "There must be one bay fewer than beats"
   when (Array.any (_ < 0) form.rythm) do
     throw "A beat cannot have a negative number of columns"
-  motif <- case NonEmptyArray.fromArray (map ColumnBeat form.rythm) of
-    Nothing -> throw "A rythm of columns needs at least one beat"
+  rythm <- case NonEmptyArray.fromArray (map ColumnBeat form.rythm) of
+    Nothing -> throw "A collonade needs at least one beat"
     Just beats -> pure (Rythm.rythm beats)
   bayFillMotif <- traverse
     (\key -> case Array.find (\b -> b.key == key) bayFills of
         Nothing -> throw ("Unknown bay fill: " <> key)
         Just { fill } -> pure fill)
     form.bays
-  bayMotif <- case NonEmptyArray.fromArray bayFillMotif of
-    Nothing -> throw "A rythm of bays needs at least one bay"
-    Just fills -> pure (Rythm.rythm fills)
+  -- A single beat has no bays, so what stands for them then is never looked at.
+  let bays = Rythm.rythm (fromMaybe (NonEmptyArray.singleton Wall) (NonEmptyArray.fromArray bayFillMotif))
   bayMeasure <- case Array.find (\m -> m.key == form.bayMeasure) bayMeasures of
     Nothing -> throw ("Unknown bay measure: " <> form.bayMeasure)
     Just { measure } -> pure measure
-  let
-    rounded = if form.endOnFirstBeat then Rythm.endOnFirstBeat form.numOfColumns motif else form.numOfColumns
-    { start, length: numOfColumns, rythm } =
-      if form.stripBlanks then Rythm.trim (\(ColumnBeat columns) -> columns <= 0) rounded motif
-      else { start: 0, length: rounded, rythm: motif }
-    -- The bays keep their place among the beats when blank beats are stripped from the start.
-    bays = Rythm.rotate start bayMotif
-  pure { orders, superposition, numOfColumns, bayWidth: form.bayWidth, bayMeasure, rythm, bays, windowWidth: form.windowWidth, lowestLowerDiameter: form.scale, offset: form.offset }
+  pure { orders, superposition, numOfColumns: form.numOfColumns, bayWidth: form.bayWidth, bayMeasure, rythm, bays, windowWidth: form.windowWidth, lowestLowerDiameter: form.scale, offset: form.offset }
 
 foreign import setupRoutes
   :: (String -> Number -> Number -> Effect Unit)

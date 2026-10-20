@@ -46,25 +46,15 @@
         </fieldset>
       </aside>
       <aside class="action-bar bottom-bar" data-page-actions="/collonade" aria-label="Collonade rythm" hidden>
-        <div class="sequencer-row">
-          <span class="bottom-bar-label">Rythm, columns per beat</span>
-          <ol id="collonade-rythm" class="beat-list"></ol>
-          <button id="collonade-add-beat" class="add-beat" type="button">Add beat</button>
-          <div class="bottom-bar-options">
-            <label class="checkbox">
-              <input id="collonade-end-on-first-beat" type="checkbox" />
-              <span>End on the first beat</span>
-            </label>
-            <label class="checkbox">
-              <input id="collonade-strip-blanks" type="checkbox" />
-              <span>Strip blanks</span>
-            </label>
+        <div class="sequencer">
+          <div class="sequencer-labels">
+            <span class="bottom-bar-label">Columns per beat</span>
+            <span class="bottom-bar-label">Bays between beats</span>
           </div>
-        </div>
-        <div class="sequencer-row">
-          <span class="bottom-bar-label">Bays, fill between beats</span>
-          <ol id="collonade-bays" class="beat-list"></ol>
-          <button id="collonade-add-bay" class="add-beat" type="button">Add bay</button>
+          <div class="sequencer-rows">
+            <ol id="collonade-beats" class="beat-list" aria-label="Beats, left to right"></ol>
+            <ol id="collonade-bays" class="beat-list bay-list" aria-label="Bays, left to right"></ol>
+          </div>
         </div>
       </aside>
       <div class="zoom-controls" data-page-actions="/collonade" role="group" aria-label="Drawing size" hidden>
