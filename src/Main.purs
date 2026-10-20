@@ -120,7 +120,7 @@ treatiseOptions = treatises <#> \{ key, name, treatise } ->
   }
 
 initialForm :: CollonadeForm
-initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none" }, numOfColumns: 5, bayWidth: 3.0, bayMeasure: "beats", rythm: Array.replicate 5 1, bays: Array.replicate 4 "window", windowWidth: 1.0, scale: 10.0, offset: { x: 0.0, y: 0.0 } }
+initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none" }, numOfColumns: 5, bayWidth: 3.0, bayMeasure: "groups", rythm: Array.replicate 5 1, bays: Array.replicate 4 "window", windowWidth: 1.0, scale: 10.0, offset: { x: 0.0, y: 0.0 } }
 
 main :: Effect Unit
 main = do
