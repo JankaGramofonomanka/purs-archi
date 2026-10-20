@@ -502,10 +502,10 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     report();
     sequenceRows[0].list.parentElement?.scrollTo({ left: Number.MAX_SAFE_INTEGER });
   });
-  // How many columns there are, a group of columns on one beat counting as one, and how many bays.
+  // How many axes (beats: places for a column or a group of them, filled or not) and bays there are.
   const renderColumnCount = () => {
-    const columns = form.rythm.filter(n => n > 0).length;
-    columnCountLabel.textContent = columnCount(columns);
+    const axes = form.rythm.length;
+    columnCountLabel.textContent = `${axes} ${axes === 1 ? "axis" : "axes"}`;
     const bays = form.bays.length;
     bayCountLabel.textContent = `${bays} ${bays === 1 ? "bay" : "bays"}`;
   };
