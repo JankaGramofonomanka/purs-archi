@@ -28,7 +28,7 @@ import Data.Maybe (Maybe(..))
 -- opening is just the height of the pilaster") and every pier two diameters, the openings as
 -- wide as the triglyphs, dentils and modillions allow. With pedestals only the Doric arch is
 -- given whole: 5 1/4 diameters by 9 1/2, the piers 2 1/4. The Ionic and Corinthian openings
--- (5 3/4 and 6 5/12 diameters) are given without their heights, and no Composite arch.
+-- (5 3/4 and 6 5/12 diameters) are given without their heights.
 -- The archivolt is half a diameter without pedestals, filling the face of the pier beside the
 -- pilaster ("just enough to receive the archivolt"). With pedestals that face is 5/8 of a
 -- diameter, and the archivolt is taken to fill it as well (37 1/2 minutes, rounded up); Ware
@@ -112,6 +112,9 @@ corynthian =
   }
 
 -- Twenty modules with an entablature of five, and a capital "of the kind which all the
--- moderns have employed"; the parts are divided as in his Corinthian.
+-- moderns have employed"; the parts are divided as in his Corinthian. Its arches are the
+-- Corinthian ones: as high as the column, which is the same, with piers of "the same
+-- dimensions" in every order, and its cornice "differs from the Corinthian only in the
+-- modillions, which are square", so the modillions over the axes are as far apart.
 composite :: Order
-composite = corynthian { kind = Composite, arcadeNoPedestal = Nothing }
+composite = corynthian { kind = Composite }
