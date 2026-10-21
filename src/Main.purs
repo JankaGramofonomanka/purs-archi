@@ -232,13 +232,13 @@ fromForm form = do
       -- A single storey is never related to another, so any rule will do.
       | otherwise -> pure continuousTaper
   when (Array.length form.rythm /= form.numOfColumns) do
-    throw "There must be as many beats as columns"
+    throw "There must be as many axes as columns"
   when (Array.length form.bays /= form.numOfColumns - 1) do
-    throw "There must be one bay fewer than beats"
+    throw "There must be one bay fewer than axes"
   when (Array.any (_ < 0) form.rythm) do
-    throw "A beat cannot have a negative number of columns"
+    throw "An axis cannot have a negative number of columns"
   rythm <- case NonEmptyArray.fromArray (map ColumnBeat form.rythm) of
-    Nothing -> throw "A collonade needs at least one beat"
+    Nothing -> throw "A collonade needs at least one axis"
     Just beats -> pure (Rythm.rythm beats)
   bayFillMotif <- traverse
     (\key -> case Array.find (\b -> b.key == key) bayFills of

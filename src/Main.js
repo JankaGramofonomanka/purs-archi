@@ -156,7 +156,7 @@ const maxWindowWidth = bayWidth => Math.max(minWindowWidth, (bayWidth - 1) * 3 /
 // What the bay width measures: the distance between the centerlines of neighbouring beats, or
 // between the facing outer columns of neighbouring groups of columns.
 const bayMeasureNames = {
-  beats: "Between beats",
+  beats: "Between axes",
   groups: "Between groups"
 };
 
@@ -452,9 +452,9 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
         beatList,
         beatIcon(columns),
         `${columnCount(columns)} (click for ${columnCount(next)})`,
-        `Beat ${index + 1}: ${columnCount(columns)}, click for ${columnCount(next)}`,
+        `Axis ${index + 1}: ${columnCount(columns)}, click for ${columnCount(next)}`,
         () => { form.rythm[index] = next; },
-        { disabled: form.rythm.length === 1, label: `Remove beat ${index + 1}`, action: () => removeBeat(index) }
+        { disabled: form.rythm.length === 1, label: `Remove axis ${index + 1}`, action: () => removeBeat(index) }
       );
     }));
     bayList.replaceChildren(...form.bays.map((fill, index) => {
@@ -526,7 +526,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
       mirror: mirrorButtons.beats,
       items: () => form.rythm,
       set: items => { form.rythm = items; },
-      noun: "beats",
+      noun: "axes",
       selection: null
     },
     {

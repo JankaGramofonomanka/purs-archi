@@ -44,11 +44,11 @@
       <aside class="action-bar bottom-bar" data-page-actions="/collonade" aria-label="Collonade rythm" hidden>
         <div class="sequencer">
           <div class="sequencer-labels">
-            <span class="bottom-bar-label">Columns per beat</span>
-            <span class="bottom-bar-label">Bays between beats</span>
+            <span class="bottom-bar-label">Columns per axis</span>
+            <span class="bottom-bar-label">Bays between axes</span>
           </div>
           <div class="sequencer-rows">
-            <ol id="collonade-beats" class="beat-list" aria-label="Beats, left to right"></ol>
+            <ol id="collonade-beats" class="beat-list" aria-label="Axes, left to right"></ol>
             <ol id="collonade-bays" class="beat-list bay-list" aria-label="Bays, left to right"></ol>
           </div>
           <div class="sequencer-counts">
@@ -60,8 +60,8 @@
             <span class="sequencer-actions-title">Repeat or mirror</span>
             <div class="sequencer-action-row">
               <button id="collonade-repeat-beats" class="repeat-selection" type="button">Repeat</button>
-              <button id="collonade-mirror-beats-right" class="mirror mirror-right" type="button" aria-label="Mirror the left half of the beats onto the right half"><svg viewBox="0 0 24 20" aria-hidden="true"><path d="M2 5h3v11H2zM6.5 9h3v7h-3z"/><path d="M12 2v16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 1.5"/><path d="M14 9h5V6l4 4-4 4v-3h-5z"/></svg></button>
-              <button id="collonade-mirror-beats-left" class="mirror mirror-left" type="button" aria-label="Mirror the right half of the beats onto the left half"><svg viewBox="0 0 24 20" aria-hidden="true"><path d="M2 5h3v11H2zM6.5 9h3v7h-3z"/><path d="M12 2v16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 1.5"/><path d="M14 9h5V6l4 4-4 4v-3h-5z"/></svg></button>
+              <button id="collonade-mirror-beats-right" class="mirror mirror-right" type="button" aria-label="Mirror the left half of the axes onto the right half"><svg viewBox="0 0 24 20" aria-hidden="true"><path d="M2 5h3v11H2zM6.5 9h3v7h-3z"/><path d="M12 2v16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 1.5"/><path d="M14 9h5V6l4 4-4 4v-3h-5z"/></svg></button>
+              <button id="collonade-mirror-beats-left" class="mirror mirror-left" type="button" aria-label="Mirror the right half of the axes onto the left half"><svg viewBox="0 0 24 20" aria-hidden="true"><path d="M2 5h3v11H2zM6.5 9h3v7h-3z"/><path d="M12 2v16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 1.5"/><path d="M14 9h5V6l4 4-4 4v-3h-5z"/></svg></button>
             </div>
             <div class="sequencer-action-row">
               <button id="collonade-repeat-bays" class="repeat-selection" type="button">Repeat</button>
