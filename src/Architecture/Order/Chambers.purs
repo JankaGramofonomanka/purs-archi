@@ -10,7 +10,7 @@ module Architecture.Order.Chambers
 
 import Prelude
 
-import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder, withPedestal)
+import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder, withArcadeNoPedestal, withPedestal, withArcadePedestal)
 import Architecture.Superposition (continuousTaper)
 import Data.Maybe (Maybe(..))
 
@@ -23,6 +23,12 @@ import Data.Maybe (Maybe(..))
 -- the shaft, the frieze is plumb with it and the cornice projects as far as it is high.
 -- His pedestals are "three-tenths of the height of their respective columns", in nine parts:
 -- cornice 1, base 2, die 6.
+-- Arcades after Chambers' plates of arches, as Ware's American Vignola (Part II, 1904)
+-- reads them. Without pedestals the opening is as high as the column ("the height of the
+-- opening is just the height of the pilaster") and every pier two diameters, the openings as
+-- wide as the triglyphs, dentils and modillions allow. With pedestals only the Doric arch is
+-- given whole: 5 1/4 diameters by 9 1/2, the piers 2 1/4. The Ionic and Corinthian openings
+-- (5 3/4 and 6 5/12 diameters) are given without their heights, and no Composite arch.
 treatise :: Treatise
 treatise =
   { tuscan: Just tuscan
@@ -36,7 +42,9 @@ treatise =
 
 -- Entablature in ten parts: architrave 3, frieze 3, cornice 4; capital one module.
 tuscan :: Order
-tuscan = withPedestal { base: 28, die: 84, cornice: 14 } $ mkOrder Tuscan
+tuscan =
+  withArcadeNoPedestal { openingWidth: 225, openingHeight: 420, pierWidth: 120 }
+  $ withPedestal { base: 28, die: 84, cornice: 14 } $ mkOrder Tuscan
   { columnHeight: 420
   , upperDiameter: 50
   , base: { width: 80, height: 30 }
@@ -49,7 +57,10 @@ tuscan = withPedestal { base: 28, die: 84, cornice: 14 } $ mkOrder Tuscan
 -- Entablature in eight parts: architrave 2, frieze 3, cornice 3; the capital 32 minutes,
 -- after the theatre of Marcellus.
 doric :: Order
-doric = withPedestal { base: 32, die: 96, cornice: 16 } $ mkOrder Doric
+doric =
+  withArcadeNoPedestal { openingWidth: 255, openingHeight: 480, pierWidth: 120 }
+  $ withArcadePedestal { openingWidth: 315, openingHeight: 570, pierWidth: 135 }
+  $ withPedestal { base: 32, die: 96, cornice: 16 } $ mkOrder Doric
   { columnHeight: 480
   , upperDiameter: 50
   , base: { width: 80, height: 30 }
@@ -62,7 +73,9 @@ doric = withPedestal { base: 32, die: 96, cornice: 16 } $ mkOrder Doric
 -- The entablature parts "bear the same proportion to each other ... as in the Tuscan". The
 -- capital height is not given; Vignola's 2/3 of a module is used.
 ionic :: Order
-ionic = withPedestal { base: 36, die: 108, cornice: 18 } $ mkOrder Ionic
+ionic =
+  withArcadeNoPedestal { openingWidth: 270, openingHeight: 540, pierWidth: 120 }
+  $ withPedestal { base: 36, die: 108, cornice: 18 } $ mkOrder Ionic
   { columnHeight: 540
   , upperDiameter: 50
   , base: { width: 80, height: 30 }
@@ -75,7 +88,9 @@ ionic = withPedestal { base: 36, die: 108, cornice: 18 } $ mkOrder Ionic
 -- "Differs but little from that of Vignola": capital 2 1/3 modules, architrave 1 1/2,
 -- frieze 1 1/2, cornice 2.
 corynthian :: Order
-corynthian = withPedestal { base: 40, die: 120, cornice: 20 } $ mkOrder Corynthian
+corynthian =
+  withArcadeNoPedestal { openingWidth: 280, openingHeight: 600, pierWidth: 120 }
+  $ withPedestal { base: 40, die: 120, cornice: 20 } $ mkOrder Corynthian
   { columnHeight: 600
   , upperDiameter: 50
   , base: { width: 80, height: 30 }
@@ -88,4 +103,4 @@ corynthian = withPedestal { base: 40, die: 120, cornice: 20 } $ mkOrder Corynthi
 -- Twenty modules with an entablature of five, and a capital "of the kind which all the
 -- moderns have employed"; the parts are divided as in his Corinthian.
 composite :: Order
-composite = corynthian { kind = Composite }
+composite = corynthian { kind = Composite, arcadeNoPedestal = Nothing }

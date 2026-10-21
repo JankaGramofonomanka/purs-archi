@@ -10,7 +10,7 @@ module Architecture.Order.Scamozzi
 
 import Prelude
 
-import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder, mkPedestal, withPedestal)
+import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder, mkPedestal, withArcadeNoPedestal, withPedestal, withArcadePedestal)
 import Architecture.Superposition (continuousTaper)
 import Data.Maybe (Maybe(..))
 
@@ -26,6 +26,17 @@ import Data.Maybe (Maybe(..))
 -- Pedestals of 1 7/8, 2 4/15, 2 1/2, 3 1/3 and 3 diameters (Tuscan, Doric, Ionic,
 -- Corinthian, Composite), with a base of 45 minutes (30 for the Tuscan) and a cimacium of
 -- 22 1/2, per the Mirror and Chambers' table.
+-- Arcades after the Mirror's plates of arches. It gives the width of the opening, the height
+-- from the foot of the order to the top of the impost and how much the arch rises above a
+-- half circle; the opening's height adds half its width to these. The pier is the column's
+-- diameter and the strip of pilaster the Mirror gives on each side of it ("the Pilaster is
+-- thirty Minutes under on the breadth of the Column"), which Chambers' piers confirm (4 2/3
+-- modules for the Tuscan with pedestals, 3 3/4 and 4 for the Corinthian without and with).
+-- The Mirror gives no strip with pedestals but the Tuscan's; the Doric, Ionic and Roman piers
+-- with pedestals are the widths that bring a triglyph or a modillion over each axis
+-- (1 1/4 diameters between triglyphs, and 35, 32 1/2 and 30 minutes between the Ionic, Roman
+-- and Corinthian modillions, from the Mirror's galleries) and keep the piers diminishing
+-- from the Tuscan to the Corinthian, as Chambers says they do.
 treatise :: Treatise
 treatise =
   { tuscan: Just tuscan
@@ -38,8 +49,15 @@ treatise =
   }
 
 -- Entablature 1 7/8 diameters: architrave 32 1/2 minutes, frieze 41, cornice 39.
+-- Arches 3 diameters 52 minutes wide, rising to the impost 5 diameters 16 minutes and "somewhat
+-- more than one eighth" of a diameter (taken as 8 minutes) above a half circle; with pedestals
+-- 4 diameters 20 minutes, 6 diameters 12 1/2 minutes and 10 minutes (the half minute rounded
+-- up). Piers of 34-minute strips without pedestals and 40-minute ones with them.
 tuscan :: Order
-tuscan = withPedestal { base: 30, die: 60, cornice: 23 } $ mkOrder Tuscan
+tuscan =
+  withArcadeNoPedestal { openingWidth: 232, openingHeight: 440, pierWidth: 128 }
+  $ withArcadePedestal { openingWidth: 260, openingHeight: 513, pierWidth: 140 }
+  $ withPedestal { base: 30, die: 60, cornice: 23 } $ mkOrder Tuscan
   { columnHeight: 450
   , upperDiameter: 45
   , base: { width: 80, height: 30 }
@@ -50,8 +68,15 @@ tuscan = withPedestal { base: 30, die: 60, cornice: 23 } $ mkOrder Tuscan
   }
 
 -- Entablature 2 1/8 diameters: architrave 35, frieze 45 with a list of 5, cornice 42.
+-- Columns 6 diameters 15 minutes apart, with strips of 32 minutes; the arch rises to the
+-- impost 6 diameters 4 1/2 minutes and 10 minutes above a half circle. With pedestals the
+-- opening is 5 1/4 diameters, 7 diameters 6 minutes to the impost and 12 1/2 above the half
+-- circle; the axes are six triglyphs (7 1/2 diameters) apart.
 doric :: Order
-doric = withPedestal { base: 45, die: 69, cornice: 22 } $ mkOrder Doric
+doric =
+  withArcadeNoPedestal { openingWidth: 251, openingHeight: 500, pierWidth: 124 }
+  $ withArcadePedestal { openingWidth: 315, openingHeight: 596, pierWidth: 135 }
+  $ withPedestal { base: 45, die: 69, cornice: 22 } $ mkOrder Doric
   { columnHeight: 510
   , upperDiameter: 48
   , base: { width: 80, height: 30 }
@@ -63,8 +88,14 @@ doric = withPedestal { base: 45, die: 69, cornice: 22 } $ mkOrder Doric
 
 -- The capital rises 18 5/6 minutes above the astragal. Entablature 1 3/4 diameters:
 -- architrave 35, frieze 28, cornice 42.
+-- Arches 3 diameters 50 minutes wide, with strips of 30 minutes, rising to the impost
+-- 6 diameters 18 minutes and 12 minutes above a half circle; with pedestals 4 diameters
+-- 50 minutes, 7 diameters 35 minutes and 15, the axes twelve modillions (7 diameters) apart.
 ionic :: Order
-ionic = withPedestal { base: 45, die: 83, cornice: 22 } $ mkOrder Ionic
+ionic =
+  withArcadeNoPedestal { openingWidth: 230, openingHeight: 505, pierWidth: 120 }
+  $ withArcadePedestal { openingWidth: 290, openingHeight: 615, pierWidth: 130 }
+  $ withPedestal { base: 45, die: 83, cornice: 22 } $ mkOrder Ionic
   { columnHeight: 525
   , upperDiameter: 50
   , base: { width: 80, height: 30 }
@@ -76,8 +107,14 @@ ionic = withPedestal { base: 45, die: 83, cornice: 22 } $ mkOrder Ionic
 
 -- The capital is 70 minutes high on an abacus drawn in a square of 1 1/2 diameters.
 -- Entablature 2 diameters: architrave 40, frieze 32, cornice 48.
+-- Arches 4 diameters 8 minutes wide, with strips of 26 minutes, rising to the impost
+-- 7 diameters 20 minutes and 16 minutes above a half circle; with pedestals 5 diameters,
+-- 9 1/2 diameters and 20 minutes, the axes fourteen modillions (7 diameters) apart.
 corynthian :: Order
-corynthian = withPedestal { base: 45, die: 133, cornice: 22 } $ mkOrder Corynthian
+corynthian =
+  withArcadeNoPedestal { openingWidth: 248, openingHeight: 580, pierWidth: 112 }
+  $ withArcadePedestal { openingWidth: 300, openingHeight: 740, pierWidth: 120 }
+  $ withPedestal { base: 45, die: 133, cornice: 22 } $ mkOrder Corynthian
   { columnHeight: 600
   , upperDiameter: 53
   , base: { width: 80, height: 30 }
@@ -89,8 +126,15 @@ corynthian = withPedestal { base: 45, die: 133, cornice: 22 } $ mkOrder Corynthi
 
 -- The capital as the Corinthian, the top of the shaft "fifty one minutes". Entablature
 -- 1 57/60 diameters: architrave 39, frieze 31 1/4, cornice 46 3/4.
+-- Arches 4 diameters 34 minutes wide, with strips of 28 minutes, rising to the impost
+-- 6 diameters 54 minutes and 14 minutes above a half circle; with pedestals 5 1/2 diameters,
+-- 8 diameters 42 1/2 minutes and 17 1/2, the axes fourteen modillions (7 7/12 diameters)
+-- apart.
 composite :: Order
-composite = withPedestalOf84 $ mkOrder Composite
+composite =
+  withArcadeNoPedestal { openingWidth: 274, openingHeight: 565, pierWidth: 116 }
+  $ withArcadePedestal { openingWidth: 330, openingHeight: 705, pierWidth: 125 }
+  $ withPedestalOf84 $ mkOrder Composite
   { columnHeight: 585
   , upperDiameter: 51
   , base: { width: 80, height: 30 }

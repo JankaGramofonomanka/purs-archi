@@ -10,7 +10,7 @@ module Architecture.Order.Palladio
 
 import Prelude
 
-import Architecture.Order (Minutes(..), Order, OrderKind(..), Treatise, mkPedestal, withPedestal)
+import Architecture.Order (Minutes(..), Order, OrderKind(..), Treatise, mkPedestal, withPedestal, withArcadePedestal)
 import Architecture.Superposition (fourthLess)
 import Data.Maybe (Maybe(..))
 
@@ -31,6 +31,14 @@ treatise =
 -- 4 1/2; the Corinthian a fourth of the column in eight parts: cimacia 1, base 2, die 5; the
 -- Composite a third of the column in 8 1/2 parts: cimacia 1, base 2, die 5 1/2. Widths as in
 -- `withPedestal`.
+-- Palladio gives arches only with pedestals (Book I, chs. 16-18; the Tuscan and Doric ones
+-- are only drawn). The Ionic arch is "two squares high" and its piers "a third part of the
+-- void"; its pedestal is half the arch's width, so the arch is twice the pedestal. The
+-- Corinthian piers are "two fifths of the void, which void is two squares and a half,
+-- including the thickness of the arch"; the Composite ones "half the void of the arch, and the
+-- arches are two squares and a half high under the vault". For these two the piers are
+-- Chambers' measures of Palladio's plates: "nearly three modules and three quarters" and
+-- "four and four-fifths" (of half a diameter); the half minute is rounded up.
 -- Widths and depths after Palladio, Quattro Libri, Book I (Ware's 1738 translation):
 -- bases and capitals project a stated fraction of the lower diameter, the frieze is
 -- plumb with the top of the shaft, and the architrave's crowning member and the
@@ -62,6 +70,8 @@ tuscan =
       , die: { width: 80, height: 60 }
       , cornice: { width: 80, height: 0 }
       }
+  , arcadeNoPedestal: Nothing
+  , arcadePedestal: Nothing
   }
 
 doric :: Order
@@ -84,6 +94,8 @@ doric =
       , cornice: { depth: Minutes 65, height: Minutes 40 }
       }
   , pedestal: Nothing
+  , arcadeNoPedestal: Nothing
+  , arcadePedestal: Nothing
   }
 
 -- Book I ch. 16: the abacus is 19 eighteenths of a diameter wide; the capital with the volute
@@ -91,7 +103,8 @@ doric =
 -- astragal, rise above the shaft.
 ionic :: Order
 ionic =
-  withPedestal { base: 43, die: 98, cornice: 22 }
+  withArcadePedestal { openingWidth: 325, openingHeight: 650, pierWidth: 108 }
+  $ withPedestal { base: 43, die: 98, cornice: 22 }
   { kind: Ionic
   , height: Minutes 675
   , column:
@@ -109,11 +122,14 @@ ionic =
       , cornice: { depth: Minutes 70, height: Minutes 45 }
       }
   , pedestal: Nothing
+  , arcadeNoPedestal: Nothing
+  , arcadePedestal: Nothing
   }
 
 corynthian :: Order
 corynthian =
-  withPedestal { base: 37, die: 94, cornice: 19 }
+  withArcadePedestal { openingWidth: 281, openingHeight: 703, pierWidth: 113 }
+  $ withPedestal { base: 37, die: 94, cornice: 19 }
   { kind: Corynthian
   , height: Minutes 750
   , column:
@@ -131,13 +147,16 @@ corynthian =
       , cornice: { depth: Minutes 75, height: Minutes 50 }
       }
   , pedestal: Nothing
+  , arcadeNoPedestal: Nothing
+  , arcadePedestal: Nothing
   }
 
 -- Palladio's Composite is "formed like [the Corinthian] in all its parts, except the capital",
 -- whose dimensions are also the same, and ten diameters high.
 composite :: Order
 composite =
-  withPedestal { base: 47, die: 129, cornice: 24 }
+  withArcadePedestal { openingWidth: 288, openingHeight: 720, pierWidth: 144 }
+  $ withPedestal { base: 47, die: 129, cornice: 24 }
   { kind: Composite
   , height: Minutes 750
   , column:
@@ -155,4 +174,6 @@ composite =
       , cornice: { depth: Minutes 75, height: Minutes 50 }
       }
   , pedestal: Nothing
+  , arcadeNoPedestal: Nothing
+  , arcadePedestal: Nothing
   }

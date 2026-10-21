@@ -1,5 +1,6 @@
 module Architecture.Order
-  ( Column
+  ( Arcade
+  , Column
   , Element
   , Entablature
   , EntablatureElement
@@ -25,7 +26,10 @@ module Architecture.Order
   , orderHeight
   , sizeOf
   , treatiseOrder
+  , withArcadeNoPedestal
   , withPedestal
+  , withArcadePedestal
+  , arcadeOf
   , Volutes
   , ionicVolutes
   , capitalWidth
@@ -80,6 +84,16 @@ type Pedestal =
 -- | continuous pedestal (a podium) with the pedestal's proportions.
 data PedestalMode = NoPedestal | Pedestals | Podium
 
+-- | The arched opening between two piers that an order decorates: the opening's width, its
+-- | height from the bottom of the order (with the pedestal, if any) to the crown of the arch,
+-- | and the width of the pier between two openings. The axes of the columns are
+-- | `openingWidth + pierWidth` apart.
+type Arcade =
+  { openingWidth :: Minutes
+  , openingHeight :: Minutes
+  , pierWidth :: Minutes
+  }
+
 derive instance Eq PedestalMode
 
 type Order =
@@ -91,7 +105,17 @@ type Order =
   , entablature :: Entablature
   -- | `Nothing` where the author gives no pedestal for the order. `height` excludes it.
   , pedestal :: Maybe Pedestal
+  -- | The arcade of columns standing without and with pedestals; `Nothing` where the author
+  -- | gives none.
+  , arcadeNoPedestal :: Maybe Arcade
+  , arcadePedestal :: Maybe Arcade
   }
+
+-- | The arcade of an order whose columns stand as `mode` says.
+arcadeOf :: PedestalMode -> Order -> Maybe Arcade
+arcadeOf mode order = case mode of
+  NoPedestal -> order.arcadeNoPedestal
+  _ -> order.arcadePedestal
 
 -- | Height of the pedestal the order stands on in the given mode, in minutes.
 pedestalHeight :: PedestalMode -> Order -> Minutes
@@ -241,6 +265,8 @@ mkOrder kind o =
       , cornice: entablatureElement o.cornice
       }
   , pedestal: Nothing
+  , arcadeNoPedestal: Nothing
+  , arcadePedestal: Nothing
   }
   where
   entablatureHeight = o.architrave.height + o.frieze.height + o.cornice.height
@@ -277,3 +303,14 @@ withPedestal p order = order
   }
   where
   Minutes dieWidth = order.base.width
+
+-- | Give the order the arcade of its columns standing without pedestals, in minutes.
+withArcadeNoPedestal :: { openingWidth :: Int, openingHeight :: Int, pierWidth :: Int } -> Order -> Order
+withArcadeNoPedestal a order = order { arcadeNoPedestal = Just (mkArcade a) }
+
+-- | Give the order the arcade of its columns standing on pedestals, in minutes.
+withArcadePedestal :: { openingWidth :: Int, openingHeight :: Int, pierWidth :: Int } -> Order -> Order
+withArcadePedestal a order = order { arcadePedestal = Just (mkArcade a) }
+
+mkArcade :: { openingWidth :: Int, openingHeight :: Int, pierWidth :: Int } -> Arcade
+mkArcade a = { openingWidth: Minutes a.openingWidth, openingHeight: Minutes a.openingHeight, pierWidth: Minutes a.pierWidth }

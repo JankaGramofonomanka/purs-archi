@@ -11,7 +11,7 @@ module Architecture.Order.Vignola
 
 import Prelude
 
-import Architecture.Order (Minutes(..), Order, OrderKind(..), Treatise, mkOrder, withPedestal)
+import Architecture.Order (Minutes(..), Order, OrderKind(..), Treatise, mkOrder, withArcadeNoPedestal, withPedestal, withArcadePedestal)
 import Data.Int as Int
 import Data.Maybe (Maybe(..))
 
@@ -26,6 +26,11 @@ import Data.Maybe (Maybe(..))
 -- Pedestals are a third of the column "in all the five orders", but the Corinthian (and so
 -- the Composite) "may be made of 7 Models" for strength. Moxon's text does not divide them;
 -- Ware's American Vignola gives the cap a ninth and the base two ninths of the pedestal.
+-- Arcades after Moxon and d'Aviler's Cours d'architecture (1738), which describe the plates.
+-- The arches are two squares high but the Corinthian, which is "more than twice the
+-- breadth"; the piers are 3 modules without pedestals and 4 with them, but the Doric with
+-- pedestals, whose 5 make the triglyphs fall over the axes. The Composite arcades are the
+-- Corinthian ones, Vignola "referring you therein to the Corinthian Order".
 treatise :: Treatise
 treatise =
   { tuscan: Just tuscan
@@ -49,9 +54,13 @@ withVignolaPedestal order =
       cornice = Int.round (Int.toNumber third / 9.0)
   in withPedestal { base, die: third - base - cornice, cornice } order
 
--- Architrave 1 module, frieze 1 1/6, cornice 1 1/3; capital 1.
+-- Architrave 1 module, frieze 1 1/6, cornice 1 1/3; capital 1. Arches 6 1/2 modules by 13,
+-- and with pedestals 8 3/4 by 17 1/2 (the half minute rounded up).
 tuscan :: Order
-tuscan = withPedestal { base: 31, die: 93, cornice: 16 } $ mkOrder Tuscan
+tuscan =
+  withArcadeNoPedestal { openingWidth: 195, openingHeight: 390, pierWidth: 90 }
+  $ withArcadePedestal { openingWidth: 263, openingHeight: 525, pierWidth: 120 }
+  $ withPedestal { base: 31, die: 93, cornice: 16 } $ mkOrder Tuscan
   { columnHeight: 420
   , upperDiameter: 50
   , base: { width: 80, height: 30 }
@@ -61,9 +70,13 @@ tuscan = withPedestal { base: 31, die: 93, cornice: 16 } $ mkOrder Tuscan
   , cornice: { depth: 65, height: 40 }
   }
 
--- Architrave 1 module, frieze 1 1/2, cornice 1 1/2; capital 1.
+-- Architrave 1 module, frieze 1 1/2, cornice 1 1/2; capital 1. Arches 7 modules by 14, and
+-- with pedestals 10 by 20.
 doric :: Order
-doric = withPedestal { base: 36, die: 106, cornice: 18 } $ mkOrder Doric
+doric =
+  withArcadeNoPedestal { openingWidth: 210, openingHeight: 420, pierWidth: 90 }
+  $ withArcadePedestal { openingWidth: 300, openingHeight: 600, pierWidth: 150 }
+  $ withPedestal { base: 36, die: 106, cornice: 18 } $ mkOrder Doric
   { columnHeight: 480
   , upperDiameter: 50
   , base: { width: 80, height: 30 }
@@ -75,8 +88,12 @@ doric = withPedestal { base: 36, die: 106, cornice: 18 } $ mkOrder Doric
 
 -- Architrave 1 1/4 modules, frieze 1 1/2, cornice 1 3/4 (37.5 and 52.5 minutes, rounded so
 -- the entablature keeps its 135); the capital, without its volutes, 2/3 of a module.
+-- Arches 8 1/2 modules by 17, and with pedestals 11 by 22.
 ionic :: Order
-ionic = withPedestal { base: 40, die: 120, cornice: 20 } $ mkOrder Ionic
+ionic =
+  withArcadeNoPedestal { openingWidth: 255, openingHeight: 510, pierWidth: 90 }
+  $ withArcadePedestal { openingWidth: 330, openingHeight: 660, pierWidth: 120 }
+  $ withPedestal { base: 40, die: 120, cornice: 20 } $ mkOrder Ionic
   { columnHeight: 540
   , upperDiameter: 50
   , base: { width: 80, height: 30 }
@@ -86,9 +103,13 @@ ionic = withPedestal { base: 40, die: 120, cornice: 20 } $ mkOrder Ionic
   , cornice: { depth: 77, height: 52 }
   }
 
--- Architrave 1 1/2 modules, frieze 1 1/2, cornice 2; capital 2 1/3.
+-- Architrave 1 1/2 modules, frieze 1 1/2, cornice 2; capital 2 1/3. Arches 9 modules by 18,
+-- and with pedestals 12 by 25.
 corynthian :: Order
-corynthian = withPedestal { base: 47, die: 140, cornice: 23 } $ mkOrder Corynthian
+corynthian =
+  withArcadeNoPedestal { openingWidth: 270, openingHeight: 540, pierWidth: 90 }
+  $ withArcadePedestal { openingWidth: 360, openingHeight: 750, pierWidth: 120 }
+  $ withPedestal { base: 47, die: 140, cornice: 23 } $ mkOrder Corynthian
   { columnHeight: 600
   , upperDiameter: 50
   , base: { width: 80, height: 30 }
