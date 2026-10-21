@@ -439,13 +439,8 @@ const setupCollonadeForm = (treatises, arcadeBayWidth, initial, onChange) => {
   const nextBayMeasure = () =>
     bayMeasureKeys[(bayMeasureKeys.indexOf(form.bayMeasure) + 1) % bayMeasureKeys.length];
   const renderBayMeasures = () => {
-    // The arches set the distance between axes.
-    const arcades = arcadeBay().arcades;
-    bayMeasureButton.disabled = arcades;
-    bayMeasureButton.textContent = bayMeasureNames[arcades ? "beats" : form.bayMeasure];
-    bayMeasureButton.title = arcades
-      ? "Set by the arches"
-      : `Click for ${bayMeasureNames[nextBayMeasure()].toLowerCase()}`;
+    bayMeasureButton.textContent = bayMeasureNames[form.bayMeasure];
+    bayMeasureButton.title = `Click for ${bayMeasureNames[nextBayMeasure()].toLowerCase()}`;
   };
 
   // While a storey frames an arcade the bay width is the arches' and cannot be typed in; the

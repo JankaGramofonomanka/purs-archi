@@ -54,7 +54,7 @@ type State =
 -- | is the width of the windows' openings in lower diameters; with their architraves (a sixth of the opening
 -- | on each side) they are at most as wide as the bay width less one diameter. `scale` is the lower diameter of the
 -- | bottom row's columns in pixels and `offset` how far the drawing is moved from the center, in pixels.
--- | While a storey frames an arcade, `bayWidth` and `bayMeasure` are not used: see `arcadeBayWidth`.
+-- | While a storey frames an arcade, `bayWidth` is not used: see `arcadeBayWidth`.
 type CollonadeForm =
   { treatise :: String
   , orders :: Array FormStorey
@@ -247,8 +247,10 @@ formStoreys form = do
   pure { storeys, superposition }
 
 -- | The bay width, in lower diameters of the bottom row's columns, that follows from the arches:
--- | the distance between the axes of the lowest storey that frames an arcade (its opening and
--- | a pier), which "gives the rule to the other" storeys (Gibbs). `Nothing` where no storey does.
+-- | an opening and a pier of the lowest storey that frames an arcade, which "gives the rule to the
+-- | other" storeys (Gibbs). It is measured as `bayMeasure` says: between single columns it is the
+-- | distance between their axes, and between groups the distance between the facing columns, which
+-- | the arch spans. `Nothing` where no storey does.
 arcadeBayWidth :: FormStoreys -> Maybe Number
 arcadeBayWidth { storeys, superposition } = do
   { index, storey } <- Array.find (_.storey.arcade) (Array.mapWithIndex { index: _, storey: _ } storeys)
@@ -306,11 +308,9 @@ fromForm form = do
     form.bays
   -- A single beat has no bays, so what stands for them then is never looked at.
   let bays = Rythm.rythm (fromMaybe (NonEmptyArray.singleton Wall) (NonEmptyArray.fromArray bayFillMotif))
-  formBayMeasure <- case Array.find (\m -> m.key == form.bayMeasure) bayMeasures of
+  bayMeasure <- case Array.find (\m -> m.key == form.bayMeasure) bayMeasures of
     Nothing -> throw ("Unknown bay measure: " <> form.bayMeasure)
     Just { measure } -> pure measure
-  -- The arches set the distance between axes.
-  let bayMeasure = if isJust arcadeBay then BetweenBeats else formBayMeasure
   pure { orders, superposition, numOfColumns: form.numOfColumns, bayWidth, bayMeasure, rythm, bays, windowWidth: form.windowWidth, lowestLowerDiameter: form.scale, offset: form.offset }
 
 foreign import setupRoutes
