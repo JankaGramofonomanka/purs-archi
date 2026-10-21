@@ -10,7 +10,7 @@ module Architecture.Order.Gibbs
 
 import Prelude
 
-import Architecture.Order (Minutes(..), Order, OrderKind(..), Treatise, mkOrder, mkPedestal)
+import Architecture.Order (Minutes(..), Order, OrderKind(..), Treatise, mkOrder, mkPedestal, withArcadePlinth)
 import Architecture.Superposition (continuousTaper)
 import Data.Maybe (Maybe(..))
 
@@ -21,6 +21,10 @@ import Data.Maybe (Maybe(..))
 -- the shaft, with which the frieze is plumb.
 -- Pedestals are a fourth of the column and entablature together: a plinth of a fourth, base
 -- mouldings of a twelfth, a cap of an eighth, and the die the rest.
+-- His arches without pedestals raise the columns on a plinth: "one Diameter for the height of
+-- the Plinth" in the Tuscan, "the Semidiameter for the Plinth" in the Doric; those of the
+-- other orders are only in the plates. He gives no full arcade (the arches' heights are only in
+-- the plates too), so the plinths are not drawn.
 treatise :: Treatise
 treatise =
   { tuscan: Just tuscan
@@ -37,7 +41,7 @@ treatise =
 -- top diameter, the architrave a sixth of its height, the cornice as far as it is high.
 -- Entablature in seven parts: architrave 2, frieze 2, cornice 3.
 tuscan :: Order
-tuscan = pedestal { base: 44, die: 71, cornice: 16, projection: 11 } $ mkOrder Tuscan
+tuscan = withArcadePlinth 60 $ pedestal { base: 44, die: 71, cornice: 16, projection: 11 } $ mkOrder Tuscan
   { columnHeight: 420
   , upperDiameter: 48
   , base: { width: 80, height: 30 }
@@ -51,7 +55,7 @@ tuscan = pedestal { base: 44, die: 71, cornice: 16, projection: 11 } $ mkOrder T
 -- top diameter, the architrave a sixth of its height, the cornice half the entablature.
 -- Entablature in eight parts: architrave 2, frieze 3, cornice 3.
 doric :: Order
-doric = pedestal { base: 50, die: 81, cornice: 19, projection: 13 } $ mkOrder Doric
+doric = withArcadePlinth 30 $ pedestal { base: 50, die: 81, cornice: 19, projection: 13 } $ mkOrder Doric
   { columnHeight: 480
   , upperDiameter: 50
   , base: { width: 80, height: 30 }

@@ -20,7 +20,7 @@ import Prelude
 
 import Anchor (class Sized, HorizontalAnchor(..), PointAnchor(..), RectangularAnchor(..), VerticalAnchor(..), drawAnchored, size)
 import Architecture.Measure (Measure(..), SizeDeterminant)
-import Architecture.Order (Arcade, Order, arcadeOf, capitalWidth, Pedestal, PedestalMode(..), lowerMinute, minuteFromSize, pedestalHeight, sizeOf, upperMinute)
+import Architecture.Order (Arcade, Order, arcadeOf, arcadePlinthHeight, capitalWidth, Pedestal, PedestalMode(..), lowerMinute, minuteFromSize, pedestalHeight, sizeOf, upperMinute)
 import Architecture.Superposition (SuperpositionRule)
 import Architecture.Order.Draw (drawColumn, drawEntablature, drawSpanningEntablature, drawSpanningPedestal)
 import Architecture.Rythm (Rythm, beatAt)
@@ -77,7 +77,8 @@ type WindowSize = { width :: Number, height :: Number }
 -- | has an opening of the size `window`, centered between the facing columns, its frame resting on
 -- | the line of the pedestals' tops (see `sillHeight`). The entablature (and a podium) span the whole row.
 -- | If `arcade` is set and the order has an arcade for columns standing as `pedestal` says, every
--- | bay is decorated with a blind arch (see `drawArch`), with its window, if any, set in it.
+-- | bay is decorated with a blind arch (see `drawArch`), with its window, if any, set in it; columns
+-- | without pedestals then stand on the order's arcade plinth, if it has one (see `porticoRaise`).
 newtype Portico = Portico {
   order :: Order,
   size :: SizeDeterminant,
@@ -237,10 +238,16 @@ windowFrame { width } = width / 6.0
 sillHeight :: Order -> Number -> Number
 sillHeight order minute = maybe 0.0 (\pedestal -> sizeOf pedestal.height minute) order.pedestal
 
+-- | How high the row's columns stand above the bottom of the row: on their pedestals or podium, or
+-- | on the plinth of an arcade without pedestals.
+porticoRaise :: Portico -> Number -> Number
+porticoRaise (Portico { order, pedestal, arcade }) minute =
+  sizeOf (pedestalHeight pedestal order) minute + sizeOf (arcadePlinthHeight pedestal arcade order) minute
+
 -- | Height of the bottom of the capitals above the bottom of the row.
 capitalBottom :: Portico -> Number -> Number
-capitalBottom (Portico { order, pedestal }) minute =
-  sizeOf (pedestalHeight pedestal order) minute + sizeOf order.base.height minute + sizeOf order.column.shaftHeight minute
+capitalBottom p@(Portico { order }) minute =
+  porticoRaise p minute + sizeOf order.base.height minute + sizeOf order.column.shaftHeight minute
 
 -- | The highest opening of the given width the row allows, its frame between the sill and the capitals.
 maxWindowHeight :: Portico -> Number -> Number
@@ -272,7 +279,7 @@ instance Sized Portico where
   size p@(Portico portico) =
     let minute = minuteFromSize portico.pedestal portico.order portico.size
     in { width: porticoSpan p + 2.0 * porticoOverhang p
-       , height: sizeOf portico.order.height minute + sizeOf (pedestalHeight portico.pedestal portico.order) minute
+       , height: sizeOf portico.order.height minute + porticoRaise p minute
        }
 
 instance RectangularFigure Portico
@@ -282,7 +289,7 @@ drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
   let minute = minuteFromSize portico.pedestal order portico.size
   let { width, height } = size p
   let ground = topLeft.y + height
-  let bottom = ground - sizeOf (pedestalHeight portico.pedestal order) minute
+  let bottom = ground - porticoRaise p minute
   let left = topLeft.x + porticoOverhang p
   let forBeats draw = for_ (porticoBeats p) \{ centerline, beat } -> draw (left + centerline) beat
   let frame = windowFrame portico.window
@@ -302,6 +309,11 @@ drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
       Podium -> drawSpanningPedestal (point (topLeft.x + width / 2.0) ground) (porticoSpan p) minute pedestal
       _ -> forBeats \x beat@(ColumnBeat n) ->
         when (n > 0) $ drawSpanningPedestal (point x ground) (groupSpan portico.groupSpacing beat) minute pedestal
+  -- The plinths of an arcade without pedestals: plain blocks as wide as the plinths of the bases.
+  let plinth = sizeOf (arcadePlinthHeight portico.pedestal portico.arcade order) minute
+  when (plinth > 0.0) $ forBeats \x beat@(ColumnBeat n) -> when (n > 0) do
+    let w = groupSpan portico.groupSpacing beat + sizeOf order.base.width minute
+    drawRectangle (point (x - w / 2.0) (ground - plinth)) w plinth (Just def) (Just def)
   forBeats \x beat@(ColumnBeat n) -> do
     let leftmost = x - groupSpan portico.groupSpacing beat / 2.0
     when (n > 0) $ for_ (Array.range 0 (n - 1)) \j ->

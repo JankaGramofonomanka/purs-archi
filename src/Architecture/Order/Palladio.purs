@@ -74,6 +74,7 @@ tuscan =
       }
   , arcadeNoPedestal: Nothing
   , arcadePedestal: Nothing
+  , arcadePlinth: Nothing
   }
 
 doric :: Order
@@ -98,6 +99,7 @@ doric =
   , pedestal: Nothing
   , arcadeNoPedestal: Nothing
   , arcadePedestal: Nothing
+  , arcadePlinth: Nothing
   }
 
 -- Book I ch. 16: the abacus is 19 eighteenths of a diameter wide; the capital with the volute
@@ -126,6 +128,7 @@ ionic =
   , pedestal: Nothing
   , arcadeNoPedestal: Nothing
   , arcadePedestal: Nothing
+  , arcadePlinth: Nothing
   }
 
 corynthian :: Order
@@ -151,6 +154,7 @@ corynthian =
   , pedestal: Nothing
   , arcadeNoPedestal: Nothing
   , arcadePedestal: Nothing
+  , arcadePlinth: Nothing
   }
 
 -- Palladio's Composite is "formed like [the Corinthian] in all its parts, except the capital",
@@ -178,4 +182,5 @@ composite =
   , pedestal: Nothing
   , arcadeNoPedestal: Nothing
   , arcadePedestal: Nothing
+  , arcadePlinth: Nothing
   }

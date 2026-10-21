@@ -27,6 +27,8 @@ module Architecture.Order
   , sizeOf
   , treatiseOrder
   , withArcadeNoPedestal
+  , withArcadePlinth
+  , arcadePlinthHeight
   , withPedestal
   , withArcadePedestal
   , arcadeOf
@@ -41,7 +43,7 @@ import Prelude
 import Architecture.Measure (Measure(..), SizeDeterminant)
 import Architecture.Superposition (SuperpositionRule, ratioValue, stepAt)
 import Data.Int as Int
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), fromMaybe, maybe)
 
 newtype Minutes = Minutes Int
 
@@ -110,6 +112,10 @@ type Order =
   -- | gives none.
   , arcadeNoPedestal :: Maybe Arcade
   , arcadePedestal :: Maybe Arcade
+  -- | The height of the plain block (a plinth or socle) the columns stand on in an arcade
+  -- | without pedestals, which raises them so that the arch with its archivolt stays under the
+  -- | architrave; `Nothing` where the author raises them on none.
+  , arcadePlinth :: Maybe Minutes
   }
 
 -- | The arcade of an order whose columns stand as `mode` says.
@@ -268,6 +274,7 @@ mkOrder kind o =
   , pedestal: Nothing
   , arcadeNoPedestal: Nothing
   , arcadePedestal: Nothing
+  , arcadePlinth: Nothing
   }
   where
   entablatureHeight = o.architrave.height + o.frieze.height + o.cornice.height
@@ -315,3 +322,14 @@ withArcadePedestal a order = order { arcadePedestal = Just (mkArcade a) }
 
 mkArcade :: { openingWidth :: Int, openingHeight :: Int, pierWidth :: Int, archivoltWidth :: Int } -> Arcade
 mkArcade a = { openingWidth: Minutes a.openingWidth, openingHeight: Minutes a.openingHeight, pierWidth: Minutes a.pierWidth, archivoltWidth: Minutes a.archivoltWidth }
+
+-- | Give the order the plinth its columns stand on in an arcade without pedestals, in minutes.
+withArcadePlinth :: Int -> Order -> Order
+withArcadePlinth height order = order { arcadePlinth = Just (Minutes height) }
+
+-- | Height of the plinth under the columns of an order standing as `mode` says, if they frame an
+-- | `arcade`: only columns without pedestals stand on one.
+arcadePlinthHeight :: PedestalMode -> Boolean -> Order -> Minutes
+arcadePlinthHeight mode arcade order = case mode of
+  NoPedestal | arcade -> fromMaybe (Minutes 0) order.arcadePlinth
+  _ -> Minutes 0

@@ -10,7 +10,7 @@ module Architecture.Order.Chambers
 
 import Prelude
 
-import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder, withArcadeNoPedestal, withPedestal, withArcadePedestal)
+import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder, withArcadeNoPedestal, withArcadePlinth, withPedestal, withArcadePedestal)
 import Architecture.Superposition (continuousTaper)
 import Data.Maybe (Maybe(..))
 
@@ -33,6 +33,9 @@ import Data.Maybe (Maybe(..))
 -- pilaster ("just enough to receive the archivolt"). With pedestals that face is 5/8 of a
 -- diameter, and the archivolt is taken to fill it as well (37 1/2 minutes, rounded up); Ware
 -- does not give it.
+-- Columns of an arcade without pedestals "should always be raised on plinths"; in his arches
+-- the plinth is three quarters of a diameter, leaving as much between the crown of the arch
+-- and the architrave.
 treatise :: Treatise
 treatise =
   { tuscan: Just tuscan
@@ -47,7 +50,8 @@ treatise =
 -- Entablature in ten parts: architrave 3, frieze 3, cornice 4; capital one module.
 tuscan :: Order
 tuscan =
-  withArcadeNoPedestal { openingWidth: 225, openingHeight: 420, pierWidth: 120, archivoltWidth: 30 }
+  withArcadePlinth 45
+  $ withArcadeNoPedestal { openingWidth: 225, openingHeight: 420, pierWidth: 120, archivoltWidth: 30 }
   $ withPedestal { base: 28, die: 84, cornice: 14 } $ mkOrder Tuscan
   { columnHeight: 420
   , upperDiameter: 50
@@ -62,7 +66,8 @@ tuscan =
 -- after the theatre of Marcellus.
 doric :: Order
 doric =
-  withArcadeNoPedestal { openingWidth: 255, openingHeight: 480, pierWidth: 120, archivoltWidth: 30 }
+  withArcadePlinth 45
+  $ withArcadeNoPedestal { openingWidth: 255, openingHeight: 480, pierWidth: 120, archivoltWidth: 30 }
   $ withArcadePedestal { openingWidth: 315, openingHeight: 570, pierWidth: 135, archivoltWidth: 38 }
   $ withPedestal { base: 32, die: 96, cornice: 16 } $ mkOrder Doric
   { columnHeight: 480
@@ -78,7 +83,8 @@ doric =
 -- capital height is not given; Vignola's 2/3 of a module is used.
 ionic :: Order
 ionic =
-  withArcadeNoPedestal { openingWidth: 270, openingHeight: 540, pierWidth: 120, archivoltWidth: 30 }
+  withArcadePlinth 45
+  $ withArcadeNoPedestal { openingWidth: 270, openingHeight: 540, pierWidth: 120, archivoltWidth: 30 }
   $ withPedestal { base: 36, die: 108, cornice: 18 } $ mkOrder Ionic
   { columnHeight: 540
   , upperDiameter: 50
@@ -93,7 +99,8 @@ ionic =
 -- frieze 1 1/2, cornice 2.
 corynthian :: Order
 corynthian =
-  withArcadeNoPedestal { openingWidth: 280, openingHeight: 600, pierWidth: 120, archivoltWidth: 30 }
+  withArcadePlinth 45
+  $ withArcadeNoPedestal { openingWidth: 280, openingHeight: 600, pierWidth: 120, archivoltWidth: 30 }
   $ withPedestal { base: 40, die: 120, cornice: 20 } $ mkOrder Corynthian
   { columnHeight: 600
   , upperDiameter: 50
