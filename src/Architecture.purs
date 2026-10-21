@@ -20,20 +20,20 @@ import Prelude
 
 import Anchor (class Sized, HorizontalAnchor(..), PointAnchor(..), RectangularAnchor(..), VerticalAnchor(..), drawAnchored, size)
 import Architecture.Measure (Measure(..), SizeDeterminant)
-import Architecture.Order (Order, capitalWidth, Pedestal, PedestalMode(..), lowerMinute, minuteFromSize, pedestalHeight, sizeOf, upperMinute)
+import Architecture.Order (Arcade, Order, arcadeOf, capitalWidth, Pedestal, PedestalMode(..), lowerMinute, minuteFromSize, pedestalHeight, sizeOf, upperMinute)
 import Architecture.Superposition (SuperpositionRule)
 import Architecture.Order.Draw (drawColumn, drawEntablature, drawSpanningEntablature, drawSpanningPedestal)
 import Architecture.Rythm (Rythm, beatAt)
 import Data.Array as Array
 import Data.Foldable (foldl, for_, sum)
 import Data.Int as Int
-import Data.Number (pow)
+import Data.Number (cos, pi, pow, sin)
 import Data.Default (def)
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), isNothing, maybe)
 import Data.Tuple (Tuple(..))
 import Geometry (class HorizontalFigure, class RectangularFigure, class VerticalFigure)
 import Ortogonal (class RenderHorizontal, class RenderOrtogonal, class RenderPoint, class RenderVertical, drawBottomCentered, drawLeftCentered, drawRightCentered, drawTopCentered)
-import Renderer (Color(..), Fill(..), Opaqueness(..), Point(..), point, class Renderer, drawRectangle)
+import Renderer (Color(..), Fill(..), Opaqueness(..), Point(..), point, class Renderer, drawPolygon, drawRectangle)
 
 type SizedOrder = { order :: Order, size :: SizeDeterminant }
 
@@ -76,6 +76,8 @@ type WindowSize = { width :: Number, height :: Number }
 -- | what fills each bay (the first bay lies between the first and the second beat); every `Window`
 -- | has an opening of the size `window`, centered between the facing columns, its frame resting on
 -- | the line of the pedestals' tops (see `sillHeight`). The entablature (and a podium) span the whole row.
+-- | If `arcade` is set and the order has an arcade for columns standing as `pedestal` says, every
+-- | bay holds an arch instead of a window (see `drawArch`), and a podium is cut by the arches.
 newtype Portico = Portico {
   order :: Order,
   size :: SizeDeterminant,
@@ -87,7 +89,8 @@ newtype Portico = Portico {
   groupSpacing :: Number,
   pedestal :: PedestalMode,
   bays :: Rythm BayFill,
-  window :: WindowSize
+  window :: WindowSize,
+  arcade :: Boolean
 }
 
 -- | One row of columns of a `StackedCollonade`; drawn exactly like a `Portico`.
@@ -96,8 +99,8 @@ newtype Collonade = Collonade Portico
 -- | A size determinant of the given row of a `StackedCollonade` (0 is the bottom row).
 type RowSizeDeterminant = { row :: Int, size :: SizeDeterminant }
 
--- | An order of a `StackedCollonade` row and how its columns stand.
-type Storey = { order :: Order, pedestal :: PedestalMode }
+-- | An order of a `StackedCollonade` row, how its columns stand and whether they frame an arcade.
+type Storey = { order :: Order, pedestal :: PedestalMode, arcade :: Boolean }
 
 -- | Rows of columns stacked on each other, `orders` listed from bottom to top.
 -- | All rows share the beats and the `rythm` of the columns (see `Portico`), and the `bays` too, so the
@@ -284,7 +287,10 @@ drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
   let forBeats draw = for_ (porticoBeats p) \{ centerline, beat } -> draw (left + centerline) beat
   let frame = windowFrame portico.window
   let sill = ground - sillHeight order minute
-  when (portico.window.width > 0.0 && portico.window.height > 0.0) do
+  let arches = if portico.arcade then arcadeOf portico.pedestal order else Nothing
+  for_ arches \arcade -> for_ (porticoBays p) \bay ->
+    drawArch { left: left + bay.left, right: left + bay.right } ground minute arcade
+  when (isNothing arches && portico.window.width > 0.0 && portico.window.height > 0.0) do
     for_ (porticoBays p) \bay -> when (bay.fill == Window) do
       let x = left + (bay.left + bay.right) / 2.0
       let rectangle w h bottom' fill = drawRectangle (point (x - w / 2.0) (bottom' - h)) w h (Just def) (Just fill)
@@ -293,7 +299,7 @@ drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
   case porticoPedestal p of
     Nothing -> pure unit
     Just pedestal -> case portico.pedestal of
-      Podium -> drawSpanningPedestal (point (topLeft.x + width / 2.0) ground) (porticoSpan p) minute pedestal
+      Podium | isNothing arches -> drawSpanningPedestal (point (topLeft.x + width / 2.0) ground) (porticoSpan p) minute pedestal
       _ -> forBeats \x beat@(ColumnBeat n) ->
         when (n > 0) $ drawSpanningPedestal (point x ground) (groupSpan portico.groupSpacing beat) minute pedestal
   forBeats \x beat@(ColumnBeat n) -> do
@@ -301,6 +307,25 @@ drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
     when (n > 0) $ for_ (Array.range 0 (n - 1)) \j ->
       drawColumn (point (leftmost + Int.toNumber j * portico.groupSpacing) bottom) minute order
   drawSpanningEntablature (point (topLeft.x + width / 2.0) (bottom - sizeOf order.column.height minute)) (porticoSpan p) minute order
+
+-- | Draw an arch of the arcade centered between the facing columns at `left` and `right`, standing on
+-- | `ground`: an impost across the bay at the springing of the arch, a ninth of the opening high, an
+-- | archivolt a tenth of the opening wide (Chambers' smallest impost and archivolt), and the opening.
+-- | The columns and pedestals drawn over it cover the impost on the piers' axes.
+drawArch :: forall m. Monad m => Renderer m => { left :: Number, right :: Number } -> Number -> Number -> Arcade -> m Unit
+drawArch { left, right } ground minute arcade = do
+  let x = (left + right) / 2.0
+  let radius = sizeOf arcade.openingWidth minute / 2.0
+  let springing = ground - sizeOf arcade.openingHeight minute + radius
+  let archivolt = radius / 5.0
+  let impost = 2.0 * radius / 9.0
+  let segments = 48
+  let semicircle r = Array.range 0 segments <#> \i ->
+        let angle = pi * Int.toNumber i / Int.toNumber segments
+        in point (x - r * cos angle) (springing - r * sin angle)
+  drawRectangle (point left springing) (right - left) impost (Just def) (Just def)
+  drawPolygon (semicircle (radius + archivolt) <> Array.reverse (semicircle radius)) (Just def) (Just def)
+  drawPolygon ([ point (x - radius) ground ] <> semicircle radius <> [ point (x + radius) ground ]) (Just def) (Just windowOpening)
 
 instance (Monad m, Renderer m) => RenderPoint m Portico where
   drawCentered p = drawAnchored drawPorticoFromTopLeft (ACenter p)
@@ -329,13 +354,15 @@ rowMinutes :: StackedCollonade -> Array Number
 rowMinutes (StackedCollonade { orders: storeys, superposition, size: { row, size } }) = case Array.index storeys row of
   Nothing -> []
   Just anchor ->
-    let anchorMinute = minuteFromSize anchor.pedestal anchor.order size
+    let rows = storeys <#> \{ order, pedestal } -> { order, pedestal }
+        anchorMinute = minuteFromSize anchor.pedestal anchor.order size
         -- Each step carries the storey and minute just reached, and the joint to cross next.
-        propagate next nextJoint firstJoint = map (\{ minute } -> minute) <<< Array.scanl
+        propagate next nextJoint firstJoint first = map (\{ minute } -> minute) <<< Array.scanl
           (\{ storey: prev, minute, joint } storey -> { storey, minute: next joint prev minute storey, joint: nextJoint joint })
-          { storey: anchor, minute: anchorMinute, joint: firstJoint }
-        above = propagate (upperMinute superposition) (_ + 1) row (Array.drop (row + 1) storeys)
-        below = propagate (lowerMinute superposition) (_ - 1) (row - 1) (Array.reverse (Array.take row storeys))
+          { storey: first, minute: anchorMinute, joint: firstJoint }
+        start = { order: anchor.order, pedestal: anchor.pedestal }
+        above = propagate (upperMinute superposition) (_ + 1) row start (Array.drop (row + 1) rows)
+        below = propagate (lowerMinute superposition) (_ - 1) (row - 1) start (Array.reverse (Array.take row rows))
     in Array.reverse below <> [ anchorMinute ] <> above
 
 -- | Rows of the stack, bottom to top. Grouped columns of all rows are as far apart as the row
@@ -344,8 +371,8 @@ collonades :: StackedCollonade -> Array Collonade
 collonades stack@(StackedCollonade { orders, numOfColumns, bayWidth, bayMeasure, rythm, bays, windowWidth }) =
   let rows = Array.zip orders (rowMinutes stack)
       groupSpacing = foldl max 0.0 (map (\(Tuple { order } minute) -> minGroupSpacing order minute) rows)
-      porticos = rows <#> \(Tuple { order, pedestal } minute) ->
-        Portico { order, size: { measure: Minute, value: minute }, numOfColumns, bayWidth, bayMeasure, rythm, groupSpacing, pedestal, bays, window: { width: 0.0, height: 0.0 } }
+      porticos = rows <#> \(Tuple { order, pedestal, arcade } minute) ->
+        Portico { order, size: { measure: Minute, value: minute }, numOfColumns, bayWidth, bayMeasure, rythm, groupSpacing, pedestal, bays, window: { width: 0.0, height: 0.0 }, arcade }
   in Array.zipWith (\(Portico portico) window -> Collonade (Portico portico { window = window })) porticos (windowSizes windowWidth porticos)
 
 -- | The windows of the rows, bottom to top, all of the given width (Palladio, Chambers: the same in

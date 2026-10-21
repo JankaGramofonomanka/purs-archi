@@ -118,7 +118,7 @@ draw width height = do
   let columnsLeft = centerX - max (columnHalfWidth doric doricMinute) (max (columnHalfWidth ionic ionicMinute) (columnHalfWidth corynthian corynthianMinute))
   let numOfColumns = 4
   let bayWidth = 3.0 * sizeOf doric.column.lowerDiameter doricMinute
-  let portico order minute = Portico { order, size: { measure: Minute, value: minute }, numOfColumns, bayWidth, bayMeasure: BetweenBeats, rythm: ColumnBeat 1 <$ pulse, groupSpacing: minGroupSpacing order minute, pedestal: NoPedestal, bays: Wall <$ pulse, window: { width: 0.0, height: 0.0 } }
+  let portico order minute = Portico { order, size: { measure: Minute, value: minute }, numOfColumns, bayWidth, bayMeasure: BetweenBeats, rythm: ColumnBeat 1 <$ pulse, groupSpacing: minGroupSpacing order minute, pedestal: NoPedestal, bays: Wall <$ pulse, window: { width: 0.0, height: 0.0 }, arcade: false }
   -- distance from the outermost column centerline to the portico's edge
   let overhang p = ((size p).width - Int.toNumber (numOfColumns - 1) * bayWidth) / 2.0
   let doricPortico = portico doric doricMinute
@@ -133,7 +133,7 @@ draw width height = do
 
   --stacked collonade, same orders and minutes as the porticos, 50px to their left
   let stackedCollonade = StackedCollonade
-        { orders: [ doric, ionic, corynthian ] <#> \order -> { order, pedestal: NoPedestal }
+        { orders: [ doric, ionic, corynthian ] <#> \order -> { order, pedestal: NoPedestal, arcade: false }
         , superposition: continuousTaper
         , size: { row: 1, size: { measure: Minute, value: ionicMinute } }
         , numOfColumns: 5

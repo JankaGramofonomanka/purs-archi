@@ -411,7 +411,8 @@ body {
   outline-offset: 1px;
 }
 
-.action-bar .pedestal-toggle {
+.action-bar .pedestal-toggle,
+.action-bar .arcade-toggle {
   display: flex;
   flex: 0 0 38px;
   align-items: center;
@@ -420,10 +421,26 @@ body {
   padding: 0;
 }
 
-.pedestal-toggle svg {
+.pedestal-toggle svg,
+.arcade-toggle svg {
   width: 24px;
   height: 20px;
   fill: currentColor;
+}
+
+.action-bar .arcade-toggle[aria-pressed="false"]:not(:disabled) {
+  background: transparent;
+  color: #52617d;
+}
+
+.action-bar .arcade-toggle[aria-pressed="false"]:not(:disabled):hover {
+  background: #f5f7fb;
+  color: #4056c4;
+}
+
+.action-bar input:disabled {
+  background: #f5f7fb;
+  color: #8a97b3;
 }
 
 .action-bar .order-remove {

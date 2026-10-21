@@ -145,6 +145,15 @@ const pedestalIcon = mode => {
   return svg;
 };
 
+// Icon of the arcade switch: an arch between two piers on the ground line.
+const arcadeIcon = () => {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 20");
+  svg.setAttribute("aria-hidden", "true");
+  svg.innerHTML = '<path d="M2 2h20v15.5h-5V10a5 5 0 0 0-10 0v7.5H2zM1 17.5h22V19H1z"/>';
+  return svg;
+};
+
 const maxColumns = 40;
 const minBayWidth = 1;
 const maxBayWidth = 12;
@@ -204,10 +213,14 @@ const bayIcon = fill => {
 const columnCount = n => n === 0 ? "no column" : n === 1 ? "1 column" : `${n} columns`;
 
 // Renders the collonade form from `initial` and reports every edit to `onChange`. Each of
-// `treatises` lists the keys of the orders it defines and of those it gives a pedestal, and says
-// whether it `stacks` orders (gives a rule for placing one over another); the form only offers those. Each storey of `orders` is `{ order, pedestal }`, the pedestal being
-// a key of `pedestalNames`.
-const setupCollonadeForm = (treatises, initial, onChange) => {
+// `treatises` lists the keys of the orders it defines, of those it gives a pedestal, and of those
+// it gives an arcade without (`arcades`) and with (`pedestalArcades`) pedestals, and says whether
+// it `stacks` orders (gives a rule for placing one over another); the form only offers those.
+// Each storey of `orders` is `{ order, pedestal, arcade }`, the pedestal being a key of
+// `pedestalNames` and `arcade` whether its columns frame arches. `arcadeBayWidth(form)` says
+// whether any storey does (`arcades`) and then the bay width the arches set (`bayWidth`), which
+// replaces the one typed in.
+const setupCollonadeForm = (treatises, arcadeBayWidth, initial, onChange) => {
   const treatiseGroup = document.querySelector("#collonade-treatises");
   const orderList = document.querySelector("#collonade-orders");
   const addButton = document.querySelector("#collonade-add-order");
@@ -269,7 +282,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     scale: initial.scale,
     offset: { ...initial.offset }
   };
-  const report = () => onChange({
+  const snapshot = () => ({
     treatise: form.treatise,
     orders: form.orders.map(storey => ({ ...storey })),
     numOfColumns: form.numOfColumns,
@@ -280,7 +293,13 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     windowWidth: form.windowWidth,
     scale: form.scale,
     offset: { ...form.offset }
-  })();
+  });
+  const report = () => onChange(snapshot())();
+  const arcadeBay = () => arcadeBayWidth(snapshot());
+  // The bay width the drawing uses: the arches' while any storey frames an arcade.
+  const effectiveBayWidth = () => arcadeBay().bayWidth;
+  const hasArcade = (treatise, { order, pedestal }) =>
+    (pedestal === "none" ? treatise.arcades : treatise.pedestalArcades).includes(order);
 
   const currentTreatise = () => {
     const treatise = treatises.find(({ key }) => key === form.treatise);
@@ -310,6 +329,12 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
       }
       if (missingPedestals.length > 0) {
         reasons.push(`gives no pedestal for the ${names(missingPedestals)} order`);
+      }
+      const missingArcades = form.orders
+        .filter(storey => storey.arcade && !hasArcade(treatise, storey))
+        .map(({ order }) => order);
+      if (missingArcades.length > 0) {
+        reasons.push(`gives no arcade for the ${names(missingArcades)} order as it stands`);
       }
       if (form.orders.length > 1 && !treatise.stacks) {
         reasons.push("gives no rule for stacking orders");
@@ -347,6 +372,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
         if (!treatise.pedestals.includes(storey.order)) {
           storey.pedestal = "none";
         }
+        storey.arcade &&= hasArcade(treatise, storey);
         render();
         report();
       });
@@ -381,12 +407,30 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
       );
       pedestalButton.addEventListener("click", () => {
         storey.pedestal = pedestalModes[(pedestalModes.indexOf(storey.pedestal) + 1) % pedestalModes.length];
+        storey.arcade &&= hasArcade(treatise, storey);
         render();
         report();
         orderList.querySelectorAll(".pedestal-toggle")[index]?.focus();
       });
 
-      item.append(select, pedestalButton, remove);
+      const arcadeButton = document.createElement("button");
+      arcadeButton.type = "button";
+      arcadeButton.className = "arcade-toggle";
+      arcadeButton.append(arcadeIcon());
+      arcadeButton.setAttribute("aria-pressed", String(storey.arcade));
+      arcadeButton.setAttribute("aria-label", `Arcade of order ${index + 1} from the bottom`);
+      arcadeButton.disabled = !hasArcade(treatise, storey);
+      arcadeButton.title = arcadeButton.disabled
+        ? `${treatise.name} gives no arcade for the ${orderNames[order]} order ${pedestal === "none" ? "without" : "with"} pedestals`
+        : storey.arcade ? "Arcade (click for columns only)" : "Columns only (click for an arcade)";
+      arcadeButton.addEventListener("click", () => {
+        storey.arcade = !storey.arcade;
+        render();
+        report();
+        orderList.querySelectorAll(".arcade-toggle")[index]?.focus();
+      });
+
+      item.append(select, pedestalButton, arcadeButton, remove);
       return item;
     }));
   };
@@ -395,8 +439,27 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   const nextBayMeasure = () =>
     bayMeasureKeys[(bayMeasureKeys.indexOf(form.bayMeasure) + 1) % bayMeasureKeys.length];
   const renderBayMeasures = () => {
-    bayMeasureButton.textContent = bayMeasureNames[form.bayMeasure];
-    bayMeasureButton.title = `Click for ${bayMeasureNames[nextBayMeasure()].toLowerCase()}`;
+    // The arches set the distance between axes.
+    const arcades = arcadeBay().arcades;
+    bayMeasureButton.disabled = arcades;
+    bayMeasureButton.textContent = bayMeasureNames[arcades ? "beats" : form.bayMeasure];
+    bayMeasureButton.title = arcades
+      ? "Set by the arches"
+      : `Click for ${bayMeasureNames[nextBayMeasure()].toLowerCase()}`;
+  };
+
+  // While a storey frames an arcade the bay width is the arches' and cannot be typed in; the
+  // window width is kept within it.
+  const renderBayWidth = () => {
+    const { arcades, bayWidth } = arcadeBay();
+    bayWidthInput.disabled = arcades;
+    bayWidthInput.title = arcades ? "Set by the arches" : "";
+    bayWidthInput.value = String(arcades ? Math.round(bayWidth * 1000) / 1000 : form.bayWidth);
+    windowWidthInput.max = String(maxWindowWidth(bayWidth));
+    if (form.windowWidth > maxWindowWidth(bayWidth)) {
+      form.windowWidth = maxWindowWidth(bayWidth);
+      windowWidthInput.value = String(form.windowWidth);
+    }
   };
   bayMeasureButton.addEventListener("click", () => {
     form.bayMeasure = nextBayMeasure();
@@ -748,6 +811,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     renderOrders();
     renderAddButton();
     renderBayMeasures();
+    renderBayWidth();
     renderSequence();
     sequenceRows.forEach(renderSelection);
     sequenceRows.forEach(renderMirror);
@@ -759,14 +823,13 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     const available = currentTreatise().orders;
     const last = form.orders[form.orders.length - 1].order;
     const order = available.find(key => available.indexOf(key) > available.indexOf(last)) ?? last;
-    form.orders.push({ order, pedestal: "none" });
+    form.orders.push({ order, pedestal: "none", arcade: false });
     render();
     report();
   });
 
   bayWidthInput.min = String(minBayWidth);
   bayWidthInput.max = String(maxBayWidth);
-  bayWidthInput.value = String(form.bayWidth);
   bayWidthInput.addEventListener("input", () => {
     const value = Number(bayWidthInput.value);
     if (
@@ -790,7 +853,6 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   });
 
   windowWidthInput.min = String(minWindowWidth);
-  windowWidthInput.max = String(maxWindowWidth(form.bayWidth));
   windowWidthInput.value = String(form.windowWidth);
   windowWidthInput.addEventListener("input", () => {
     const value = Number(windowWidthInput.value);
@@ -798,7 +860,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
       windowWidthInput.value !== "" &&
       Number.isFinite(value) &&
       value >= minWindowWidth &&
-      value <= maxWindowWidth(form.bayWidth) &&
+      value <= maxWindowWidth(effectiveBayWidth()) &&
       value !== form.windowWidth
     ) {
       form.windowWidth = value;
@@ -812,8 +874,8 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   render();
 };
 
-export const setupRoutes = onRouteChange => onAction => treatises => initialCollonade => onCollonadeChange => () => {
-  setupCollonadeForm(treatises, initialCollonade, onCollonadeChange);
+export const setupRoutes = onRouteChange => onAction => treatises => arcadeBayWidth => initialCollonade => onCollonadeChange => () => {
+  setupCollonadeForm(treatises, arcadeBayWidth, initialCollonade, onCollonadeChange);
   updateRoute(onRouteChange);
   window.addEventListener("popstate", () => updateRoute(onRouteChange));
   window.addEventListener("resize", () => updateRoute(onRouteChange));

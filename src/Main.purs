@@ -2,19 +2,20 @@ module Main where
 
 import Prelude
 
-import Control.Monad (when)
 import Control.Monad.State (runStateT)
 import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
-import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
+import Data.Either (Either(..), either)
+import Data.Foldable (foldl)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import Architecture (BayFill(..), BayMeasure(..), ColumnBeat(..), Storey)
-import Architecture.Order (OrderKind(..), PedestalMode(..), Treatise, treatiseOrder)
-import Architecture.Superposition (continuousTaper)
+import Architecture (BayFill(..), BayMeasure(..), ColumnBeat(..))
+import Architecture.Order (Order, OrderKind(..), PedestalMode(..), Treatise, arcadeOf, minuteFromLowerDiameter, sizeOf, treatiseOrder, upperMinute)
+import Architecture.Superposition (SuperpositionRule, continuousTaper)
 import Architecture.Order.Alberti as Alberti
 import Architecture.Order.Chambers as Chambers
 import Architecture.Order.Gibbs as Gibbs
@@ -46,16 +47,17 @@ type State =
   }
 
 -- | The collonade settings as exchanged with the page's form: the key of a treatise from
--- | `treatises`, orders as keys from `orderKinds` with a key from `pedestalModes` each, and
--- | the bay width in lower diameters with a key from `bayMeasures` saying what it measures. `rythm` is the number
+-- | `treatises`, orders as keys from `orderKinds` with a key from `pedestalModes` each and whether their
+-- | columns frame an arcade, and the bay width in lower diameters with a key from `bayMeasures` saying what it measures. `rythm` is the number
 -- | of columns standing on each of the `numOfColumns` beats (beats, in fact), and `bays` what fills each of the
 -- | bays between them, left to right, as keys from `bayFills`, so there is one bay fewer than beats. `windowWidth`
 -- | is the width of the windows' openings in lower diameters; with their architraves (a sixth of the opening
 -- | on each side) they are at most as wide as the bay width less one diameter. `scale` is the lower diameter of the
 -- | bottom row's columns in pixels and `offset` how far the drawing is moved from the center, in pixels.
+-- | While a storey frames an arcade, `bayWidth` and `bayMeasure` are not used: see `arcadeBayWidth`.
 type CollonadeForm =
   { treatise :: String
-  , orders :: Array { order :: String, pedestal :: String }
+  , orders :: Array FormStorey
   , numOfColumns :: Int
   , bayWidth :: Number
   , bayMeasure :: String
@@ -66,9 +68,20 @@ type CollonadeForm =
   , offset :: { x :: Number, y :: Number }
   }
 
--- | A treatise as offered by the page's form, with the keys of the orders it defines and of
--- | those it gives a pedestal, and whether it gives a rule for stacking orders.
-type TreatiseOption = { key :: String, name :: String, orders :: Array String, pedestals :: Array String, stacks :: Boolean }
+type FormStorey = { order :: String, pedestal :: String, arcade :: Boolean }
+
+-- | A treatise as offered by the page's form, with the keys of the orders it defines, of those
+-- | it gives a pedestal, and of those it gives an arcade without and with pedestals, and whether
+-- | it gives a rule for stacking orders.
+type TreatiseOption =
+  { key :: String
+  , name :: String
+  , orders :: Array String
+  , pedestals :: Array String
+  , arcades :: Array String
+  , pedestalArcades :: Array String
+  , stacks :: Boolean
+  }
 
 treatises :: Array { key :: String, name :: String, treatise :: Treatise }
 treatises =
@@ -116,11 +129,13 @@ treatiseOptions = treatises <#> \{ key, name, treatise } ->
   , name
   , orders: _.key <$> Array.filter (\{ kind } -> isJust (treatiseOrder treatise kind)) orderKinds
   , pedestals: _.key <$> Array.filter (\{ kind } -> isJust (treatiseOrder treatise kind >>= _.pedestal)) orderKinds
+  , arcades: _.key <$> Array.filter (\{ kind } -> isJust (treatiseOrder treatise kind >>= _.arcadeNoPedestal)) orderKinds
+  , pedestalArcades: _.key <$> Array.filter (\{ kind } -> isJust (treatiseOrder treatise kind >>= _.arcadePedestal)) orderKinds
   , stacks: isJust treatise.superposition
   }
 
 initialForm :: CollonadeForm
-initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none" }, numOfColumns: 5, bayWidth: 3.0, bayMeasure: "groups", rythm: Array.replicate 5 1, bays: Array.replicate 4 "window", windowWidth: 1.0, scale: 10.0, offset: { x: 0.0, y: 0.0 } }
+initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none", arcade: false }, numOfColumns: 5, bayWidth: 3.0, bayMeasure: "groups", rythm: Array.replicate 5 1, bays: Array.replicate 4 "window", windowWidth: 1.0, scale: 10.0, offset: { x: 0.0, y: 0.0 } }
 
 main :: Effect Unit
 main = do
@@ -130,6 +145,7 @@ main = do
     (drawRoute state)
     (handleAction state StepAlgorithm)
     treatiseOptions
+    arcadeBayWidthOfForm
     initialForm
     (\form -> fromForm form >>= SetCollonade >>> handleAction state)
 
@@ -195,42 +211,85 @@ renderDemoRoute route = case route of
   "/demo/purescript-drawing" -> PureScriptDrawingDemo.draw
   _ -> pure unit
 
+-- | The storeys of the form, as the treatise it names proportions them, and the rule for stacking them.
+type FormStoreys =
+  { storeys :: Array { order :: Order, pedestal :: PedestalMode, arcade :: Boolean }
+  , superposition :: SuperpositionRule
+  }
+
+formStoreys :: CollonadeForm -> Either String FormStoreys
+formStoreys form = do
+  { name, treatise } <- case Array.find (\t -> t.key == form.treatise) treatises of
+    Nothing -> Left ("Unknown treatise: " <> form.treatise)
+    Just found -> Right found
+  let
+    storeyFromForm { order: key, pedestal: pedestalKey, arcade } = do
+      order <- case Array.find (\o -> o.key == key) orderKinds of
+        Nothing -> Left ("Unknown order: " <> key)
+        Just { kind } -> case treatiseOrder treatise kind of
+          Nothing -> Left (name <> " does not define the " <> key <> " order")
+          Just order -> Right order
+      pedestal <- case Array.find (\p -> p.key == pedestalKey) pedestalModes of
+        Nothing -> Left ("Unknown pedestal mode: " <> pedestalKey)
+        Just { mode } -> Right mode
+      when (pedestal /= NoPedestal && isNothing order.pedestal) do
+        Left (name <> " gives no pedestal for the " <> key <> " order")
+      when (arcade && isNothing (arcadeOf pedestal order)) do
+        Left (name <> " gives no arcade for the " <> key <> " order " <> if pedestal == NoPedestal then "without pedestals" else "with pedestals")
+      pure { order, pedestal, arcade }
+  storeys <- traverse storeyFromForm form.orders
+  superposition <- case treatise.superposition of
+    Just rule -> Right rule
+    Nothing
+      | Array.length storeys > 1 -> Left (name <> " gives no rule for stacking orders")
+      -- A single storey is never related to another, so any rule will do.
+      | otherwise -> Right continuousTaper
+  pure { storeys, superposition }
+
+-- | The bay width, in lower diameters of the bottom row's columns, that follows from the arches:
+-- | the distance between the axes of the lowest storey that frames an arcade (its opening and
+-- | a pier), which "gives the rule to the other" storeys (Gibbs). `Nothing` where no storey does.
+arcadeBayWidth :: FormStoreys -> Maybe Number
+arcadeBayWidth { storeys, superposition } = do
+  { index, storey } <- Array.find (_.storey.arcade) (Array.mapWithIndex { index: _, storey: _ } storeys)
+  arcade <- arcadeOf storey.pedestal storey.order
+  minute <- Array.index rowMinutes index
+  pure (sizeOf arcade.openingWidth minute + sizeOf arcade.pierWidth minute)
+  where
+  rows = storeys <#> \{ order, pedestal } -> { order, pedestal }
+  -- The minute of each storey, in lower diameters of the bottom row's columns.
+  rowMinutes = foldl nextMinute [] (Array.mapWithIndex Tuple rows)
+  nextMinute minutes (Tuple index row) = Array.snoc minutes $
+    case Array.last minutes, Array.index rows (index - 1) of
+      Just minute, Just lower -> upperMinute superposition (index - 1) lower minute row
+      _, _ -> minuteFromLowerDiameter row.order 1.0
+
+-- | `arcadeBayWidth` for the page's form, which greys out its bay width while `arcades` is set
+-- | and shows `bayWidth` instead. A form that is not valid has no arcades.
+arcadeBayWidthOfForm :: CollonadeForm -> { arcades :: Boolean, bayWidth :: Number }
+arcadeBayWidthOfForm form =
+  maybe { arcades: false, bayWidth: form.bayWidth } { arcades: true, bayWidth: _ }
+    (either (const Nothing) arcadeBayWidth (formStoreys form))
+
 fromForm :: CollonadeForm -> Effect Collonade.Config
 fromForm form = do
+  parsed <- either throw pure (formStoreys form)
+  let arcadeBay = arcadeBayWidth parsed
+  let bayWidth = fromMaybe form.bayWidth arcadeBay
+  when (Array.length form.orders < 1) do
+    throw "A collonade needs at least one order"
   when (form.numOfColumns < 1) do
     throw "A collonade needs at least one column"
-  when (form.bayWidth <= 0.0) do
+  when (bayWidth <= 0.0) do
     throw "The bay width must be positive"
   when (form.windowWidth < 0.0) do
     throw "The window width cannot be negative"
-  when (form.windowWidth * 4.0 / 3.0 > form.bayWidth - 1.0) do
+  when (form.windowWidth * 4.0 / 3.0 > bayWidth - 1.0) do
     throw "A window with its architrave cannot be wider than the bay width less one diameter"
   when (form.scale <= 0.0) do
     throw "The scale of the drawing must be positive"
-  { name, treatise } <- case Array.find (\t -> t.key == form.treatise) treatises of
-    Nothing -> throw ("Unknown treatise: " <> form.treatise)
-    Just found -> pure found
-  let
-    storeyFromForm :: { order :: String, pedestal :: String } -> Effect Storey
-    storeyFromForm { order: key, pedestal: pedestalKey } = do
-      order <- case Array.find (\o -> o.key == key) orderKinds of
-        Nothing -> throw ("Unknown order: " <> key)
-        Just { kind } -> case treatiseOrder treatise kind of
-          Nothing -> throw (name <> " does not define the " <> key <> " order")
-          Just order -> pure order
-      pedestal <- case Array.find (\p -> p.key == pedestalKey) pedestalModes of
-        Nothing -> throw ("Unknown pedestal mode: " <> pedestalKey)
-        Just { mode } -> pure mode
-      when (pedestal /= NoPedestal && isNothing order.pedestal) do
-        throw (name <> " gives no pedestal for the " <> key <> " order")
-      pure { order, pedestal }
-  orders <- traverse storeyFromForm form.orders
-  superposition <- case treatise.superposition of
-    Just rule -> pure rule
-    Nothing
-      | Array.length orders > 1 -> throw (name <> " gives no rule for stacking orders")
-      -- A single storey is never related to another, so any rule will do.
-      | otherwise -> pure continuousTaper
+  let orders = parsed.storeys
+  let superposition = parsed.superposition
   when (Array.length form.rythm /= form.numOfColumns) do
     throw "There must be as many axes as columns"
   when (Array.length form.bays /= form.numOfColumns - 1) do
@@ -247,15 +306,18 @@ fromForm form = do
     form.bays
   -- A single beat has no bays, so what stands for them then is never looked at.
   let bays = Rythm.rythm (fromMaybe (NonEmptyArray.singleton Wall) (NonEmptyArray.fromArray bayFillMotif))
-  bayMeasure <- case Array.find (\m -> m.key == form.bayMeasure) bayMeasures of
+  formBayMeasure <- case Array.find (\m -> m.key == form.bayMeasure) bayMeasures of
     Nothing -> throw ("Unknown bay measure: " <> form.bayMeasure)
     Just { measure } -> pure measure
-  pure { orders, superposition, numOfColumns: form.numOfColumns, bayWidth: form.bayWidth, bayMeasure, rythm, bays, windowWidth: form.windowWidth, lowestLowerDiameter: form.scale, offset: form.offset }
+  -- The arches set the distance between axes.
+  let bayMeasure = if isJust arcadeBay then BetweenBeats else formBayMeasure
+  pure { orders, superposition, numOfColumns: form.numOfColumns, bayWidth, bayMeasure, rythm, bays, windowWidth: form.windowWidth, lowestLowerDiameter: form.scale, offset: form.offset }
 
 foreign import setupRoutes
   :: (String -> Number -> Number -> Effect Unit)
   -> Effect Unit
   -> Array TreatiseOption
+  -> (CollonadeForm -> { arcades :: Boolean, bayWidth :: Number })
   -> CollonadeForm
   -> (CollonadeForm -> Effect Unit)
   -> Effect Unit
