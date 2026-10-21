@@ -10,7 +10,7 @@ module Architecture.Order.Scamozzi
 
 import Prelude
 
-import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder, mkPedestal, withArcadeNoPedestal, withPedestal, withArcadePedestal)
+import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder, mkPedestal, withArcadeNoPedestal, withPedestal, withArcadePedestal, withArcadePlinth)
 import Architecture.Superposition (continuousTaper)
 import Data.Maybe (Maybe(..))
 
@@ -41,6 +41,10 @@ import Data.Maybe (Maybe(..))
 -- the Arch must be one tenth of the breadth"): 26, 27 1/4, 24 1/4, 25 and 28 minutes without
 -- pedestals (Tuscan, Doric, Ionic, Corinthian, Roman) and 29, 34, 30 1/2, 30 and 33 with them,
 -- quarter minutes rounded down and the half up.
+-- Without pedestals the columns stand on "one gross Base under of half a Model high", which the
+-- Mirror adds to every gallery and arch without pedestals "to make the Work appear the
+-- statelier". With it the key-piece of every arch reaches the architrave, as it does with
+-- pedestals.
 treatise :: Treatise
 treatise =
   { tuscan: Just tuscan
@@ -59,7 +63,8 @@ treatise =
 -- up). Piers of 34-minute strips without pedestals and 40-minute ones with them.
 tuscan :: Order
 tuscan =
-  withArcadeNoPedestal { openingWidth: 232, openingHeight: 440, pierWidth: 128, archivoltWidth: 26 }
+  withArcadePlinth 30
+  $ withArcadeNoPedestal { openingWidth: 232, openingHeight: 440, pierWidth: 128, archivoltWidth: 26 }
   $ withArcadePedestal { openingWidth: 260, openingHeight: 513, pierWidth: 140, archivoltWidth: 29 }
   $ withPedestal { base: 30, die: 60, cornice: 23 } $ mkOrder Tuscan
   { columnHeight: 450
@@ -78,7 +83,8 @@ tuscan =
 -- circle; the axes are six triglyphs (7 1/2 diameters) apart.
 doric :: Order
 doric =
-  withArcadeNoPedestal { openingWidth: 251, openingHeight: 500, pierWidth: 124, archivoltWidth: 27 }
+  withArcadePlinth 30
+  $ withArcadeNoPedestal { openingWidth: 251, openingHeight: 500, pierWidth: 124, archivoltWidth: 27 }
   $ withArcadePedestal { openingWidth: 315, openingHeight: 596, pierWidth: 135, archivoltWidth: 34 }
   $ withPedestal { base: 45, die: 69, cornice: 22 } $ mkOrder Doric
   { columnHeight: 510
@@ -97,7 +103,8 @@ doric =
 -- 50 minutes, 7 diameters 35 minutes and 15, the axes twelve modillions (7 diameters) apart.
 ionic :: Order
 ionic =
-  withArcadeNoPedestal { openingWidth: 230, openingHeight: 505, pierWidth: 120, archivoltWidth: 24 }
+  withArcadePlinth 30
+  $ withArcadeNoPedestal { openingWidth: 230, openingHeight: 505, pierWidth: 120, archivoltWidth: 24 }
   $ withArcadePedestal { openingWidth: 290, openingHeight: 615, pierWidth: 130, archivoltWidth: 31 }
   $ withPedestal { base: 45, die: 83, cornice: 22 } $ mkOrder Ionic
   { columnHeight: 525
@@ -116,7 +123,8 @@ ionic =
 -- 9 1/2 diameters and 20 minutes, the axes fourteen modillions (7 diameters) apart.
 corynthian :: Order
 corynthian =
-  withArcadeNoPedestal { openingWidth: 248, openingHeight: 580, pierWidth: 112, archivoltWidth: 25 }
+  withArcadePlinth 30
+  $ withArcadeNoPedestal { openingWidth: 248, openingHeight: 580, pierWidth: 112, archivoltWidth: 25 }
   $ withArcadePedestal { openingWidth: 300, openingHeight: 740, pierWidth: 120, archivoltWidth: 30 }
   $ withPedestal { base: 45, die: 133, cornice: 22 } $ mkOrder Corynthian
   { columnHeight: 600
@@ -136,7 +144,8 @@ corynthian =
 -- apart.
 composite :: Order
 composite =
-  withArcadeNoPedestal { openingWidth: 274, openingHeight: 565, pierWidth: 116, archivoltWidth: 28 }
+  withArcadePlinth 30
+  $ withArcadeNoPedestal { openingWidth: 274, openingHeight: 565, pierWidth: 116, archivoltWidth: 28 }
   $ withArcadePedestal { openingWidth: 330, openingHeight: 705, pierWidth: 125, archivoltWidth: 33 }
   $ withPedestalOf84 $ mkOrder Composite
   { columnHeight: 585
