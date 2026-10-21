@@ -212,6 +212,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
   const orderList = document.querySelector("#collonade-orders");
   const addButton = document.querySelector("#collonade-add-order");
   const addColumnButton = document.querySelector("#collonade-add-column");
+  const addColumnLeftButton = document.querySelector("#collonade-add-column-left");
   const columnCountLabel = document.querySelector("#collonade-column-count");
   const bayCountLabel = document.querySelector("#collonade-bay-count");
   const bayWidthInput = document.querySelector("#collonade-bay-width");
@@ -238,6 +239,7 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     !(orderList instanceof HTMLOListElement) ||
     !(addButton instanceof HTMLButtonElement) ||
     !(addColumnButton instanceof HTMLButtonElement) ||
+    !(addColumnLeftButton instanceof HTMLButtonElement) ||
     !(columnCountLabel instanceof HTMLElement) ||
     !(bayCountLabel instanceof HTMLElement) ||
     !(bayWidthInput instanceof HTMLInputElement) ||
@@ -477,6 +479,17 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     form.bays.push("window");
     form.numOfColumns = form.rythm.length;
   };
+  // The same at the left end, with the bay after the new column; the selections stay on their cells.
+  const addColumnLeft = () => {
+    form.rythm.unshift(1);
+    form.bays.unshift("window");
+    form.numOfColumns = form.rythm.length;
+    for (const row of sequenceRows) {
+      if (row.selection !== null) {
+        row.selection = { anchor: row.selection.anchor + 1, focus: row.selection.focus + 1 };
+      }
+    }
+  };
   const removeBeat = index => {
     const bay = Math.min(index, form.bays.length - 1);
     form.rythm.splice(index, 1);
@@ -496,6 +509,12 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     const end = range.end >= index ? range.end - 1 : range.end;
     row.selection = end < start ? null : { anchor: start, focus: end };
   };
+  addColumnLeftButton.addEventListener("click", () => {
+    addColumnLeft();
+    render();
+    report();
+    sequenceRows[0].list.parentElement?.scrollTo({ left: 0 });
+  });
   addColumnButton.addEventListener("click", () => {
     addColumn();
     render();
@@ -510,10 +529,15 @@ const setupCollonadeForm = (treatises, initial, onChange) => {
     bayCountLabel.textContent = `${bays} ${bays === 1 ? "bay" : "bays"}`;
   };
   const renderAddColumn = () => {
-    addColumnButton.disabled = form.rythm.length >= maxColumns;
-    addColumnButton.title = addColumnButton.disabled
+    const full = form.rythm.length >= maxColumns;
+    addColumnButton.disabled = full;
+    addColumnLeftButton.disabled = full;
+    addColumnButton.title = full
       ? `A collonade can have at most ${maxColumns} columns`
-      : "Add a column at the right end, with a bay before it";
+      : "Add axis to the right";
+    addColumnLeftButton.title = full
+      ? addColumnButton.title
+      : "Add axis to the left";
   };
 
   // Each sequence has its own selection: a run of cells chosen by dragging along the strip next to them,

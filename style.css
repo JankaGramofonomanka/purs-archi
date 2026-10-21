@@ -300,9 +300,19 @@ body {
 }
 
 .action-bar .add-column {
+  display: flex;
   flex: 0 0 auto;
-  width: 96px;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
   margin: 4px 0;
+  padding: 0;
+}
+
+.add-column svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
 }
 
 .selection-strip:hover {
