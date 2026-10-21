@@ -86,12 +86,13 @@ data PedestalMode = NoPedestal | Pedestals | Podium
 
 -- | The arched opening between two piers that an order decorates: the opening's width, its
 -- | height from the bottom of the order (with the pedestal, if any) to the crown of the arch,
--- | and the width of the pier between two openings. The axes of the columns are
--- | `openingWidth + pierWidth` apart.
+-- | the width of the pier between two openings, and the width of the archivolt, the band of
+-- | mouldings around the arch. The axes of the columns are `openingWidth + pierWidth` apart.
 type Arcade =
   { openingWidth :: Minutes
   , openingHeight :: Minutes
   , pierWidth :: Minutes
+  , archivoltWidth :: Minutes
   }
 
 derive instance Eq PedestalMode
@@ -305,12 +306,12 @@ withPedestal p order = order
   Minutes dieWidth = order.base.width
 
 -- | Give the order the arcade of its columns standing without pedestals, in minutes.
-withArcadeNoPedestal :: { openingWidth :: Int, openingHeight :: Int, pierWidth :: Int } -> Order -> Order
+withArcadeNoPedestal :: { openingWidth :: Int, openingHeight :: Int, pierWidth :: Int, archivoltWidth :: Int } -> Order -> Order
 withArcadeNoPedestal a order = order { arcadeNoPedestal = Just (mkArcade a) }
 
 -- | Give the order the arcade of its columns standing on pedestals, in minutes.
-withArcadePedestal :: { openingWidth :: Int, openingHeight :: Int, pierWidth :: Int } -> Order -> Order
+withArcadePedestal :: { openingWidth :: Int, openingHeight :: Int, pierWidth :: Int, archivoltWidth :: Int } -> Order -> Order
 withArcadePedestal a order = order { arcadePedestal = Just (mkArcade a) }
 
-mkArcade :: { openingWidth :: Int, openingHeight :: Int, pierWidth :: Int } -> Arcade
-mkArcade a = { openingWidth: Minutes a.openingWidth, openingHeight: Minutes a.openingHeight, pierWidth: Minutes a.pierWidth }
+mkArcade :: { openingWidth :: Int, openingHeight :: Int, pierWidth :: Int, archivoltWidth :: Int } -> Arcade
+mkArcade a = { openingWidth: Minutes a.openingWidth, openingHeight: Minutes a.openingHeight, pierWidth: Minutes a.pierWidth, archivoltWidth: Minutes a.archivoltWidth }

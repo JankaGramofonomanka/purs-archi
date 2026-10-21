@@ -39,6 +39,8 @@ treatise =
 -- arches are two squares and a half high under the vault". For these two the piers are
 -- Chambers' measures of Palladio's plates: "nearly three modules and three quarters" and
 -- "four and four-fifths" (of half a diameter); the half minute is rounded up.
+-- Palladio's text gives no archivolt (Chambers finds those of his plates "slender"); the
+-- archivolts here are BORROWED from Chambers' rule, a tenth of the opening, rounded.
 -- Widths and depths after Palladio, Quattro Libri, Book I (Ware's 1738 translation):
 -- bases and capitals project a stated fraction of the lower diameter, the frieze is
 -- plumb with the top of the shaft, and the architrave's crowning member and the
@@ -103,7 +105,7 @@ doric =
 -- astragal, rise above the shaft.
 ionic :: Order
 ionic =
-  withArcadePedestal { openingWidth: 325, openingHeight: 650, pierWidth: 108 }
+  withArcadePedestal { openingWidth: 325, openingHeight: 650, pierWidth: 108, archivoltWidth: 33 }
   $ withPedestal { base: 43, die: 98, cornice: 22 }
   { kind: Ionic
   , height: Minutes 675
@@ -128,7 +130,7 @@ ionic =
 
 corynthian :: Order
 corynthian =
-  withArcadePedestal { openingWidth: 281, openingHeight: 703, pierWidth: 113 }
+  withArcadePedestal { openingWidth: 281, openingHeight: 703, pierWidth: 113, archivoltWidth: 28 }
   $ withPedestal { base: 37, die: 94, cornice: 19 }
   { kind: Corynthian
   , height: Minutes 750
@@ -155,7 +157,7 @@ corynthian =
 -- whose dimensions are also the same, and ten diameters high.
 composite :: Order
 composite =
-  withArcadePedestal { openingWidth: 288, openingHeight: 720, pierWidth: 144 }
+  withArcadePedestal { openingWidth: 288, openingHeight: 720, pierWidth: 144, archivoltWidth: 29 }
   $ withPedestal { base: 47, die: 129, cornice: 24 }
   { kind: Composite
   , height: Minutes 750

@@ -29,6 +29,10 @@ import Data.Maybe (Maybe(..))
 -- wide as the triglyphs, dentils and modillions allow. With pedestals only the Doric arch is
 -- given whole: 5 1/4 diameters by 9 1/2, the piers 2 1/4. The Ionic and Corinthian openings
 -- (5 3/4 and 6 5/12 diameters) are given without their heights, and no Composite arch.
+-- The archivolt is half a diameter without pedestals, filling the face of the pier beside the
+-- pilaster ("just enough to receive the archivolt"). With pedestals that face is 5/8 of a
+-- diameter, and the archivolt is taken to fill it as well (37 1/2 minutes, rounded up); Ware
+-- does not give it.
 treatise :: Treatise
 treatise =
   { tuscan: Just tuscan
@@ -43,7 +47,7 @@ treatise =
 -- Entablature in ten parts: architrave 3, frieze 3, cornice 4; capital one module.
 tuscan :: Order
 tuscan =
-  withArcadeNoPedestal { openingWidth: 225, openingHeight: 420, pierWidth: 120 }
+  withArcadeNoPedestal { openingWidth: 225, openingHeight: 420, pierWidth: 120, archivoltWidth: 30 }
   $ withPedestal { base: 28, die: 84, cornice: 14 } $ mkOrder Tuscan
   { columnHeight: 420
   , upperDiameter: 50
@@ -58,8 +62,8 @@ tuscan =
 -- after the theatre of Marcellus.
 doric :: Order
 doric =
-  withArcadeNoPedestal { openingWidth: 255, openingHeight: 480, pierWidth: 120 }
-  $ withArcadePedestal { openingWidth: 315, openingHeight: 570, pierWidth: 135 }
+  withArcadeNoPedestal { openingWidth: 255, openingHeight: 480, pierWidth: 120, archivoltWidth: 30 }
+  $ withArcadePedestal { openingWidth: 315, openingHeight: 570, pierWidth: 135, archivoltWidth: 38 }
   $ withPedestal { base: 32, die: 96, cornice: 16 } $ mkOrder Doric
   { columnHeight: 480
   , upperDiameter: 50
@@ -74,7 +78,7 @@ doric =
 -- capital height is not given; Vignola's 2/3 of a module is used.
 ionic :: Order
 ionic =
-  withArcadeNoPedestal { openingWidth: 270, openingHeight: 540, pierWidth: 120 }
+  withArcadeNoPedestal { openingWidth: 270, openingHeight: 540, pierWidth: 120, archivoltWidth: 30 }
   $ withPedestal { base: 36, die: 108, cornice: 18 } $ mkOrder Ionic
   { columnHeight: 540
   , upperDiameter: 50
@@ -89,7 +93,7 @@ ionic =
 -- frieze 1 1/2, cornice 2.
 corynthian :: Order
 corynthian =
-  withArcadeNoPedestal { openingWidth: 280, openingHeight: 600, pierWidth: 120 }
+  withArcadeNoPedestal { openingWidth: 280, openingHeight: 600, pierWidth: 120, archivoltWidth: 30 }
   $ withPedestal { base: 40, die: 120, cornice: 20 } $ mkOrder Corynthian
   { columnHeight: 600
   , upperDiameter: 50

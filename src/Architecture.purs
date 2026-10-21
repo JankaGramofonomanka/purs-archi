@@ -309,15 +309,15 @@ drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
   drawSpanningEntablature (point (topLeft.x + width / 2.0) (bottom - sizeOf order.column.height minute)) (porticoSpan p) minute order
 
 -- | Draw an arch of the arcade centered between the facing columns at `left` and `right`, standing on
--- | `ground`: an impost across the bay at the springing of the arch, a ninth of the opening high, an
--- | archivolt a tenth of the opening wide (Chambers' smallest impost and archivolt), and the opening.
+-- | `ground`: an impost across the bay at the springing of the arch, a ninth of the opening high
+-- | (Chambers' smallest impost), the archivolt as wide as the arcade says, and the opening.
 -- | The columns and pedestals drawn over it cover the impost on the piers' axes.
 drawArch :: forall m. Monad m => Renderer m => { left :: Number, right :: Number } -> Number -> Number -> Arcade -> m Unit
 drawArch { left, right } ground minute arcade = do
   let x = (left + right) / 2.0
   let radius = sizeOf arcade.openingWidth minute / 2.0
   let springing = ground - sizeOf arcade.openingHeight minute + radius
-  let archivolt = radius / 5.0
+  let archivolt = sizeOf arcade.archivoltWidth minute
   let impost = 2.0 * radius / 9.0
   let segments = 48
   let semicircle r = Array.range 0 segments <#> \i ->
