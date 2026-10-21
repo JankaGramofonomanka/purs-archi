@@ -29,7 +29,7 @@ import Data.Foldable (foldl, for_, sum)
 import Data.Int as Int
 import Data.Number (cos, pi, pow, sin)
 import Data.Default (def)
-import Data.Maybe (Maybe(..), isNothing, maybe)
+import Data.Maybe (Maybe(..), maybe)
 import Data.Tuple (Tuple(..))
 import Geometry (class HorizontalFigure, class RectangularFigure, class VerticalFigure)
 import Ortogonal (class RenderHorizontal, class RenderOrtogonal, class RenderPoint, class RenderVertical, drawBottomCentered, drawLeftCentered, drawRightCentered, drawTopCentered)
@@ -77,7 +77,7 @@ type WindowSize = { width :: Number, height :: Number }
 -- | has an opening of the size `window`, centered between the facing columns, its frame resting on
 -- | the line of the pedestals' tops (see `sillHeight`). The entablature (and a podium) span the whole row.
 -- | If `arcade` is set and the order has an arcade for columns standing as `pedestal` says, every
--- | bay holds an arch instead of a window (see `drawArch`), and a podium is cut by the arches.
+-- | bay is decorated with a blind arch (see `drawArch`), with its window, if any, set in it.
 newtype Portico = Portico {
   order :: Order,
   size :: SizeDeterminant,
@@ -290,7 +290,7 @@ drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
   let arches = if portico.arcade then arcadeOf portico.pedestal order else Nothing
   for_ arches \arcade -> for_ (porticoBays p) \bay ->
     drawArch { left: left + bay.left, right: left + bay.right } ground minute arcade
-  when (isNothing arches && portico.window.width > 0.0 && portico.window.height > 0.0) do
+  when (portico.window.width > 0.0 && portico.window.height > 0.0) do
     for_ (porticoBays p) \bay -> when (bay.fill == Window) do
       let x = left + (bay.left + bay.right) / 2.0
       let rectangle w h bottom' fill = drawRectangle (point (x - w / 2.0) (bottom' - h)) w h (Just def) (Just fill)
@@ -299,7 +299,7 @@ drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
   case porticoPedestal p of
     Nothing -> pure unit
     Just pedestal -> case portico.pedestal of
-      Podium | isNothing arches -> drawSpanningPedestal (point (topLeft.x + width / 2.0) ground) (porticoSpan p) minute pedestal
+      Podium -> drawSpanningPedestal (point (topLeft.x + width / 2.0) ground) (porticoSpan p) minute pedestal
       _ -> forBeats \x beat@(ColumnBeat n) ->
         when (n > 0) $ drawSpanningPedestal (point x ground) (groupSpan portico.groupSpacing beat) minute pedestal
   forBeats \x beat@(ColumnBeat n) -> do
@@ -311,7 +311,8 @@ drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
 -- | Draw an arch of the arcade centered between the facing columns at `left` and `right`, standing on
 -- | `ground`: an impost across the bay at the springing of the arch, a ninth of the opening high
 -- | (Chambers' smallest impost), the archivolt as wide as the arcade says, and the opening.
--- | The columns and pedestals drawn over it cover the impost on the piers' axes.
+-- | The arch is blind: its opening is walled up. The columns, pedestals and windows drawn over it
+-- | cover the impost on the piers' axes and whatever of the arch they stand in front of.
 drawArch :: forall m. Monad m => Renderer m => { left :: Number, right :: Number } -> Number -> Number -> Arcade -> m Unit
 drawArch { left, right } ground minute arcade = do
   let x = (left + right) / 2.0
@@ -325,7 +326,7 @@ drawArch { left, right } ground minute arcade = do
         in point (x - r * cos angle) (springing - r * sin angle)
   drawRectangle (point left springing) (right - left) impost (Just def) (Just def)
   drawPolygon (semicircle (radius + archivolt) <> Array.reverse (semicircle radius)) (Just def) (Just def)
-  drawPolygon ([ point (x - radius) ground ] <> semicircle radius <> [ point (x + radius) ground ]) (Just def) (Just windowOpening)
+  drawPolygon ([ point (x - radius) ground ] <> semicircle radius <> [ point (x + radius) ground ]) (Just def) (Just def)
 
 instance (Monad m, Renderer m) => RenderPoint m Portico where
   drawCentered p = drawAnchored drawPorticoFromTopLeft (ACenter p)
