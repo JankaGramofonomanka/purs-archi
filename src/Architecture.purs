@@ -20,19 +20,22 @@ import Prelude
 
 import Anchor (class Sized, HorizontalAnchor(..), PointAnchor(..), RectangularAnchor(..), VerticalAnchor(..), drawAnchored, size)
 import Architecture.Measure (Measure(..), SizeDeterminant)
-import Architecture.Order (Arcade, Order, arcadeOf, arcadePlinthHeight, capitalWidth, Pedestal, PedestalMode(..), lowerMinute, minuteFromSize, pedestalHeight, sizeOf, upperMinute)
-import Architecture.Superposition (SuperpositionRule)
+import Architecture.Order (Arcade, Minutes(..), Order, Pedestal, PedestalMode(..), arcadeOf, arcadePlinthHeight, capitalWidth, lowerMinute, minuteFromSize, pedestalHeight, sizeOf, upperMinute)
+import Architecture.Order as Order
 import Architecture.Order.Draw (drawColumn, drawEntablature, drawSpanningEntablature, drawSpanningPedestal)
 import Architecture.Rythm (Rythm, beatAt)
+import Architecture.Superposition (SuperpositionRule)
 import Data.Array as Array
+import Data.Default (def)
 import Data.Foldable (foldl, for_, sum)
 import Data.Int as Int
-import Data.Number (cos, pi, pow, sin)
-import Data.Default (def)
 import Data.Maybe (Maybe(..), maybe)
+import Data.Newtype (unwrap)
+import Data.Number (cos, pi, pow, sin)
 import Data.Tuple (Tuple(..))
 import Geometry (class HorizontalFigure, class RectangularFigure, class VerticalFigure)
 import Ortogonal (class RenderHorizontal, class RenderOrtogonal, class RenderPoint, class RenderVertical, drawBottomCentered, drawLeftCentered, drawRightCentered, drawTopCentered)
+import Proportion (class Measurable, measure)
 import Renderer (Color(..), Fill(..), Opaqueness(..), Point(..), point, class Renderer, drawPolygon, drawRectangle)
 
 type SizedOrder = { order :: Order, size :: SizeDeterminant }
@@ -96,6 +99,15 @@ newtype Portico = Portico {
 
 -- | One row of columns of a `StackedCollonade`; drawn exactly like a `Portico`.
 newtype Collonade = Collonade Portico
+
+data CollonadeMeasure = StoreyHeight | FromOrder Measure
+
+instance Measurable Collonade CollonadeMeasure Minutes where
+  measure (Collonade collonade) (FromOrder msr) = measure (unwrap collonade).order msr
+  measure (Collonade collonade) StoreyHeight =
+    let Minutes height = (unwrap collonade).order.height
+        Minutes pedestal = Order.pedestalHeight (unwrap collonade).pedestal (unwrap collonade).order
+    in Minutes (height + pedestal)
 
 -- | A size determinant of the given row of a `StackedCollonade` (0 is the bottom row).
 type RowSizeDeterminant = { row :: Int, size :: SizeDeterminant }

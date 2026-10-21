@@ -1,6 +1,5 @@
 module Architecture.Superposition
-  ( Ratio
-  , Step
+  ( Step
   , SuperpositionRule(..)
   , albertiDiminution
   , continuousTaper
@@ -28,9 +27,7 @@ import Data.Either (Either(..))
 import Data.Int as Int
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (Tuple(..))
-
--- | An exact, positive ratio.
-type Ratio = { numerator :: Int, denominator :: Int }
+import Proportion (Ratio (..))
 
 ratioValue :: Ratio -> Number
 ratioValue { numerator, denominator } = Int.toNumber numerator / Int.toNumber denominator

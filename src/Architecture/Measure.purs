@@ -14,9 +14,8 @@ import Data.Codec.JSON.Sum as CJS
 import Data.Maybe (Maybe(..))
 
 -- | A dimension of an order, in minutes of that order.
--- | `Minute` is one minute; `OrderHeight` is the column with its entablature; `StoreyHeight` adds
--- | the pedestal the columns stand on, if they stand on one.
-data Measure = Minute | LowerDiameter | UpperDiameter | ColumnHeight | EntablatureHeight | OrderHeight | StoreyHeight
+-- | `Minute` is one minute; `OrderHeight` is the column with its entablature.
+data Measure = Minute | LowerDiameter | UpperDiameter | ColumnHeight | EntablatureHeight | OrderHeight
 
 derive instance Eq Measure
 
@@ -34,7 +33,6 @@ measureCodec = CJS.enumSum print parse
     ColumnHeight -> "columnHeight"
     EntablatureHeight -> "entablatureHeight"
     OrderHeight -> "orderHeight"
-    StoreyHeight -> "storeyHeight"
   parse = case _ of
     "minute" -> Just Minute
     "lowerDiameter" -> Just LowerDiameter
@@ -42,7 +40,6 @@ measureCodec = CJS.enumSum print parse
     "columnHeight" -> Just ColumnHeight
     "entablatureHeight" -> Just EntablatureHeight
     "orderHeight" -> Just OrderHeight
-    "storeyHeight" -> Just StoreyHeight
     _ -> Nothing
 
 -- | A size determinant as `{ "measure": "lowerDiameter", "value": 10 }`.

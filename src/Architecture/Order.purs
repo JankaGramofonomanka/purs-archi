@@ -44,6 +44,7 @@ import Architecture.Measure (Measure(..), SizeDeterminant)
 import Architecture.Superposition (SuperpositionRule, ratioValue, stepAt)
 import Data.Int as Int
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Proportion (class Measurable)
 
 newtype Minutes = Minutes Int
 
@@ -117,6 +118,14 @@ type Order =
   -- | architrave; `Nothing` where the author raises them on none.
   , arcadePlinth :: Maybe Minutes
   }
+
+instance Measurable Order Measure Minutes where
+  measure order Minute = Minutes 1
+  measure order LowerDiameter = order.column.lowerDiameter
+  measure order UpperDiameter = order.column.upperDiameter
+  measure order ColumnHeight = order.column.height
+  measure order EntablatureHeight = order.entablature.height
+  measure order OrderHeight = order.height
 
 -- | The arcade of an order whose columns stand as `mode` says.
 arcadeOf :: PedestalMode -> Order -> Maybe Arcade
@@ -192,19 +201,15 @@ minuteFromProportion :: Minutes -> Number -> Number
 minuteFromProportion (Minutes proportion) measurement =
   measurement / Int.toNumber proportion
 
--- | The given measure of an order whose columns stand as `mode` says, in minutes.
-measureOf :: Measure -> PedestalMode -> Order -> Minutes
-measureOf measure mode order = case measure of
+-- | The given measure of an order, in minutes.
+measureOf :: Measure -> Order -> Minutes
+measureOf measure order = case measure of
   Minute -> Minutes 1
   LowerDiameter -> order.column.lowerDiameter
   UpperDiameter -> order.column.upperDiameter
   ColumnHeight -> order.column.height
   EntablatureHeight -> order.entablature.height
   OrderHeight -> order.height
-  StoreyHeight ->
-    let Minutes height = order.height
-        Minutes pedestal = pedestalHeight mode order
-    in Minutes (height + pedestal)
 
 -- | The minute of an order stacked on `lower`, whose minute is given, as `rule` says; `joint` is the
 -- | index of `lower` in the stack (0 is the bottom storey).
