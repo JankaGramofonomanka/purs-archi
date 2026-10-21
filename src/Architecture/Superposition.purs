@@ -16,7 +16,7 @@ module Architecture.Superposition
 
 import Prelude
 
-import Architecture.Measure (Measure(..), measureCodec)
+import Architecture.Measure (CollonadeMeasure(..), Measure(..), collonadeMeasureCodec)
 import Data.Codec.JSON as CJ
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NonEmptyArray
@@ -27,7 +27,7 @@ import Data.Either (Either(..))
 import Data.Int as Int
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Tuple (Tuple(..))
-import Proportion (Ratio (..))
+import Proportion (Ratio)
 
 ratioValue :: Ratio -> Number
 ratioValue { numerator, denominator } = Int.toNumber numerator / Int.toNumber denominator
@@ -35,7 +35,7 @@ ratioValue { numerator, denominator } = Int.toNumber numerator / Int.toNumber de
 -- | How large one storey is relative to the storey below: its `upper` measure is `ratio` times
 -- | the `lower` measure of the storey below. A step determines the lower storey from the upper
 -- | one as well, since a stack may be sized from any of its storeys.
-type Step = { upper :: Measure, lower :: Measure, ratio :: Ratio }
+type Step = { upper :: CollonadeMeasure, lower :: CollonadeMeasure, ratio :: Ratio }
 
 -- | How large an order stacked on another is.
 -- | `Match step`: the same step between every two storeys.
@@ -54,11 +54,11 @@ stepAt joint = case _ of
 -- | Scamozzi's rule: the lower diameter of the upper column is the upper diameter of the
 -- | lower one, "as if from one long single tree".
 continuousTaper :: SuperpositionRule
-continuousTaper = Match { upper: LowerDiameter, lower: UpperDiameter, ratio: { numerator: 1, denominator: 1 } }
+continuousTaper = Match { upper: FromOrder LowerDiameter, lower: FromOrder UpperDiameter, ratio: { numerator: 1, denominator: 1 } }
 
 -- | Vitruvius' rule (Book V, chapters 1 and 7): the upper columns are a fourth less than the lower.
 fourthLess :: SuperpositionRule
-fourthLess = Match { upper: ColumnHeight, lower: ColumnHeight, ratio: { numerator: 3, denominator: 4 } }
+fourthLess = Match { upper: FromOrder ColumnHeight, lower: FromOrder ColumnHeight, ratio: { numerator: 3, denominator: 4 } }
 
 -- | Serlio's reading of Vitruvius: the whole upper storey, from its floor to the top of its cornice,
 -- | is a fourth less than the storey below, every member diminished in proportion.
@@ -69,8 +69,8 @@ storeyFourthLess = Match { upper: StoreyHeight, lower: StoreyHeight, ratio: { nu
 -- | order a fifth shorter than the second.
 albertiDiminution :: SuperpositionRule
 albertiDiminution = Successive $ NonEmptyArray.cons'
-  { upper: OrderHeight, lower: OrderHeight, ratio: { numerator: 3, denominator: 4 } }
-  [ { upper: OrderHeight, lower: OrderHeight, ratio: { numerator: 4, denominator: 5 } } ]
+  { upper: FromOrder OrderHeight, lower: FromOrder OrderHeight, ratio: { numerator: 3, denominator: 4 } }
+  [ { upper: FromOrder OrderHeight, lower: FromOrder OrderHeight, ratio: { numerator: 4, denominator: 5 } } ]
 
 -- | Storeys of equal height, pedestals included.
 equalStoreys :: SuperpositionRule
@@ -89,7 +89,7 @@ ratioCodec = CJ.prismaticCodec "Ratio" fromPair toPair (CJ.array CJ.int)
 
 -- | A step as `{ "upper": …, "lower": …, "ratio": [n, d] }`.
 stepCodec :: CJ.Codec Step
-stepCodec = CJR.object { upper: measureCodec, lower: measureCodec, ratio: ratioCodec }
+stepCodec = CJR.object { upper: collonadeMeasureCodec, lower: collonadeMeasureCodec, ratio: ratioCodec }
 
 data RuleTag = MatchTag | SuccessiveTag
 

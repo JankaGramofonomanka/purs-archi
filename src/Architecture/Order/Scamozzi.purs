@@ -10,7 +10,7 @@ module Architecture.Order.Scamozzi
 
 import Prelude
 
-import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder, mkPedestal, withArcadeNoPedestal, withPedestal, withArcadePedestal, withArcadePlinth)
+import Architecture.Order (Order(..), OrderKind(..), Treatise, mkOrder, mkPedestal, withArcadeNoPedestal, withPedestal, withArcadePedestal, withArcadePlinth)
 import Architecture.Superposition (continuousTaper)
 import Data.Maybe (Maybe(..))
 
@@ -158,7 +158,7 @@ composite =
   }
   where
   -- The neck (die) of the Composite pedestal is "one model twenty four minutes" broad.
-  withPedestalOf84 order = order
+  withPedestalOf84 (Order order) = Order order
     { pedestal = Just $ mkPedestal
         { base: { width: 118, height: 45 }
         , die: { width: 84, height: 113 }

@@ -14,7 +14,7 @@ import Architecture.Superposition (continuousTaper)
 import Data.Int as Int
 import Data.Default (class Default, def)
 import Data.Maybe (Maybe(..))
-import Data.Newtype (class Newtype, modify)
+import Data.Newtype (class Newtype, modify, unwrap)
 import Data.Number (pi)
 import Geometry (Rectangle(..))
 import Ortogonal as Ortogonal
@@ -97,8 +97,8 @@ draw width height = do
   let ionicHeight = 200.0
   let ionicMinute = minuteFromColumnAndEntablatureHeight ionic ionicHeight
   let ionicBottom = screenCenterY + ionicHeight / 2.0
-  let ionicLowerDiameter = sizeOf ionic.column.lowerDiameter ionicMinute
-  let ionicUpperDiameter = sizeOf ionic.column.upperDiameter ionicMinute
+  let ionicLowerDiameter = sizeOf (unwrap ionic).column.lowerDiameter ionicMinute
+  let ionicUpperDiameter = sizeOf (unwrap ionic).column.upperDiameter ionicMinute
 
   let doricUpperDiameter = ionicLowerDiameter
   let doricMinute = minuteFromUpperDiameter doric doricUpperDiameter
@@ -117,7 +117,7 @@ draw width height = do
   let columnHalfWidth order minute = (size (Column { order, size: { measure: Minute, value: minute } })).width / 2.0
   let columnsLeft = centerX - max (columnHalfWidth doric doricMinute) (max (columnHalfWidth ionic ionicMinute) (columnHalfWidth corynthian corynthianMinute))
   let numOfColumns = 4
-  let bayWidth = 3.0 * sizeOf doric.column.lowerDiameter doricMinute
+  let bayWidth = 3.0 * sizeOf (unwrap doric).column.lowerDiameter doricMinute
   let portico order minute = Portico { order, size: { measure: Minute, value: minute }, numOfColumns, bayWidth, bayMeasure: BetweenBeats, rythm: ColumnBeat 1 <$ pulse, groupSpacing: minGroupSpacing order minute, pedestal: NoPedestal, bays: Wall <$ pulse, window: { width: 0.0, height: 0.0 }, arcade: false }
   -- distance from the outermost column centerline to the portico's edge
   let overhang p = ((size p).width - Int.toNumber (numOfColumns - 1) * bayWidth) / 2.0

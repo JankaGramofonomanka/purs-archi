@@ -8,6 +8,7 @@ import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..), either)
 import Data.Foldable (foldl)
 import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
+import Data.Newtype (unwrap)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
@@ -128,9 +129,9 @@ treatiseOptions = treatises <#> \{ key, name, treatise } ->
   { key
   , name
   , orders: _.key <$> Array.filter (\{ kind } -> isJust (treatiseOrder treatise kind)) orderKinds
-  , pedestals: _.key <$> Array.filter (\{ kind } -> isJust (treatiseOrder treatise kind >>= _.pedestal)) orderKinds
-  , arcades: _.key <$> Array.filter (\{ kind } -> isJust (treatiseOrder treatise kind >>= _.arcadeNoPedestal)) orderKinds
-  , pedestalArcades: _.key <$> Array.filter (\{ kind } -> isJust (treatiseOrder treatise kind >>= _.arcadePedestal)) orderKinds
+  , pedestals: _.key <$> Array.filter (\{ kind } -> isJust (treatiseOrder treatise kind >>= _.pedestal <<< unwrap)) orderKinds
+  , arcades: _.key <$> Array.filter (\{ kind } -> isJust (treatiseOrder treatise kind >>= _.arcadeNoPedestal <<< unwrap)) orderKinds
+  , pedestalArcades: _.key <$> Array.filter (\{ kind } -> isJust (treatiseOrder treatise kind >>= _.arcadePedestal <<< unwrap)) orderKinds
   , stacks: isJust treatise.superposition
   }
 
@@ -232,7 +233,7 @@ formStoreys form = do
       pedestal <- case Array.find (\p -> p.key == pedestalKey) pedestalModes of
         Nothing -> Left ("Unknown pedestal mode: " <> pedestalKey)
         Just { mode } -> Right mode
-      when (pedestal /= NoPedestal && isNothing order.pedestal) do
+      when (pedestal /= NoPedestal && isNothing (unwrap order).pedestal) do
         Left (name <> " gives no pedestal for the " <> key <> " order")
       when (arcade && isNothing (arcadeOf pedestal order)) do
         Left (name <> " gives no arcade for the " <> key <> " order " <> if pedestal == NoPedestal then "without pedestals" else "with pedestals")

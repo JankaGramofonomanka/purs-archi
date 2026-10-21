@@ -10,9 +10,10 @@ module Architecture.Order.Gibbs
 
 import Prelude
 
-import Architecture.Order (Minutes(..), Order, OrderKind(..), Treatise, mkOrder, mkPedestal, withArcadePlinth)
+import Architecture.Order (Minutes(..), Order(..), OrderKind(..), Treatise, mkOrder, mkPedestal, withArcadePlinth)
 import Architecture.Superposition (continuousTaper)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (over)
 
 -- After Gibbs, Rules for Drawing the Several Parts of Architecture (1753 edition). Columns
 -- are 7, 8, 9, 10 and 10 diameters; entablatures a fourth of the Tuscan and Doric columns and
@@ -93,12 +94,12 @@ corynthian = pedestal { base: 60, die: 98, cornice: 22, projection: 15 } $ mkOrd
   }
 
 composite :: Order
-composite = corynthian { kind = Composite }
+composite = over Order _ { kind = Composite } corynthian
 
 -- The die is as wide as the column's base; the base and cap of the pedestal both project
 -- as far as the base's mouldings are high.
 pedestal :: { base :: Int, die :: Int, cornice :: Int, projection :: Int } -> Order -> Order
-pedestal p order = order
+pedestal p (Order order) = Order order
   { pedestal = Just $ mkPedestal
       { base: { width: dieWidth + 2 * p.projection, height: p.base }
       , die: { width: dieWidth, height: p.die }

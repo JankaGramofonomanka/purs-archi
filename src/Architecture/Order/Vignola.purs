@@ -11,9 +11,10 @@ module Architecture.Order.Vignola
 
 import Prelude
 
-import Architecture.Order (Minutes(..), Order, OrderKind(..), Treatise, mkOrder, withArcadeNoPedestal, withPedestal, withArcadePedestal)
+import Architecture.Order (Minutes(..), Order(..), OrderKind(..), Treatise, mkOrder, withArcadeNoPedestal, withPedestal, withArcadePedestal)
 import Data.Int as Int
 import Data.Maybe (Maybe(..))
+import Data.Newtype (over, unwrap)
 
 -- After Vignola, Regola delli cinque ordini (Moxon's translation, "Vignola, or the Compleat
 -- Architect", 1655). The module is half a diameter (30 minutes here); the columns are 14, 16,
@@ -49,7 +50,7 @@ treatise =
 -- | it is used.
 withVignolaPedestal :: Order -> Order
 withVignolaPedestal order =
-  let Minutes column = order.column.height
+  let Minutes column = (unwrap order).column.height
       third = Int.round (Int.toNumber column / 3.0)
       base = Int.round (Int.toNumber third * 2.0 / 9.0)
       cornice = Int.round (Int.toNumber third / 9.0)
@@ -122,4 +123,4 @@ corynthian =
 
 -- "The same Measures and Proportions that he does to the Corinthian" (Fréart).
 composite :: Order
-composite = corynthian { kind = Composite }
+composite = over Order _ { kind = Composite } corynthian

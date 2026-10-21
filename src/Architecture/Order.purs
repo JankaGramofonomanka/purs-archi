@@ -5,7 +5,7 @@ module Architecture.Order
   , Entablature
   , EntablatureElement
   , Minutes(..)
-  , Order
+  , Order(..)
   , OrderKind(..)
   , Pedestal
   , PedestalMode(..)
@@ -20,6 +20,7 @@ module Architecture.Order
   , minuteFromLowerDiameter
   , minuteFromUpperDiameter
   , measureOf
+  , storeyMeasureOf
   , lowerMinute
   , upperMinute
   , minutesPerDiameter
@@ -40,10 +41,11 @@ module Architecture.Order
 
 import Prelude
 
-import Architecture.Measure (Measure(..), SizeDeterminant)
+import Architecture.Measure (CollonadeMeasure(..), Measure(..), SizeDeterminant)
 import Architecture.Superposition (SuperpositionRule, ratioValue, stepAt)
 import Data.Int as Int
 import Data.Maybe (Maybe(..), fromMaybe, maybe)
+import Data.Newtype (class Newtype, unwrap)
 import Proportion (class Measurable)
 
 newtype Minutes = Minutes Int
@@ -100,7 +102,7 @@ type Arcade =
 
 derive instance Eq PedestalMode
 
-type Order =
+newtype Order = Order
   { kind :: OrderKind
   , height :: Minutes
   , column :: Column
@@ -119,56 +121,57 @@ type Order =
   , arcadePlinth :: Maybe Minutes
   }
 
+derive instance Newtype Order _
+
 instance Measurable Order Measure Minutes where
-  measure order Minute = Minutes 1
-  measure order LowerDiameter = order.column.lowerDiameter
-  measure order UpperDiameter = order.column.upperDiameter
-  measure order ColumnHeight = order.column.height
-  measure order EntablatureHeight = order.entablature.height
-  measure order OrderHeight = order.height
+  measure (Order order) Minute = Minutes 1
+  measure (Order order) LowerDiameter = order.column.lowerDiameter
+  measure (Order order) UpperDiameter = order.column.upperDiameter
+  measure (Order order) ColumnHeight = order.column.height
+  measure (Order order) EntablatureHeight = order.entablature.height
+  measure (Order order) OrderHeight = order.height
 
 -- | The arcade of an order whose columns stand as `mode` says.
 arcadeOf :: PedestalMode -> Order -> Maybe Arcade
-arcadeOf mode order = case mode of
+arcadeOf mode (Order order) = case mode of
   NoPedestal -> order.arcadeNoPedestal
   _ -> order.arcadePedestal
 
 -- | Height of the pedestal the order stands on in the given mode, in minutes.
 pedestalHeight :: PedestalMode -> Order -> Minutes
-pedestalHeight mode order = case mode of
+pedestalHeight mode (Order order) = case mode of
   NoPedestal -> Minutes 0
   _ -> maybe (Minutes 0) _.height order.pedestal
 
 orderHeight :: Number -> Order -> Number
-orderHeight minute order =
+orderHeight minute (Order order) =
   sizeOf order.height minute
 
 minutesPerDiameter :: Int
 minutesPerDiameter = 60
 
 minuteFromColumnHeight :: Order -> Number -> Number
-minuteFromColumnHeight order height =
+minuteFromColumnHeight (Order order) height =
   minuteFromProportion order.column.height height
 
 minuteFromColumnAndEntablatureHeight :: Order -> Number -> Number
-minuteFromColumnAndEntablatureHeight order height =
+minuteFromColumnAndEntablatureHeight (Order order) height =
   minuteFromProportion order.height height
 
 minuteFromEntablatureHeight :: Order -> Number -> Number
-minuteFromEntablatureHeight order height =
+minuteFromEntablatureHeight (Order order) height =
   minuteFromProportion order.entablature.height height
 
--- | The minute of an order whose columns stand as `mode` says (which matters for `StoreyHeight`).
-minuteFromSize :: PedestalMode -> Order -> SizeDeterminant -> Number
-minuteFromSize mode order { measure, value } =
-  minuteFromProportion (measureOf measure mode order) value
+minuteFromSize :: Order -> SizeDeterminant -> Number
+minuteFromSize order { measure, value } =
+  minuteFromProportion (measureOf measure order) value
 
 minuteFromLowerDiameter :: Order -> Number -> Number
-minuteFromLowerDiameter order diameter =
+minuteFromLowerDiameter (Order order) diameter =
   minuteFromProportion order.column.lowerDiameter diameter
 
 minuteFromUpperDiameter :: Order -> Number -> Number
-minuteFromUpperDiameter order diameter =
+minuteFromUpperDiameter (Order order) diameter =
   minuteFromProportion order.column.upperDiameter diameter
 
 -- | The volutes of an Ionic capital after Palladio, Book I ch. 16: the abacus is 19 parts wide,
@@ -185,7 +188,7 @@ ionicVolutes abacus =
 -- | The full width of the capital: the abacus, widened for an Ionic capital by the volutes
 -- | that reach beyond its ends.
 capitalWidth :: Order -> Number -> Number
-capitalWidth order minute =
+capitalWidth (Order order) minute =
   let abacus = sizeOf order.capital.width minute
   in case order.kind of
     Ionic ->
@@ -203,7 +206,7 @@ minuteFromProportion (Minutes proportion) measurement =
 
 -- | The given measure of an order, in minutes.
 measureOf :: Measure -> Order -> Minutes
-measureOf measure order = case measure of
+measureOf measure (Order order) = case measure of
   Minute -> Minutes 1
   LowerDiameter -> order.column.lowerDiameter
   UpperDiameter -> order.column.upperDiameter
@@ -211,21 +214,30 @@ measureOf measure order = case measure of
   EntablatureHeight -> order.entablature.height
   OrderHeight -> order.height
 
+-- | The given measure of a row of columns of an order standing as `mode` says, in minutes.
+storeyMeasureOf :: CollonadeMeasure -> PedestalMode -> Order -> Minutes
+storeyMeasureOf measure mode order = case measure of
+  FromOrder orderMeasure -> measureOf orderMeasure order
+  StoreyHeight ->
+    let Minutes height = (unwrap order).height
+        Minutes pedestal = pedestalHeight mode order
+    in Minutes (height + pedestal)
+
 -- | The minute of an order stacked on `lower`, whose minute is given, as `rule` says; `joint` is the
 -- | index of `lower` in the stack (0 is the bottom storey).
 upperMinute :: SuperpositionRule -> Int -> { order :: Order, pedestal :: PedestalMode } -> Number -> { order :: Order, pedestal :: PedestalMode } -> Number
 upperMinute rule joint lower minute upper =
   let step = stepAt joint rule
-  in minuteFromProportion (measureOf step.upper upper.pedestal upper.order)
-       (ratioValue step.ratio * sizeOf (measureOf step.lower lower.pedestal lower.order) minute)
+  in minuteFromProportion (storeyMeasureOf step.upper upper.pedestal upper.order)
+       (ratioValue step.ratio * sizeOf (storeyMeasureOf step.lower lower.pedestal lower.order) minute)
 
 -- | The minute of the order under `upper`, whose minute is given, as `rule` says; `joint` is the
 -- | index of the lower order in the stack. The inverse of `upperMinute`.
 lowerMinute :: SuperpositionRule -> Int -> { order :: Order, pedestal :: PedestalMode } -> Number -> { order :: Order, pedestal :: PedestalMode } -> Number
 lowerMinute rule joint upper minute lower =
   let step = stepAt joint rule
-  in minuteFromProportion (measureOf step.lower lower.pedestal lower.order)
-       (sizeOf (measureOf step.upper upper.pedestal upper.order) minute / ratioValue step.ratio)
+  in minuteFromProportion (storeyMeasureOf step.lower lower.pedestal lower.order)
+       (sizeOf (storeyMeasureOf step.upper upper.pedestal upper.order) minute / ratioValue step.ratio)
 
 -- | The orders as one author of a treatise proportions them; `Nothing` where the author
 -- | does not define the order.
@@ -259,7 +271,7 @@ mkOrder
      , cornice :: { depth :: Int, height :: Int }
      }
   -> Order
-mkOrder kind o =
+mkOrder kind o = Order
   { kind
   , height: Minutes (o.columnHeight + entablatureHeight)
   , column:
@@ -307,7 +319,7 @@ mkPedestal p =
 -- | base, the cornice projects as far as it is high, and the base somewhat less (three
 -- | quarters as far) "that so the whole base may be covered and sheltered by it".
 withPedestal :: { base :: Int, die :: Int, cornice :: Int } -> Order -> Order
-withPedestal p order = order
+withPedestal p (Order order) = Order order
   { pedestal = Just $ mkPedestal
       { base: { width: dieWidth + 2 * Int.round (Int.toNumber p.cornice * 0.75), height: p.base }
       , die: { width: dieWidth, height: p.die }
@@ -319,22 +331,22 @@ withPedestal p order = order
 
 -- | Give the order the arcade of its columns standing without pedestals, in minutes.
 withArcadeNoPedestal :: { openingWidth :: Int, openingHeight :: Int, pierWidth :: Int, archivoltWidth :: Int } -> Order -> Order
-withArcadeNoPedestal a order = order { arcadeNoPedestal = Just (mkArcade a) }
+withArcadeNoPedestal a (Order order) = Order order { arcadeNoPedestal = Just (mkArcade a) }
 
 -- | Give the order the arcade of its columns standing on pedestals, in minutes.
 withArcadePedestal :: { openingWidth :: Int, openingHeight :: Int, pierWidth :: Int, archivoltWidth :: Int } -> Order -> Order
-withArcadePedestal a order = order { arcadePedestal = Just (mkArcade a) }
+withArcadePedestal a (Order order) = Order order { arcadePedestal = Just (mkArcade a) }
 
 mkArcade :: { openingWidth :: Int, openingHeight :: Int, pierWidth :: Int, archivoltWidth :: Int } -> Arcade
 mkArcade a = { openingWidth: Minutes a.openingWidth, openingHeight: Minutes a.openingHeight, pierWidth: Minutes a.pierWidth, archivoltWidth: Minutes a.archivoltWidth }
 
 -- | Give the order the plinth its columns stand on in an arcade without pedestals, in minutes.
 withArcadePlinth :: Int -> Order -> Order
-withArcadePlinth height order = order { arcadePlinth = Just (Minutes height) }
+withArcadePlinth height (Order order) = Order order { arcadePlinth = Just (Minutes height) }
 
 -- | Height of the plinth under the columns of an order standing as `mode` says, if they frame an
 -- | `arcade`: only columns without pedestals stand on one.
 arcadePlinthHeight :: PedestalMode -> Boolean -> Order -> Minutes
-arcadePlinthHeight mode arcade order = case mode of
+arcadePlinthHeight mode arcade (Order order) = case mode of
   NoPedestal | arcade -> fromMaybe (Minutes 0) order.arcadePlinth
   _ -> Minutes 0

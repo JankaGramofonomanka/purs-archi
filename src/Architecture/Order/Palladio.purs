@@ -10,7 +10,7 @@ module Architecture.Order.Palladio
 
 import Prelude
 
-import Architecture.Order (Minutes(..), Order, OrderKind(..), Treatise, mkPedestal, withPedestal, withArcadePedestal)
+import Architecture.Order (Minutes(..), Order(..), OrderKind(..), Treatise, mkPedestal, withPedestal, withArcadePedestal)
 import Architecture.Superposition (fourthLess)
 import Data.Maybe (Maybe(..))
 
@@ -50,7 +50,7 @@ treatise =
 -- stone Tuscan entablature, so it is a fourth of the column, as in the Doric. Half minutes
 -- (the upper radius is 22.5) are rounded up.
 tuscan :: Order
-tuscan =
+tuscan = Order
   { kind: Tuscan
   , height: Minutes 525
   , column:
@@ -79,7 +79,7 @@ tuscan =
 
 doric :: Order
 doric =
-  withPedestal { base: 40, die: 80, cornice: 20 }
+  withPedestal { base: 40, die: 80, cornice: 20 } $ Order
   { kind: Doric
   , height: Minutes 600
   , column:
@@ -108,7 +108,7 @@ doric =
 ionic :: Order
 ionic =
   withArcadePedestal { openingWidth: 325, openingHeight: 650, pierWidth: 108, archivoltWidth: 33 }
-  $ withPedestal { base: 43, die: 98, cornice: 22 }
+  $ withPedestal { base: 43, die: 98, cornice: 22 } $ Order
   { kind: Ionic
   , height: Minutes 675
   , column:
@@ -134,7 +134,7 @@ ionic =
 corynthian :: Order
 corynthian =
   withArcadePedestal { openingWidth: 281, openingHeight: 703, pierWidth: 113, archivoltWidth: 28 }
-  $ withPedestal { base: 37, die: 94, cornice: 19 }
+  $ withPedestal { base: 37, die: 94, cornice: 19 } $ Order
   { kind: Corynthian
   , height: Minutes 750
   , column:
@@ -162,7 +162,7 @@ corynthian =
 composite :: Order
 composite =
   withArcadePedestal { openingWidth: 288, openingHeight: 720, pierWidth: 144, archivoltWidth: 29 }
-  $ withPedestal { base: 47, die: 129, cornice: 24 }
+  $ withPedestal { base: 47, die: 129, cornice: 24 } $ Order
   { kind: Composite
   , height: Minutes 750
   , column:

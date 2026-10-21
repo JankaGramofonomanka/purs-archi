@@ -19,7 +19,7 @@ module Architecture
 import Prelude
 
 import Anchor (class Sized, HorizontalAnchor(..), PointAnchor(..), RectangularAnchor(..), VerticalAnchor(..), drawAnchored, size)
-import Architecture.Measure (Measure(..), SizeDeterminant)
+import Architecture.Measure (CollonadeMeasure, Measure(..), SizeDeterminant)
 import Architecture.Order (Arcade, Minutes(..), Order, Pedestal, PedestalMode(..), arcadeOf, arcadePlinthHeight, capitalWidth, lowerMinute, minuteFromSize, pedestalHeight, sizeOf, upperMinute)
 import Architecture.Order as Order
 import Architecture.Order.Draw (drawColumn, drawEntablature, drawSpanningEntablature, drawSpanningPedestal)
@@ -100,14 +100,8 @@ newtype Portico = Portico {
 -- | One row of columns of a `StackedCollonade`; drawn exactly like a `Portico`.
 newtype Collonade = Collonade Portico
 
-data CollonadeMeasure = StoreyHeight | FromOrder Measure
-
 instance Measurable Collonade CollonadeMeasure Minutes where
-  measure (Collonade collonade) (FromOrder msr) = measure (unwrap collonade).order msr
-  measure (Collonade collonade) StoreyHeight =
-    let Minutes height = (unwrap collonade).order.height
-        Minutes pedestal = Order.pedestalHeight (unwrap collonade).pedestal (unwrap collonade).order
-    in Minutes (height + pedestal)
+  measure (Collonade (Portico collonade)) msr = Order.storeyMeasureOf msr collonade.pedestal collonade.order
 
 -- | A size determinant of the given row of a `StackedCollonade` (0 is the bottom row).
 type RowSizeDeterminant = { row :: Int, size :: SizeDeterminant }
@@ -132,15 +126,15 @@ newtype StackedCollonade = StackedCollonade {
 }
 
 minuteOf :: SizedOrder -> Number
-minuteOf sized = minuteFromSize NoPedestal sized.order sized.size
+minuteOf sized = minuteFromSize sized.order sized.size
 
 -- Column
 
 instance Sized Column where
   size (Column sized) =
     let minute = minuteOf sized
-    in { width: max (sizeOf sized.order.base.width minute) (capitalWidth sized.order minute)
-       , height: sizeOf sized.order.column.height minute
+    in { width: max (sizeOf (unwrap sized.order).base.width minute) (capitalWidth sized.order minute)
+       , height: sizeOf (unwrap sized.order).column.height minute
        }
 
 instance VerticalFigure Column
@@ -173,8 +167,8 @@ instance (Monad m, Renderer m) => RenderVertical m Column where
 instance Sized Entablature where
   size (Entablature sized) =
     let minute = minuteOf sized
-    in { width: sizeOf sized.order.column.lowerDiameter minute
-       , height: sizeOf sized.order.entablature.height minute
+    in { width: sizeOf (unwrap sized.order).column.lowerDiameter minute
+       , height: sizeOf (unwrap sized.order).entablature.height minute
        }
 
 instance HorizontalFigure Entablature
@@ -208,7 +202,7 @@ instance (Monad m, Renderer m) => RenderHorizontal m Entablature where
 -- | neither their bases nor their capitals overlap.
 minGroupSpacing :: Order -> Number -> Number
 minGroupSpacing order minute =
-  max (sizeOf order.base.width minute) (capitalWidth order minute)
+  max (sizeOf (unwrap order).base.width minute) (capitalWidth order minute)
 
 -- | The beats of the row, each with its centerline measured from the centerline of the leftmost column.
 porticoBeats :: Portico -> Array { centerline :: Number, beat :: ColumnBeat }
@@ -248,7 +242,7 @@ windowFrame { width } = width / 6.0
 -- | the columns stand on pedestals or not (Chambers lines the sills up with the pedestals). The bottom
 -- | of the row if the order has no pedestal.
 sillHeight :: Order -> Number -> Number
-sillHeight order minute = maybe 0.0 (\pedestal -> sizeOf pedestal.height minute) order.pedestal
+sillHeight order minute = maybe 0.0 (\pedestal -> sizeOf pedestal.height minute) (unwrap order).pedestal
 
 -- | How high the row's columns stand above the bottom of the row: on their pedestals or podium, or
 -- | on the plinth of an arcade without pedestals.
@@ -259,46 +253,46 @@ porticoRaise (Portico { order, pedestal, arcade }) minute =
 -- | Height of the bottom of the capitals above the bottom of the row.
 capitalBottom :: Portico -> Number -> Number
 capitalBottom p@(Portico { order }) minute =
-  porticoRaise p minute + sizeOf order.base.height minute + sizeOf order.column.shaftHeight minute
+  porticoRaise p minute + sizeOf (unwrap order).base.height minute + sizeOf (unwrap order).column.shaftHeight minute
 
 -- | The highest opening of the given width the row allows, its frame between the sill and the capitals.
 maxWindowHeight :: Portico -> Number -> Number
 maxWindowHeight p@(Portico { order, size }) width =
-  let minute = minuteFromSize NoPedestal order size
+  let minute = minuteFromSize order size
   in capitalBottom p minute - sillHeight order minute - 2.0 * windowFrame { width, height: 0.0 }
 
 -- | The pedestal the portico's columns stand on, if any.
 porticoPedestal :: Portico -> Maybe Pedestal
 porticoPedestal (Portico portico) = case portico.pedestal of
   NoPedestal -> Nothing
-  _ -> portico.order.pedestal
+  _ -> (unwrap portico.order).pedestal
 
 -- | How far the portico reaches beyond the centerlines of the outermost columns.
 porticoOverhang :: Portico -> Number
 porticoOverhang p@(Portico portico@{ order }) =
-  let minute = minuteFromSize portico.pedestal order portico.size
+  let minute = minuteFromSize order portico.size
       size' proportion = sizeOf proportion minute
       pedestalOverhang = case porticoPedestal p of
         Nothing -> 0.0
         Just pedestal -> max (size' pedestal.base.width) (max (size' pedestal.die.width) (size' pedestal.cornice.width)) / 2.0
   in max pedestalOverhang
-    $ max (size' order.base.width / 2.0)
+    $ max (size' (unwrap order).base.width / 2.0)
     $ max (capitalWidth order minute / 2.0)
-    $ max (size' order.entablature.architrave.depth)
-    $ max (size' order.entablature.frieze.depth) (size' order.entablature.cornice.depth)
+    $ max (size' (unwrap order).entablature.architrave.depth)
+    $ max (size' (unwrap order).entablature.frieze.depth) (size' (unwrap order).entablature.cornice.depth)
 
 instance Sized Portico where
   size p@(Portico portico) =
-    let minute = minuteFromSize portico.pedestal portico.order portico.size
+    let minute = minuteFromSize portico.order portico.size
     in { width: porticoSpan p + 2.0 * porticoOverhang p
-       , height: sizeOf portico.order.height minute + porticoRaise p minute
+       , height: sizeOf (unwrap portico.order).height minute + porticoRaise p minute
        }
 
 instance RectangularFigure Portico
 
 drawPorticoFromTopLeft :: forall m. Monad m => Renderer m => Point -> Portico -> m Unit
 drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
-  let minute = minuteFromSize portico.pedestal order portico.size
+  let minute = minuteFromSize order portico.size
   let { width, height } = size p
   let ground = topLeft.y + height
   let bottom = ground - porticoRaise p minute
@@ -324,13 +318,13 @@ drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
   -- The plinths of an arcade without pedestals: plain blocks as wide as the plinths of the bases.
   let plinth = sizeOf (arcadePlinthHeight portico.pedestal portico.arcade order) minute
   when (plinth > 0.0) $ forBeats \x beat@(ColumnBeat n) -> when (n > 0) do
-    let w = groupSpan portico.groupSpacing beat + sizeOf order.base.width minute
+    let w = groupSpan portico.groupSpacing beat + sizeOf (unwrap order).base.width minute
     drawRectangle (point (x - w / 2.0) (ground - plinth)) w plinth (Just def) (Just def)
   forBeats \x beat@(ColumnBeat n) -> do
     let leftmost = x - groupSpan portico.groupSpacing beat / 2.0
     when (n > 0) $ for_ (Array.range 0 (n - 1)) \j ->
       drawColumn (point (leftmost + Int.toNumber j * portico.groupSpacing) bottom) minute order
-  drawSpanningEntablature (point (topLeft.x + width / 2.0) (bottom - sizeOf order.column.height minute)) (porticoSpan p) minute order
+  drawSpanningEntablature (point (topLeft.x + width / 2.0) (bottom - sizeOf (unwrap order).column.height minute)) (porticoSpan p) minute order
 
 -- | Draw an arch of the arcade centered between the facing columns at `left` and `right`, standing on
 -- | `ground`: an impost across the bay at the springing of the arch, a ninth of the opening high
@@ -380,7 +374,7 @@ rowMinutes (StackedCollonade { orders: storeys, superposition, size: { row, size
   Nothing -> []
   Just anchor ->
     let rows = storeys <#> \{ order, pedestal } -> { order, pedestal }
-        anchorMinute = minuteFromSize anchor.pedestal anchor.order size
+        anchorMinute = minuteFromSize anchor.order size
         -- Each step carries the storey and minute just reached, and the joint to cross next.
         propagate next nextJoint firstJoint first = map (\{ minute } -> minute) <<< Array.scanl
           (\{ storey: prev, minute, joint } storey -> { storey, minute: next joint prev minute storey, joint: nextJoint joint })

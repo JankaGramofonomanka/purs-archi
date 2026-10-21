@@ -17,7 +17,7 @@ module Architecture.Order.Draw
 
 import Prelude
 
-import Architecture.Order (Order, OrderKind(..), ionicVolutes, Pedestal, minuteFromColumnAndEntablatureHeight, minuteFromColumnHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, sizeOf)
+import Architecture.Order (Order(..), OrderKind(..), ionicVolutes, Pedestal, minuteFromColumnAndEntablatureHeight, minuteFromColumnHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, sizeOf)
 import Data.Array as Array
 import Data.Default (def)
 import Data.Foldable (for_)
@@ -26,11 +26,12 @@ import Data.Maybe (Maybe(..))
 import Data.Number as Number
 import Renderer (Point(..), point)
 import Renderer as Renderer
+import Data.Newtype (unwrap)
 
 -- | Draw the column of an order (base, shaft and capital) with the given size of a minute.
 -- | The point is the center of the bottom edge of the column base.
 drawColumn :: forall m. Monad m => Renderer.Renderer m => Point -> Number -> Order -> m Unit
-drawColumn (Point bottom) minute order = do
+drawColumn (Point bottom) minute (Order order) = do
   let size proportion = sizeOf proportion minute
   let x = bottom.x
   let baseTop = bottom.y - size order.base.height
@@ -50,7 +51,7 @@ drawColumn (Point bottom) minute order = do
 -- | Draw the entablature of an order (architrave, frieze and cornice) with the given size of a minute.
 -- | The point is the center of the bottom edge of the architrave.
 drawEntablature :: forall m. Monad m => Renderer.Renderer m => Point -> Number -> Order -> m Unit
-drawEntablature (Point bottom) minute order = do
+drawEntablature (Point bottom) minute (Order order) = do
   let size proportion = sizeOf proportion minute
   let x = bottom.x
   let width = size order.column.lowerDiameter
@@ -65,7 +66,7 @@ drawEntablature (Point bottom) minute order = do
 -- | with each element projecting its depth beyond the outermost centerlines.
 -- | The point is the center of the bottom edge of the architrave.
 drawSpanningEntablature :: forall m. Monad m => Renderer.Renderer m => Point -> Number -> Number -> Order -> m Unit
-drawSpanningEntablature (Point bottom) span minute order = do
+drawSpanningEntablature (Point bottom) span minute (Order order) = do
   let size proportion = sizeOf proportion minute
   let x = bottom.x
   let width element = span + 2.0 * size element.depth
@@ -101,7 +102,7 @@ drawSpanningPedestal (Point bottom) span minute pedestal = do
 drawOrder :: forall m. Monad m => Renderer.Renderer m => Point -> Number -> Order -> m Unit
 drawOrder (Point bottom) minute order = do
   drawColumn (Point bottom) minute order
-  drawEntablature (point bottom.x (bottom.y - sizeOf order.column.height minute)) minute order
+  drawEntablature (point bottom.x (bottom.y - sizeOf (unwrap order).column.height minute)) minute order
 
 -- | Draw the column so that the entire order, including the entablature, has the given height.
 drawColumnFromOrderHeight :: forall m. Monad m => Renderer.Renderer m => Point -> Number -> Order -> m Unit

@@ -10,9 +10,10 @@ module Architecture.Order.Chambers
 
 import Prelude
 
-import Architecture.Order (Order, OrderKind(..), Treatise, mkOrder, withArcadeNoPedestal, withArcadePlinth, withPedestal, withArcadePedestal)
+import Architecture.Order (Order(..), OrderKind(..), Treatise, mkOrder, withArcadeNoPedestal, withArcadePlinth, withPedestal, withArcadePedestal)
 import Architecture.Superposition (continuousTaper)
 import Data.Maybe (Maybe(..))
+import Data.Newtype (over)
 
 -- After Chambers, A Treatise on the Decorative Part of Civil Architecture (Gwilt's 1862
 -- edition). The module is half a diameter; columns are 14, 16, 18, 20 and 20 modules, every
@@ -117,4 +118,4 @@ corynthian =
 -- dimensions" in every order, and its cornice "differs from the Corinthian only in the
 -- modillions, which are square", so the modillions over the axes are as far apart.
 composite :: Order
-composite = corynthian { kind = Composite }
+composite = over Order _ { kind = Composite } corynthian
