@@ -21,7 +21,8 @@ npm run dev
 ```
 
 Open the local URL printed by Vite (by default, <http://127.0.0.1:5173/>).
-The home page redirects to `/algo/svg`.
+The home page links to the `/algo`, `/demo`, and `/collonade` sections; each
+of these opens its `/svg` page.
 The first build downloads the PureScript packages listed in `spago.yaml`.
 
 To run the dev server and rebuild/reload the page when PureScript sources

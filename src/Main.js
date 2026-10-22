@@ -4,6 +4,16 @@ const backends = ["/svg", "/canvas", "/purescript-drawing"];
 
 const updateRoute = onRouteChange => {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  const isHome = path === "/";
+  for (const element of document.querySelectorAll(".route-nav, .demo-page")) {
+    element.hidden = isHome;
+  }
+  getElement(".home-page", HTMLElement).hidden = !isHome;
+  if (isHome) {
+    currentRoute = path;
+    return;
+  }
+
   const routes = modes.flatMap(mode => backends.map(backend => mode + backend));
   // A bare mode opens its SVG page; anything else unknown opens the algorithm's.
   const route = routes.includes(path) ? path
@@ -84,6 +94,14 @@ const updateRoute = onRouteChange => {
 };
 
 let currentRoute = "/";
+
+const getElement = (selector, type) => {
+  const element = document.querySelector(selector);
+  if (!(element instanceof type)) {
+    throw new Error(`Missing ${selector} element`);
+  }
+  return element;
+};
 
 const getMode = route => route.slice(0, route.lastIndexOf("/"));
 
@@ -936,18 +954,14 @@ export const setupRoutes = onRouteChange => onAction => treatises => formStatus 
   window.addEventListener("popstate", () => updateRoute(onRouteChange));
   window.addEventListener("resize", () => updateRoute(onRouteChange));
 
-  const routeNav = document.querySelector(".route-nav");
-  if (!(routeNav instanceof HTMLElement)) {
-    throw new Error("Missing .route-nav element");
-  }
-
   const stepButton = document.querySelector("#step-algorithm");
   if (!(stepButton instanceof HTMLButtonElement)) {
     throw new Error("Missing #step-algorithm button");
   }
   stepButton.addEventListener("click", () => onAction());
 
-  routeNav.addEventListener("click", event => {
+  // Follow same-origin route links without reloading the page.
+  const followRouteLink = event => {
     if (
       !(event.target instanceof Element) ||
       event.defaultPrevented ||
@@ -973,5 +987,7 @@ export const setupRoutes = onRouteChange => onAction => treatises => formStatus 
     event.preventDefault();
     window.history.pushState({}, "", link.href);
     updateRoute(onRouteChange);
-  });
+  };
+  getElement(".route-nav", HTMLElement).addEventListener("click", followRouteLink);
+  getElement(".home-page", HTMLElement).addEventListener("click", followRouteLink);
 };

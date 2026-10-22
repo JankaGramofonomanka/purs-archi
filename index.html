@@ -9,6 +9,23 @@
     <script type="module" src="/app.js"></script>
   </head>
   <body>
+    <main class="home-page" hidden>
+      <h1>PureScript drawing demo</h1>
+      <nav class="home-links" aria-label="Sections">
+        <a class="home-link" href="/algo" data-route="/algo">
+          <span class="home-link-title">Algorithm</span>
+          <span class="home-link-text">Step through the algorithm on its drawing surface.</span>
+        </a>
+        <a class="home-link" href="/demo" data-route="/demo">
+          <span class="home-link-title">Demo</span>
+          <span class="home-link-text">Renderer examples: shapes, lines, orders and porticos.</span>
+        </a>
+        <a class="home-link" href="/collonade" data-route="/collonade">
+          <span class="home-link-title">Collonade</span>
+          <span class="home-link-text">Design a stacked collonade from the classical orders.</span>
+        </a>
+      </nav>
+    </main>
     <nav class="route-nav" aria-label="Demo pages">
       <a class="route-link" href="/algo/svg" data-page="/svg" data-route="/algo/svg">SVG</a>
       <a class="route-link" href="/algo/canvas" data-page="/canvas" data-route="/algo/canvas">Canvas</a>
