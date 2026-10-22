@@ -10,5 +10,4 @@
 /.purs*
 /.psa*
 /.spago
-app.js
 .toignore/
