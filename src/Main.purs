@@ -7,7 +7,7 @@ import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..), either)
 import Data.Foldable (foldl)
-import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
 import Data.Newtype (unwrap)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
@@ -55,7 +55,7 @@ type State =
 -- | is the width of the windows' openings in lower diameters; with their architraves (a sixth of the opening
 -- | on each side) they are at most as wide as the bay width less one diameter. `scale` is the lower diameter of the
 -- | bottom row's columns in pixels and `offset` how far the drawing is moved from the center, in pixels.
--- | While a storey frames an arcade, `bayWidth` is not used: see `arcadeBayWidth`. `arcadeMode`, a key
+-- | While a storey frames an arcade, a `bayWidth` less than `arcadeBayWidth` is taken as that. `arcadeMode`, a key
 -- | from `arcadeModes`, says how wide the arches above the lowest arcade are.
 type CollonadeForm =
   { treatise :: String
@@ -277,13 +277,15 @@ arcadeBayWidth { storeys, superposition } = do
       _, _ -> minuteFromLowerDiameter row.order 1.0
 
 -- | What the page's form shows that follows from its settings: whether any storey frames an arcade
--- | (`arcades`), and then the bay width it sets (`bayWidth`, otherwise the one typed in), and for
--- | each storey, bottom to top, whether its arches would be too tall for its columns
+-- | (`arcades`), and then the least bay width it allows (`minBayWidth`), the bay width drawn
+-- | (`bayWidth`: the one typed in, but no less than that), and for each storey, bottom to top,
+-- | whether its arches would be too tall for its columns
 -- | (`archTooTall`; see `archesTooTall`). A form that is not valid has no arcades.
-formStatus :: CollonadeForm -> { arcades :: Boolean, bayWidth :: Number, archTooTall :: Array Boolean }
+formStatus :: CollonadeForm -> { arcades :: Boolean, minBayWidth :: Number, bayWidth :: Number, archTooTall :: Array Boolean }
 formStatus form =
   { arcades: isJust arcadeBay
-  , bayWidth: fromMaybe form.bayWidth arcadeBay
+  , minBayWidth: fromMaybe 0.0 arcadeBay
+  , bayWidth: maybe form.bayWidth (max form.bayWidth) arcadeBay
   , archTooTall: either (const (false <$ form.orders)) (archesTooTall <<< Collonade.stackedCollonade) (configFromForm form)
   }
   where
@@ -296,7 +298,8 @@ configFromForm :: CollonadeForm -> Either String Collonade.Config
 configFromForm form = do
   parsed <- formStoreys form
   let arcadeBay = arcadeBayWidth parsed
-  let bayWidth = fromMaybe form.bayWidth arcadeBay
+  -- The arches set the least bay width; a wider one widens the piers.
+  let bayWidth = maybe form.bayWidth (max form.bayWidth) arcadeBay
   when (Array.length form.orders < 1) do
     Left "A collonade needs at least one order"
   when (form.numOfColumns < 1) do
@@ -339,7 +342,7 @@ foreign import setupRoutes
   :: (String -> Number -> Number -> Effect Unit)
   -> Effect Unit
   -> Array TreatiseOption
-  -> (CollonadeForm -> { arcades :: Boolean, bayWidth :: Number, archTooTall :: Array Boolean })
+  -> (CollonadeForm -> { arcades :: Boolean, minBayWidth :: Number, bayWidth :: Number, archTooTall :: Array Boolean })
   -> CollonadeForm
   -> (CollonadeForm -> Effect Unit)
   -> Effect Unit

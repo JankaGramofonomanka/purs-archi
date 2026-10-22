@@ -232,7 +232,8 @@ const columnCount = n => n === 0 ? "no column" : n === 1 ? "1 column" : `${n} co
 // Each storey of `orders` is `{ order, pedestal, arcade }`, the pedestal being a key of
 // `pedestalNames` and `arcade` whether its columns frame arches; `arcadeMode` is a key of
 // `arcadeModeNames`. `formStatus(form)` says whether any storey frames an arcade (`arcades`) and then
-// the bay width the arches set (`bayWidth`), which replaces the one typed in, and for each storey
+// the least bay width the arches allow (`minBayWidth`), the bay width drawn (`bayWidth`: the one typed
+// in, but no less than that; a wider bay widens the piers), and for each storey
 // whether its arches would rise higher than its columns (`archTooTall`), so it cannot frame one.
 const setupCollonadeForm = (treatises, formStatus, initial, onChange) => {
   const treatiseGroup = document.querySelector("#collonade-treatises");
@@ -492,11 +493,24 @@ const setupCollonadeForm = (treatises, formStatus, initial, onChange) => {
 
   // While a storey frames an arcade the bay width is the arches' and cannot be typed in; the
   // window width is kept within it.
+  // While a storey frames an arcade the bay width cannot be less than an arch and a pier of the
+  // lowest arcade; a wider bay widens the piers.
+  const bayWidthBounds = () => {
+    const { arcades, minBayWidth: arcadeMin } = arcadeBay();
+    const min = arcades ? Math.max(minBayWidth, arcadeMin) : minBayWidth;
+    return { min, max: Math.max(maxBayWidth, min) };
+  };
+  const roundBayWidth = value => Math.round(value * 1000) / 1000;
   const renderBayWidth = () => {
     const { arcades, bayWidth } = arcadeBay();
-    bayWidthInput.disabled = arcades;
-    bayWidthInput.title = arcades ? "Set by the arches" : "";
-    bayWidthInput.value = String(arcades ? Math.round(bayWidth * 1000) / 1000 : form.bayWidth);
+    const { min, max } = bayWidthBounds();
+    bayWidthInput.min = String(roundBayWidth(min));
+    bayWidthInput.max = String(max);
+    bayWidthInput.title = arcades ? `At least ${roundBayWidth(min)}, an arch and a pier of the lowest arcade; wider bays widen the piers` : "";
+    // Left alone while typed in, so the redraw does not rewrite what is being typed.
+    if (document.activeElement !== bayWidthInput) {
+      bayWidthInput.value = String(roundBayWidth(bayWidth));
+    }
     windowWidthInput.max = String(maxWindowWidth(bayWidth));
     if (form.windowWidth > maxWindowWidth(bayWidth)) {
       form.windowWidth = maxWindowWidth(bayWidth);
@@ -872,28 +886,23 @@ const setupCollonadeForm = (treatises, formStatus, initial, onChange) => {
     report();
   });
 
-  bayWidthInput.min = String(minBayWidth);
-  bayWidthInput.max = String(maxBayWidth);
   bayWidthInput.addEventListener("input", () => {
     const value = Number(bayWidthInput.value);
+    const { min, max } = bayWidthBounds();
     if (
       bayWidthInput.value !== "" &&
       Number.isFinite(value) &&
-      value >= minBayWidth &&
-      value <= maxBayWidth &&
+      value >= roundBayWidth(min) &&
+      value <= max &&
       value !== form.bayWidth
     ) {
-      form.bayWidth = value;
-      windowWidthInput.max = String(maxWindowWidth(form.bayWidth));
-      if (form.windowWidth > maxWindowWidth(form.bayWidth)) {
-        form.windowWidth = maxWindowWidth(form.bayWidth);
-        windowWidthInput.value = String(form.windowWidth);
-      }
+      form.bayWidth = Math.max(value, min);
+      render();
       report();
     }
   });
   bayWidthInput.addEventListener("change", () => {
-    bayWidthInput.value = String(form.bayWidth);
+    bayWidthInput.value = String(roundBayWidth(arcadeBay().bayWidth));
   });
 
   windowWidthInput.min = String(minWindowWidth);

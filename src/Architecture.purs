@@ -74,7 +74,8 @@ data BayFill = Wall | Window
 derive instance Eq BayFill
 
 -- | How the arches of the storeys of a `StackedCollonade` above the lowest arcade (which sets the
--- | bay width) fill their wider bays, the height of each order's arch being kept.
+-- | least bay width: its arch and pier) fill their wider bays, the height of each order's arch being
+-- | kept. A bay wider than the least widens the piers of every storey by as much.
 -- | `OrderArches`: every arch is as wide as its order says, so the piers widen upwards.
 -- | `ConstantArchWidth`: every arch is as wide as the lowest arcade's (the Colosseum).
 -- | `OrderPiers`: every pier is as wide as its order says and the arches widen upwards (the theatre
@@ -84,8 +85,9 @@ data ArcadeMode = OrderArches | ConstantArchWidth | OrderPiers
 derive instance Eq ArcadeMode
 
 -- | How wide the arches of a row are: as the order says (`OrderArch`), of the given width
--- | (`ArchOf`), or filling the bay but for a pier as wide as the order says (`OrderPier`).
-data ArchWidth = OrderArch | ArchOf Number | OrderPier
+-- | (`ArchOf`), or filling the bay but for a pier as wide as the order says and the given width
+-- | more (`OrderPier`).
+data ArchWidth = OrderArch | ArchOf Number | OrderPier Number
 
 -- | The opening of the windows of a row, without their frame.
 type WindowSize = { width :: Number, height :: Number }
@@ -280,7 +282,7 @@ archOpenings p@(Portico portico@{ order }) = arcadeOf portico.pedestal order <#>
   in porticoBays p <#> \bay -> case portico.archWidth of
        OrderArch -> sizeOf arcade.openingWidth minute
        ArchOf width -> width
-       OrderPier -> bay.right - bay.left - sizeOf arcade.pierWidth minute
+       OrderPier wider -> bay.right - bay.left - sizeOf arcade.pierWidth minute - wider
 
 -- | Whether the half circle of an arch of the row, left without its supports, would rise higher
 -- | than the columns with their pedestals.
@@ -437,19 +439,20 @@ collonades :: StackedCollonade -> Array Collonade
 collonades stack@(StackedCollonade { orders, numOfColumns, bayWidth, bayMeasure, rythm, bays, windowWidth, arcadeMode }) =
   let rows = Array.zip orders (rowMinutes stack)
       groupSpacing = foldl max 0.0 (map (\(Tuple { order } minute) -> minGroupSpacing order minute) rows)
-      -- The lowest arcade, which sets the bay width, and the width of its arches.
+      -- The lowest arcade, which sets the least bay width, and the width of its arches and piers.
       lowest = Array.findIndex (\(Tuple { order, pedestal, arcade } _) -> arcade && isJust (arcadeOf pedestal order)) rows
-      lowestOpening = do
+      lowestArcade = do
         index <- lowest
         Tuple { order, pedestal } minute <- Array.index rows index
         arcade <- arcadeOf pedestal order
-        pure (sizeOf arcade.openingWidth minute)
+        pure { opening: sizeOf arcade.openingWidth minute, pier: sizeOf arcade.pierWidth minute }
       -- A row at or under the lowest arcade would itself be the lowest if it framed one.
-      archWidth index = case lowest, lowestOpening of
-        Just l, Just opening | index > l -> case arcadeMode of
+      archWidth index = case lowest, lowestArcade of
+        Just l, Just { opening, pier } | index > l -> case arcadeMode of
           OrderArches -> OrderArch
           ConstantArchWidth -> ArchOf opening
-          OrderPiers -> OrderPier
+          -- How much wider than the least the bay is widens the piers, not the arches.
+          OrderPiers -> OrderPier (max 0.0 (bayWidth - opening - pier))
         _, _ -> OrderArch
       porticos = rows # Array.mapWithIndex \index (Tuple { order, pedestal, arcade } minute) ->
         Portico { order, size: { measure: Minute, value: minute }, numOfColumns, bayWidth, bayMeasure, rythm, groupSpacing, pedestal, bays, window: { width: 0.0, height: 0.0 }, arcade, archWidth: archWidth index }
