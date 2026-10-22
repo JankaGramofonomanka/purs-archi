@@ -1,11 +1,14 @@
-// Each mode prefixes the backend routes ("" is the algorithm page); a mode may have its own action bar.
-const modes = ["", "/demo", "/collonade"];
+// Each mode prefixes the backend routes; a mode may have its own action bar.
+const modes = ["/algo", "/demo", "/collonade"];
 const backends = ["/svg", "/canvas", "/purescript-drawing"];
 
 const updateRoute = onRouteChange => {
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
   const routes = modes.flatMap(mode => backends.map(backend => mode + backend));
-  const route = routes.includes(path) ? path : "/svg";
+  // A bare mode opens its SVG page; anything else unknown opens the algorithm's.
+  const route = routes.includes(path) ? path
+    : modes.includes(path) ? `${path}/svg`
+    : "/algo/svg";
   if (path !== route) {
     window.history.replaceState({}, "", route);
   }

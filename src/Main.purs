@@ -194,7 +194,7 @@ handleAction state = case _ of
 
 isBlankRoute :: String -> Boolean
 isBlankRoute route =
-  route == "/svg" || route == "/canvas" || route == "/purescript-drawing"
+  route == "/algo/svg" || route == "/algo/canvas" || route == "/algo/purescript-drawing"
 
 isCollonadeRoute :: String -> Boolean
 isCollonadeRoute route =
@@ -202,9 +202,9 @@ isCollonadeRoute route =
 
 renderBlankRoute :: String -> Algo.State -> Effect Unit
 renderBlankRoute route algoState = case route of
-  "/svg" -> SVGPage.draw algoState
-  "/canvas" -> CanvasPage.draw algoState
-  "/purescript-drawing" -> PureScriptDrawingPage.draw algoState
+  "/algo/svg" -> SVGPage.draw algoState
+  "/algo/canvas" -> CanvasPage.draw algoState
+  "/algo/purescript-drawing" -> PureScriptDrawingPage.draw algoState
   _ -> pure unit
 
 renderCollonadeRoute :: String -> Collonade.Config -> Effect Unit

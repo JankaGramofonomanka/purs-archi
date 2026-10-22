@@ -1,7 +1,7 @@
 # PureScript drawing demo
 
-A small browser drawing demo written in PureScript. The `/svg`, `/canvas`, and
-`/purescript-drawing` routes render the algorithm state on their drawing
+A small browser drawing demo written in PureScript. The `/algo/svg`, `/algo/canvas`,
+and `/algo/purescript-drawing` routes render the algorithm state on their drawing
 surfaces. Use the left-side **Step algorithm** button to advance the algorithm;
 its state is shared while switching between these routes. Their `/demo/...`
 counterparts render the SVG, Canvas, and PureScript Drawing examples.
@@ -21,7 +21,7 @@ npm run dev
 ```
 
 Open the local URL printed by Vite (by default, <http://127.0.0.1:5173/>).
-The home page redirects to `/svg`.
+The home page redirects to `/algo/svg`.
 The first build downloads the PureScript packages listed in `spago.yaml`.
 
 To run the dev server and rebuild/reload the page when PureScript sources
