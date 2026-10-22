@@ -169,6 +169,19 @@ const bayMeasureNames = {
   groups: "Between groups"
 };
 
+// How the arches above the lowest arcade, which sets the bay width, fill their wider bays; each
+// keeps the height of its order's arch.
+const arcadeModeNames = {
+  arches: "Arches as the order",
+  width: "Constant arch width",
+  piers: "Piers as the order"
+};
+const arcadeModeTitles = {
+  arches: "Every arch as wide as its order says; the piers widen upwards",
+  width: "Every arch as wide as the lowest arcade's, as at the Colosseum",
+  piers: "Every pier as wide as its order says; the arches widen upwards, as at the theatre of Marcellus"
+};
+
 // Bounds of the drawing's scale (lower diameter of the bottom columns, in pixels) and the factor
 // each click of the zoom buttons multiplies or divides it by.
 const minScale = 2;
@@ -217,10 +230,11 @@ const columnCount = n => n === 0 ? "no column" : n === 1 ? "1 column" : `${n} co
 // it gives an arcade without (`arcades`) and with (`pedestalArcades`) pedestals, and says whether
 // it `stacks` orders (gives a rule for placing one over another); the form only offers those.
 // Each storey of `orders` is `{ order, pedestal, arcade }`, the pedestal being a key of
-// `pedestalNames` and `arcade` whether its columns frame arches. `arcadeBayWidth(form)` says
-// whether any storey does (`arcades`) and then the bay width the arches set (`bayWidth`), which
-// replaces the one typed in.
-const setupCollonadeForm = (treatises, arcadeBayWidth, initial, onChange) => {
+// `pedestalNames` and `arcade` whether its columns frame arches; `arcadeMode` is a key of
+// `arcadeModeNames`. `formStatus(form)` says whether any storey frames an arcade (`arcades`) and then
+// the bay width the arches set (`bayWidth`), which replaces the one typed in, and for each storey
+// whether its arches would rise higher than its columns (`archTooTall`), so it cannot frame one.
+const setupCollonadeForm = (treatises, formStatus, initial, onChange) => {
   const treatiseGroup = document.querySelector("#collonade-treatises");
   const orderList = document.querySelector("#collonade-orders");
   const addButton = document.querySelector("#collonade-add-order");
@@ -245,6 +259,7 @@ const setupCollonadeForm = (treatises, arcadeBayWidth, initial, onChange) => {
     }
   };
   const bayMeasureButton = document.querySelector("#collonade-bay-measure");
+  const arcadeModeGroup = document.querySelector("#collonade-arcade-modes");
   const zoomInButton = document.querySelector("#collonade-zoom-in");
   const zoomOutButton = document.querySelector("#collonade-zoom-out");
   if (
@@ -264,6 +279,7 @@ const setupCollonadeForm = (treatises, arcadeBayWidth, initial, onChange) => {
     !Object.values(mirrorButtons).every(({ right, left }) =>
       right instanceof HTMLButtonElement && left instanceof HTMLButtonElement) ||
     !(bayMeasureButton instanceof HTMLButtonElement) ||
+    !(arcadeModeGroup instanceof HTMLElement) ||
     !(zoomInButton instanceof HTMLButtonElement) ||
     !(zoomOutButton instanceof HTMLButtonElement)
   ) {
@@ -280,7 +296,8 @@ const setupCollonadeForm = (treatises, arcadeBayWidth, initial, onChange) => {
     bays: [...initial.bays],
     windowWidth: initial.windowWidth,
     scale: initial.scale,
-    offset: { ...initial.offset }
+    offset: { ...initial.offset },
+    arcadeMode: initial.arcadeMode
   };
   const snapshot = () => ({
     treatise: form.treatise,
@@ -292,10 +309,21 @@ const setupCollonadeForm = (treatises, arcadeBayWidth, initial, onChange) => {
     bays: [...form.bays],
     windowWidth: form.windowWidth,
     scale: form.scale,
-    offset: { ...form.offset }
+    offset: { ...form.offset },
+    arcadeMode: form.arcadeMode
   });
   const report = () => onChange(snapshot())();
-  const arcadeBay = () => arcadeBayWidth(snapshot());
+  const arcadeBay = () => formStatus(snapshot());
+  // A storey whose arches would rise higher than its columns cannot frame an arcade. Turning one
+  // off never changes the bay width (the lowest arcade's arches always fit), but repeat to be sure.
+  const dropTooTallArcades = () => {
+    for (let pass = 0; pass < form.orders.length; pass++) {
+      const { archTooTall } = arcadeBay();
+      const tooTall = form.orders.filter((storey, index) => storey.arcade && archTooTall[index]);
+      if (tooTall.length === 0) return;
+      tooTall.forEach(storey => { storey.arcade = false; });
+    }
+  };
   // The bay width the drawing uses: the arches' while any storey frames an arcade.
   const effectiveBayWidth = () => arcadeBay().bayWidth;
   const hasArcade = (treatise, { order, pedestal }) =>
@@ -419,9 +447,11 @@ const setupCollonadeForm = (treatises, arcadeBayWidth, initial, onChange) => {
       arcadeButton.append(arcadeIcon());
       arcadeButton.setAttribute("aria-pressed", String(storey.arcade));
       arcadeButton.setAttribute("aria-label", `Arcade of order ${index + 1} from the bottom`);
-      arcadeButton.disabled = !hasArcade(treatise, storey);
-      arcadeButton.title = arcadeButton.disabled
+      const tooTall = arcadeBay().archTooTall[index] ?? false;
+      arcadeButton.disabled = !hasArcade(treatise, storey) || tooTall;
+      arcadeButton.title = !hasArcade(treatise, storey)
         ? `${treatise.name} gives no arcade for the ${orderNames[order]} order ${pedestal === "none" ? "without" : "with"} pedestals`
+        : tooTall ? "The arch exceeds the column height"
         : storey.arcade ? "Arcade (click for columns only)" : "Columns only (click for an arcade)";
       arcadeButton.addEventListener("click", () => {
         storey.arcade = !storey.arcade;
@@ -441,6 +471,23 @@ const setupCollonadeForm = (treatises, arcadeBayWidth, initial, onChange) => {
   const renderBayMeasures = () => {
     bayMeasureButton.textContent = bayMeasureNames[form.bayMeasure];
     bayMeasureButton.title = `Click for ${bayMeasureNames[nextBayMeasure()].toLowerCase()}`;
+  };
+
+  const renderArcadeModes = () => {
+    arcadeModeGroup.replaceChildren(...Object.entries(arcadeModeNames).map(([key, name]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "treatise-option";
+      button.textContent = name;
+      button.title = arcadeModeTitles[key];
+      button.setAttribute("aria-pressed", String(key === form.arcadeMode));
+      button.addEventListener("click", () => {
+        form.arcadeMode = key;
+        render();
+        report();
+      });
+      return button;
+    }));
   };
 
   // While a storey frames an arcade the bay width is the arches' and cannot be typed in; the
@@ -801,11 +848,13 @@ const setupCollonadeForm = (treatises, arcadeBayWidth, initial, onChange) => {
   }
 
   const render = () => {
+    dropTooTallArcades();
     renderZoom();
     renderTreatises();
     renderOrders();
     renderAddButton();
     renderBayMeasures();
+    renderArcadeModes();
     renderBayWidth();
     renderSequence();
     sequenceRows.forEach(renderSelection);
@@ -869,8 +918,8 @@ const setupCollonadeForm = (treatises, arcadeBayWidth, initial, onChange) => {
   render();
 };
 
-export const setupRoutes = onRouteChange => onAction => treatises => arcadeBayWidth => initialCollonade => onCollonadeChange => () => {
-  setupCollonadeForm(treatises, arcadeBayWidth, initialCollonade, onCollonadeChange);
+export const setupRoutes = onRouteChange => onAction => treatises => formStatus => initialCollonade => onCollonadeChange => () => {
+  setupCollonadeForm(treatises, formStatus, initialCollonade, onCollonadeChange);
   updateRoute(onRouteChange);
   window.addEventListener("popstate", () => updateRoute(onRouteChange));
   window.addEventListener("resize", () => updateRoute(onRouteChange));

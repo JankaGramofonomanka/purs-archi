@@ -7,14 +7,14 @@ import Data.Array as Array
 import Data.Array.NonEmpty as NonEmptyArray
 import Data.Either (Either(..), either)
 import Data.Foldable (foldl)
-import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing, maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, isNothing)
 import Data.Newtype (unwrap)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
 import Effect.Exception (throw)
 import Effect.Ref as Ref
-import Architecture (BayFill(..), BayMeasure(..), ColumnBeat(..))
+import Architecture (ArcadeMode(..), BayFill(..), BayMeasure(..), ColumnBeat(..), archesTooTall)
 import Architecture.Order (Order, OrderKind(..), PedestalMode(..), Treatise, arcadeOf, minuteFromLowerDiameter, sizeOf, treatiseOrder, upperMinute)
 import Architecture.Superposition (SuperpositionRule, continuousTaper)
 import Architecture.Order.Alberti as Alberti
@@ -55,7 +55,8 @@ type State =
 -- | is the width of the windows' openings in lower diameters; with their architraves (a sixth of the opening
 -- | on each side) they are at most as wide as the bay width less one diameter. `scale` is the lower diameter of the
 -- | bottom row's columns in pixels and `offset` how far the drawing is moved from the center, in pixels.
--- | While a storey frames an arcade, `bayWidth` is not used: see `arcadeBayWidth`.
+-- | While a storey frames an arcade, `bayWidth` is not used: see `arcadeBayWidth`. `arcadeMode`, a key
+-- | from `arcadeModes`, says how wide the arches above the lowest arcade are.
 type CollonadeForm =
   { treatise :: String
   , orders :: Array FormStorey
@@ -67,6 +68,7 @@ type CollonadeForm =
   , windowWidth :: Number
   , scale :: Number
   , offset :: { x :: Number, y :: Number }
+  , arcadeMode :: String
   }
 
 type FormStorey = { order :: String, pedestal :: String, arcade :: Boolean }
@@ -117,6 +119,13 @@ bayFills =
   , { key: "window", fill: Window }
   ]
 
+arcadeModes :: Array { key :: String, mode :: ArcadeMode }
+arcadeModes =
+  [ { key: "arches", mode: OrderArches }
+  , { key: "width", mode: ConstantArchWidth }
+  , { key: "piers", mode: OrderPiers }
+  ]
+
 pedestalModes :: Array { key :: String, mode :: PedestalMode }
 pedestalModes =
   [ { key: "none", mode: NoPedestal }
@@ -136,7 +145,7 @@ treatiseOptions = treatises <#> \{ key, name, treatise } ->
   }
 
 initialForm :: CollonadeForm
-initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none", arcade: false }, numOfColumns: 5, bayWidth: 3.0, bayMeasure: "groups", rythm: Array.replicate 5 1, bays: Array.replicate 4 "window", windowWidth: 1.0, scale: 10.0, offset: { x: 0.0, y: 0.0 } }
+initialForm = { treatise: "palladio", orders: [ "doric", "ionic", "corynthian" ] <#> { order: _, pedestal: "none", arcade: false }, numOfColumns: 5, bayWidth: 3.0, bayMeasure: "groups", rythm: Array.replicate 5 1, bays: Array.replicate 4 "window", windowWidth: 1.0, scale: 10.0, offset: { x: 0.0, y: 0.0 }, arcadeMode: "arches" }
 
 main :: Effect Unit
 main = do
@@ -146,7 +155,7 @@ main = do
     (drawRoute state)
     (handleAction state StepAlgorithm)
     treatiseOptions
-    arcadeBayWidthOfForm
+    formStatus
     initialForm
     (\form -> fromForm form >>= SetCollonade >>> handleAction state)
 
@@ -267,58 +276,70 @@ arcadeBayWidth { storeys, superposition } = do
       Just minute, Just lower -> upperMinute superposition (index - 1) lower minute row
       _, _ -> minuteFromLowerDiameter row.order 1.0
 
--- | `arcadeBayWidth` for the page's form, which greys out its bay width while `arcades` is set
--- | and shows `bayWidth` instead. A form that is not valid has no arcades.
-arcadeBayWidthOfForm :: CollonadeForm -> { arcades :: Boolean, bayWidth :: Number }
-arcadeBayWidthOfForm form =
-  maybe { arcades: false, bayWidth: form.bayWidth } { arcades: true, bayWidth: _ }
-    (either (const Nothing) arcadeBayWidth (formStoreys form))
+-- | What the page's form shows that follows from its settings: whether any storey frames an arcade
+-- | (`arcades`), and then the bay width it sets (`bayWidth`, otherwise the one typed in), and for
+-- | each storey, bottom to top, whether its arches would be too tall for its columns
+-- | (`archTooTall`; see `archesTooTall`). A form that is not valid has no arcades.
+formStatus :: CollonadeForm -> { arcades :: Boolean, bayWidth :: Number, archTooTall :: Array Boolean }
+formStatus form =
+  { arcades: isJust arcadeBay
+  , bayWidth: fromMaybe form.bayWidth arcadeBay
+  , archTooTall: either (const (false <$ form.orders)) (archesTooTall <<< Collonade.stackedCollonade) (configFromForm form)
+  }
+  where
+  arcadeBay = either (const Nothing) arcadeBayWidth (formStoreys form)
 
 fromForm :: CollonadeForm -> Effect Collonade.Config
-fromForm form = do
-  parsed <- either throw pure (formStoreys form)
+fromForm = either throw pure <<< configFromForm
+
+configFromForm :: CollonadeForm -> Either String Collonade.Config
+configFromForm form = do
+  parsed <- formStoreys form
   let arcadeBay = arcadeBayWidth parsed
   let bayWidth = fromMaybe form.bayWidth arcadeBay
   when (Array.length form.orders < 1) do
-    throw "A collonade needs at least one order"
+    Left "A collonade needs at least one order"
   when (form.numOfColumns < 1) do
-    throw "A collonade needs at least one column"
+    Left "A collonade needs at least one column"
   when (bayWidth <= 0.0) do
-    throw "The bay width must be positive"
+    Left "The bay width must be positive"
   when (form.windowWidth < 0.0) do
-    throw "The window width cannot be negative"
+    Left "The window width cannot be negative"
   when (form.windowWidth * 4.0 / 3.0 > bayWidth - 1.0) do
-    throw "A window with its architrave cannot be wider than the bay width less one diameter"
+    Left "A window with its architrave cannot be wider than the bay width less one diameter"
   when (form.scale <= 0.0) do
-    throw "The scale of the drawing must be positive"
+    Left "The scale of the drawing must be positive"
   let orders = parsed.storeys
   let superposition = parsed.superposition
   when (Array.length form.rythm /= form.numOfColumns) do
-    throw "There must be as many axes as columns"
+    Left "There must be as many axes as columns"
   when (Array.length form.bays /= form.numOfColumns - 1) do
-    throw "There must be one bay fewer than axes"
+    Left "There must be one bay fewer than axes"
   when (Array.any (_ < 0) form.rythm) do
-    throw "An axis cannot have a negative number of columns"
+    Left "An axis cannot have a negative number of columns"
   rythm <- case NonEmptyArray.fromArray (map ColumnBeat form.rythm) of
-    Nothing -> throw "A collonade needs at least one axis"
+    Nothing -> Left "A collonade needs at least one axis"
     Just beats -> pure (Rythm.rythm beats)
   bayFillMotif <- traverse
     (\key -> case Array.find (\b -> b.key == key) bayFills of
-        Nothing -> throw ("Unknown bay fill: " <> key)
+        Nothing -> Left ("Unknown bay fill: " <> key)
         Just { fill } -> pure fill)
     form.bays
   -- A single beat has no bays, so what stands for them then is never looked at.
   let bays = Rythm.rythm (fromMaybe (NonEmptyArray.singleton Wall) (NonEmptyArray.fromArray bayFillMotif))
   bayMeasure <- case Array.find (\m -> m.key == form.bayMeasure) bayMeasures of
-    Nothing -> throw ("Unknown bay measure: " <> form.bayMeasure)
+    Nothing -> Left ("Unknown bay measure: " <> form.bayMeasure)
     Just { measure } -> pure measure
-  pure { orders, superposition, numOfColumns: form.numOfColumns, bayWidth, bayMeasure, rythm, bays, windowWidth: form.windowWidth, lowestLowerDiameter: form.scale, offset: form.offset }
+  arcadeMode <- case Array.find (\m -> m.key == form.arcadeMode) arcadeModes of
+    Nothing -> Left ("Unknown arcade mode: " <> form.arcadeMode)
+    Just { mode } -> pure mode
+  pure { orders, superposition, numOfColumns: form.numOfColumns, bayWidth, bayMeasure, rythm, bays, windowWidth: form.windowWidth, lowestLowerDiameter: form.scale, offset: form.offset, arcadeMode }
 
 foreign import setupRoutes
   :: (String -> Number -> Number -> Effect Unit)
   -> Effect Unit
   -> Array TreatiseOption
-  -> (CollonadeForm -> { arcades :: Boolean, bayWidth :: Number })
+  -> (CollonadeForm -> { arcades :: Boolean, bayWidth :: Number, archTooTall :: Array Boolean })
   -> CollonadeForm
   -> (CollonadeForm -> Effect Unit)
   -> Effect Unit

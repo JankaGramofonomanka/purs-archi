@@ -2,6 +2,9 @@ module Architecture
   ( Portico(..)
   , Collonade(..)
   , StackedCollonade(..)
+  , ArcadeMode(..)
+  , ArchWidth(..)
+  , archesTooTall
   , Storey
   , RowSizeDeterminant
   , collonades
@@ -27,9 +30,9 @@ import Architecture.Rythm (Rythm, beatAt)
 import Architecture.Superposition (SuperpositionRule)
 import Data.Array as Array
 import Data.Default (def)
-import Data.Foldable (foldl, for_, sum)
+import Data.Foldable (any, foldl, for_, sum)
 import Data.Int as Int
-import Data.Maybe (Maybe(..), maybe)
+import Data.Maybe (Maybe(..), fromMaybe, isJust, maybe)
 import Data.Newtype (unwrap)
 import Data.Number (cos, pi, pow, sin)
 import Data.Tuple (Tuple(..))
@@ -70,6 +73,20 @@ data BayFill = Wall | Window
 
 derive instance Eq BayFill
 
+-- | How the arches of the storeys of a `StackedCollonade` above the lowest arcade (which sets the
+-- | bay width) fill their wider bays, the height of each order's arch being kept.
+-- | `OrderArches`: every arch is as wide as its order says, so the piers widen upwards.
+-- | `ConstantArchWidth`: every arch is as wide as the lowest arcade's (the Colosseum).
+-- | `OrderPiers`: every pier is as wide as its order says and the arches widen upwards (the theatre
+-- | of Marcellus, Michelangelo's courtyard of the Farnese; d'Aviler's preference).
+data ArcadeMode = OrderArches | ConstantArchWidth | OrderPiers
+
+derive instance Eq ArcadeMode
+
+-- | How wide the arches of a row are: as the order says (`OrderArch`), of the given width
+-- | (`ArchOf`), or filling the bay but for a pier as wide as the order says (`OrderPier`).
+data ArchWidth = OrderArch | ArchOf Number | OrderPier
+
 -- | The opening of the windows of a row, without their frame.
 type WindowSize = { width :: Number, height :: Number }
 
@@ -80,8 +97,10 @@ type WindowSize = { width :: Number, height :: Number }
 -- | has an opening of the size `window`, centered between the facing columns, its frame resting on
 -- | the line of the pedestals' tops (see `sillHeight`). The entablature (and a podium) span the whole row.
 -- | If `arcade` is set and the order has an arcade for columns standing as `pedestal` says, every
--- | bay is decorated with a blind arch (see `drawArch`), with its window, if any, set in it; columns
--- | without pedestals then stand on the order's arcade plinth, if it has one (see `porticoRaise`).
+-- | bay is decorated with a blind arch (see `drawArch`) as wide as `archWidth` says and as high as
+-- | the order says, with its window, if any, set in it; columns without pedestals then stand on the
+-- | order's arcade plinth, if it has one (see `porticoRaise`). Arches whose half circle would rise
+-- | higher than the columns with their pedestals are not drawn (see `archTooTall`).
 newtype Portico = Portico {
   order :: Order,
   size :: SizeDeterminant,
@@ -94,7 +113,8 @@ newtype Portico = Portico {
   pedestal :: PedestalMode,
   bays :: Rythm BayFill,
   window :: WindowSize,
-  arcade :: Boolean
+  arcade :: Boolean,
+  archWidth :: ArchWidth
 }
 
 -- | One row of columns of a `StackedCollonade`; drawn exactly like a `Portico`.
@@ -113,6 +133,7 @@ type Storey = { order :: Order, pedestal :: PedestalMode, arcade :: Boolean }
 -- | All rows share the beats and the `rythm` of the columns (see `Portico`), and the `bays` too, so the
 -- | windows of the rows stand over each other; `superposition` relates the size of each row to the row
 -- | below, so every row has its own minute. All windows are `windowWidth` wide; see `windowSizes`.
+-- | `arcadeMode` says how wide the arches of the rows above the lowest arcade are.
 newtype StackedCollonade = StackedCollonade {
   orders :: Array Storey,
   superposition :: SuperpositionRule,
@@ -122,7 +143,8 @@ newtype StackedCollonade = StackedCollonade {
   bayMeasure :: BayMeasure,
   rythm :: Rythm ColumnBeat,
   bays :: Rythm BayFill,
-  windowWidth :: Number
+  windowWidth :: Number,
+  arcadeMode :: ArcadeMode
 }
 
 minuteOf :: SizedOrder -> Number
@@ -247,8 +269,33 @@ sillHeight order minute = maybe 0.0 (\pedestal -> sizeOf pedestal.height minute)
 -- | How high the row's columns stand above the bottom of the row: on their pedestals or podium, or
 -- | on the plinth of an arcade without pedestals.
 porticoRaise :: Portico -> Number -> Number
-porticoRaise (Portico { order, pedestal, arcade }) minute =
-  sizeOf (pedestalHeight pedestal order) minute + sizeOf (arcadePlinthHeight pedestal arcade order) minute
+porticoRaise p@(Portico { order, pedestal }) minute =
+  sizeOf (pedestalHeight pedestal order) minute + sizeOf (arcadePlinthHeight pedestal (isJust (porticoArcade p)) order) minute
+
+-- | The widths of the openings of the row's arches, one for each bay, as `archWidth` says, whether
+-- | or not the columns frame an arcade; `Nothing` where the order has no arcade for them.
+archOpenings :: Portico -> Maybe (Array Number)
+archOpenings p@(Portico portico@{ order }) = arcadeOf portico.pedestal order <#> \arcade ->
+  let minute = minuteFromSize order portico.size
+  in porticoBays p <#> \bay -> case portico.archWidth of
+       OrderArch -> sizeOf arcade.openingWidth minute
+       ArchOf width -> width
+       OrderPier -> bay.right - bay.left - sizeOf arcade.pierWidth minute
+
+-- | Whether the half circle of an arch of the row, left without its supports, would rise higher
+-- | than the columns with their pedestals.
+archTooTall :: Portico -> Boolean
+archTooTall p@(Portico { order, pedestal, size }) =
+  let minute = minuteFromSize order size
+      columns = sizeOf (pedestalHeight pedestal order) minute + sizeOf (unwrap order).column.height minute
+  in any (\width -> width / 2.0 > columns) (fromMaybe [] (archOpenings p))
+
+-- | The arcade the row's columns frame: they are set to, the order has one for them, and its arches
+-- | are not too tall (see `archTooTall`).
+porticoArcade :: Portico -> Maybe Arcade
+porticoArcade p@(Portico portico)
+  | portico.arcade && not (archTooTall p) = arcadeOf portico.pedestal portico.order
+  | otherwise = Nothing
 
 -- | Height of the bottom of the capitals above the bottom of the row.
 capitalBottom :: Portico -> Number -> Number
@@ -300,9 +347,8 @@ drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
   let forBeats draw = for_ (porticoBeats p) \{ centerline, beat } -> draw (left + centerline) beat
   let frame = windowFrame portico.window
   let sill = ground - sillHeight order minute
-  let arches = if portico.arcade then arcadeOf portico.pedestal order else Nothing
-  for_ arches \arcade -> for_ (porticoBays p) \bay ->
-    drawArch { left: left + bay.left, right: left + bay.right } ground minute arcade
+  for_ (porticoArcade p) \arcade -> for_ (Array.zip (porticoBays p) (fromMaybe [] (archOpenings p))) \(Tuple bay opening) ->
+    when (opening > 0.0) $ drawArch { left: left + bay.left, right: left + bay.right } ground minute opening arcade
   when (portico.window.width > 0.0 && portico.window.height > 0.0) do
     for_ (porticoBays p) \bay -> when (bay.fill == Window) do
       let x = left + (bay.left + bay.right) / 2.0
@@ -316,7 +362,7 @@ drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
       _ -> forBeats \x beat@(ColumnBeat n) ->
         when (n > 0) $ drawSpanningPedestal (point x ground) (groupSpan portico.groupSpacing beat) minute pedestal
   -- The plinths of an arcade without pedestals: plain blocks as wide as the plinths of the bases.
-  let plinth = sizeOf (arcadePlinthHeight portico.pedestal portico.arcade order) minute
+  let plinth = sizeOf (arcadePlinthHeight portico.pedestal (isJust (porticoArcade p)) order) minute
   when (plinth > 0.0) $ forBeats \x beat@(ColumnBeat n) -> when (n > 0) do
     let w = groupSpan portico.groupSpacing beat + sizeOf (unwrap order).base.width minute
     drawRectangle (point (x - w / 2.0) (ground - plinth)) w plinth (Just def) (Just def)
@@ -328,14 +374,15 @@ drawPorticoFromTopLeft (Point topLeft) p@(Portico portico@{ order }) = do
 
 -- | Draw an arch of the arcade centered between the facing columns at `left` and `right`, standing on
 -- | `ground`: an impost across the bay at the springing of the arch, a ninth of the opening high
--- | (Chambers' smallest impost), the archivolt as wide as the arcade says, and the opening.
+-- | (Chambers' smallest impost), the archivolt as wide as the arcade says, and the opening, `opening`
+-- | wide and as high as the arcade says (but springing no lower than the ground).
 -- | The arch is blind: its opening is walled up. The columns, pedestals and windows drawn over it
 -- | cover the impost on the piers' axes and whatever of the arch they stand in front of.
-drawArch :: forall m. Monad m => Renderer m => { left :: Number, right :: Number } -> Number -> Number -> Arcade -> m Unit
-drawArch { left, right } ground minute arcade = do
+drawArch :: forall m. Monad m => Renderer m => { left :: Number, right :: Number } -> Number -> Number -> Number -> Arcade -> m Unit
+drawArch { left, right } ground minute opening arcade = do
   let x = (left + right) / 2.0
-  let radius = sizeOf arcade.openingWidth minute / 2.0
-  let springing = ground - sizeOf arcade.openingHeight minute + radius
+  let radius = opening / 2.0
+  let springing = min ground (ground - sizeOf arcade.openingHeight minute + radius)
   let archivolt = sizeOf arcade.archivoltWidth minute
   let impost = 2.0 * radius / 9.0
   let segments = 48
@@ -387,12 +434,31 @@ rowMinutes (StackedCollonade { orders: storeys, superposition, size: { row, size
 -- | Rows of the stack, bottom to top. Grouped columns of all rows are as far apart as the row
 -- | that needs the most room requires, so the columns of each row stand on those below.
 collonades :: StackedCollonade -> Array Collonade
-collonades stack@(StackedCollonade { orders, numOfColumns, bayWidth, bayMeasure, rythm, bays, windowWidth }) =
+collonades stack@(StackedCollonade { orders, numOfColumns, bayWidth, bayMeasure, rythm, bays, windowWidth, arcadeMode }) =
   let rows = Array.zip orders (rowMinutes stack)
       groupSpacing = foldl max 0.0 (map (\(Tuple { order } minute) -> minGroupSpacing order minute) rows)
-      porticos = rows <#> \(Tuple { order, pedestal, arcade } minute) ->
-        Portico { order, size: { measure: Minute, value: minute }, numOfColumns, bayWidth, bayMeasure, rythm, groupSpacing, pedestal, bays, window: { width: 0.0, height: 0.0 }, arcade }
+      -- The lowest arcade, which sets the bay width, and the width of its arches.
+      lowest = Array.findIndex (\(Tuple { order, pedestal, arcade } _) -> arcade && isJust (arcadeOf pedestal order)) rows
+      lowestOpening = do
+        index <- lowest
+        Tuple { order, pedestal } minute <- Array.index rows index
+        arcade <- arcadeOf pedestal order
+        pure (sizeOf arcade.openingWidth minute)
+      -- A row at or under the lowest arcade would itself be the lowest if it framed one.
+      archWidth index = case lowest, lowestOpening of
+        Just l, Just opening | index > l -> case arcadeMode of
+          OrderArches -> OrderArch
+          ConstantArchWidth -> ArchOf opening
+          OrderPiers -> OrderPier
+        _, _ -> OrderArch
+      porticos = rows # Array.mapWithIndex \index (Tuple { order, pedestal, arcade } minute) ->
+        Portico { order, size: { measure: Minute, value: minute }, numOfColumns, bayWidth, bayMeasure, rythm, groupSpacing, pedestal, bays, window: { width: 0.0, height: 0.0 }, arcade, archWidth: archWidth index }
   in Array.zipWith (\(Portico portico) window -> Collonade (Portico portico { window = window })) porticos (windowSizes windowWidth porticos)
+
+-- | For each row, bottom to top, whether its arches would be too tall if it framed an arcade (see
+-- | `archTooTall`), so it does not.
+archesTooTall :: StackedCollonade -> Array Boolean
+archesTooTall = map (\(Collonade portico) -> archTooTall portico) <<< collonades
 
 -- | The windows of the rows, bottom to top, all of the given width (Palladio, Chambers: the same in
 -- | every storey). The bottom row's windows are two widths and a sixth high and those of each row

@@ -3,7 +3,7 @@ module Renderer.Demo (draw) where
 import Prelude
 
 import Anchor (placeBottomRight, render, size)
-import Architecture (BayFill(..), BayMeasure(..), Column(..), ColumnBeat(..), Portico(..), StackedCollonade(..), minGroupSpacing)
+import Architecture (ArcadeMode(..), ArchWidth(..), BayFill(..), BayMeasure(..), Column(..), ColumnBeat(..), Portico(..), StackedCollonade(..), minGroupSpacing)
 import Architecture.Measure (Measure(..))
 import Architecture.Order (PedestalMode(..), minuteFromColumnAndEntablatureHeight, minuteFromLowerDiameter, minuteFromUpperDiameter, orderHeight, sizeOf)
 import Architecture.Order.Draw (drawOrder, drawOrderFromLowerDiameter, drawOrderFromOrderHeight, drawOrderFromUpperDiameter)
@@ -118,7 +118,7 @@ draw width height = do
   let columnsLeft = centerX - max (columnHalfWidth doric doricMinute) (max (columnHalfWidth ionic ionicMinute) (columnHalfWidth corynthian corynthianMinute))
   let numOfColumns = 4
   let bayWidth = 3.0 * sizeOf (unwrap doric).column.lowerDiameter doricMinute
-  let portico order minute = Portico { order, size: { measure: Minute, value: minute }, numOfColumns, bayWidth, bayMeasure: BetweenBeats, rythm: ColumnBeat 1 <$ pulse, groupSpacing: minGroupSpacing order minute, pedestal: NoPedestal, bays: Wall <$ pulse, window: { width: 0.0, height: 0.0 }, arcade: false }
+  let portico order minute = Portico { order, size: { measure: Minute, value: minute }, numOfColumns, bayWidth, bayMeasure: BetweenBeats, rythm: ColumnBeat 1 <$ pulse, groupSpacing: minGroupSpacing order minute, pedestal: NoPedestal, bays: Wall <$ pulse, window: { width: 0.0, height: 0.0 }, arcade: false, archWidth: OrderArch }
   -- distance from the outermost column centerline to the portico's edge
   let overhang p = ((size p).width - Int.toNumber (numOfColumns - 1) * bayWidth) / 2.0
   let doricPortico = portico doric doricMinute
@@ -143,6 +143,7 @@ draw width height = do
         , rythm: rythm (NonEmptyArray.cons' (ColumnBeat 2) [ ColumnBeat 1 ])
         , bays: Wall <$ pulse
         , windowWidth: 0.0
+        , arcadeMode: OrderArches
         }
   let porticosLeft = porticoCenterline - Int.toNumber (numOfColumns - 1) * bayWidth
         - max (overhang doricPortico) (max (overhang ionicPortico) (overhang corynthianPortico))

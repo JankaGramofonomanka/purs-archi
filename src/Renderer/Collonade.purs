@@ -1,9 +1,9 @@
-module Renderer.Collonade (Config, draw) where
+module Renderer.Collonade (Config, draw, stackedCollonade) where
 
 import Prelude
 
 import Anchor (placeCentered, render)
-import Architecture (BayFill, BayMeasure, ColumnBeat, StackedCollonade(..), Storey)
+import Architecture (ArcadeMode, BayFill, BayMeasure, ColumnBeat, StackedCollonade(..), Storey)
 import Architecture.Measure (Measure(..))
 import Architecture.Rythm (Rythm)
 import Architecture.Superposition (SuperpositionRule)
@@ -15,13 +15,19 @@ import Renderer as Renderer
 -- | stand on each of the `numOfColumns` beats and `bays` what fills each bay between them; `windowWidth` is the width of
 -- | the windows' openings in lower diameters of the bottom row's columns; `superposition` sizes each storey from the one below;
 -- | `lowestLowerDiameter` is the lower diameter of the bottom row's columns in pixels, the scale of the drawing,
--- | and `offset` how far, in pixels, the drawing is moved from the center of the surface.
-type Config = { orders :: Array Storey, superposition :: SuperpositionRule, numOfColumns :: Int, bayWidth :: Number, bayMeasure :: BayMeasure, rythm :: Rythm ColumnBeat, bays :: Rythm BayFill, windowWidth :: Number, lowestLowerDiameter :: Number, offset :: { x :: Number, y :: Number } }
+-- | and `offset` how far, in pixels, the drawing is moved from the center of the surface; `arcadeMode` says
+-- | how wide the arches above the lowest arcade are.
+type Config = { orders :: Array Storey, superposition :: SuperpositionRule, numOfColumns :: Int, bayWidth :: Number, bayMeasure :: BayMeasure, rythm :: Rythm ColumnBeat, bays :: Rythm BayFill, windowWidth :: Number, lowestLowerDiameter :: Number, offset :: { x :: Number, y :: Number }, arcadeMode :: ArcadeMode }
 
 -- | Draw the stacked collonade centered on the surface, moved by `offset`.
 draw :: forall m. Monad m => Renderer.Renderer m => Config -> Number -> Number -> m Unit
-draw { orders, superposition, numOfColumns, bayWidth, bayMeasure, rythm, bays, windowWidth, lowestLowerDiameter, offset } width height =
-  render $ placeCentered (point (width / 2.0 + offset.x) (height / 2.0 + offset.y)) $ StackedCollonade
+draw config width height =
+  render $ placeCentered (point (width / 2.0 + config.offset.x) (height / 2.0 + config.offset.y)) $ stackedCollonade config
+
+-- | The stacked collonade the configuration describes, in pixels.
+stackedCollonade :: Config -> StackedCollonade
+stackedCollonade { orders, superposition, numOfColumns, bayWidth, bayMeasure, rythm, bays, windowWidth, lowestLowerDiameter, arcadeMode } =
+  StackedCollonade
     { orders
     , superposition
     , size: { row: 0, size: { measure: LowerDiameter, value: lowestLowerDiameter } }
@@ -31,4 +37,5 @@ draw { orders, superposition, numOfColumns, bayWidth, bayMeasure, rythm, bays, w
     , rythm
     , bays
     , windowWidth: windowWidth * lowestLowerDiameter
+    , arcadeMode
     }
